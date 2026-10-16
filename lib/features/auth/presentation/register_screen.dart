@@ -1,0 +1,286 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/validators.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../shared/widgets/app_logo.dart';
+
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final success = await ref
+        .read(authProvider.notifier)
+        .signUp(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          fullName: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+        );
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'تم إنشاء الحساب بنجاح. أهلاً بك في بوابة اليمن العقارية',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      context.go('/');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const AppLogo(size: 34), centerTitle: true),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: AppColors.divider),
+              ),
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'إنشاء حساب جديد',
+                        style: GoogleFonts.cairo(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'انضم إلى مجتمع العقارات الأول في اليمن مجاناً',
+                        style: GoogleFonts.cairo(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      if (authState.errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.errorMuted,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: AppColors.error,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  authState.errorMessage!,
+                                  style: GoogleFonts.cairo(
+                                    color: AppColors.error,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Full Name
+                      Text(
+                        'الاسم الكامل *',
+                        style: GoogleFonts.cairo(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _nameController,
+                        validator: (val) =>
+                            Validators.requiredField(val, 'الاسم الكامل'),
+                        decoration: const InputDecoration(
+                          hintText: 'أدخل اسمك الثلاثي أو الرباعي',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Email
+                      Text(
+                        'البريد الإلكتروني *',
+                        style: GoogleFonts.cairo(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: Validators.email,
+                        decoration: const InputDecoration(
+                          hintText: 'name@example.com',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Phone
+                      Text(
+                        'رقم الهاتف للتواصل *',
+                        style: GoogleFonts.cairo(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        validator: Validators.phone,
+                        decoration: const InputDecoration(
+                          hintText: 'مثال: 770000000',
+                          prefixIcon: Icon(Icons.phone_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Password
+                      Text(
+                        'كلمة المرور *',
+                        style: GoogleFonts.cairo(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        validator: Validators.password,
+                        decoration: InputDecoration(
+                          hintText: 'لا تقل عن 6 خانات',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                        ),
+                        onFieldSubmitted: (_) => _submit(),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Register Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: authState.isLoading ? null : _submit,
+                          child: authState.isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  'تسجيل حساب جديد',
+                                  style: GoogleFonts.cairo(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Switch to Login
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'لديك حساب بالفعل؟',
+                            style: GoogleFonts.cairo(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => context.push('/login'),
+                            child: Text(
+                              'تسجيل الدخول',
+                              style: GoogleFonts.cairo(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
