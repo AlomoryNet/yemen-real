@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -1142,6 +1143,23 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           ),
         ),
         actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.copy, size: 18),
+            label: Text('نسخ البيانات', style: GoogleFonts.cairo()),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: csvContent));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'تم نسخ بيانات CSV بنجاح إلى الحافظة',
+                    style: GoogleFonts.cairo(),
+                  ),
+                  backgroundColor: AppColors.success,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('إغلاق'),

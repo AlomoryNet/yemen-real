@@ -188,7 +188,7 @@ class AdminRepository {
       ]);
     }
 
-    return const ListToCsvConverter().convert(rows);
+    return '\uFEFF${const ListToCsvConverter().convert(rows)}';
   }
 
   /// Export Rental Requests to CSV
@@ -219,7 +219,7 @@ class AdminRepository {
       ]);
     }
 
-    return const ListToCsvConverter().convert(rows);
+    return '\uFEFF${const ListToCsvConverter().convert(rows)}';
   }
 
   /// Export Commissions to CSV
@@ -256,6 +256,6 @@ class AdminRepository {
       ]);
     }
 
-    return const ListToCsvConverter().convert(rows);
+    return '\uFEFF${const ListToCsvConverter().convert(rows)}';
   }
 }

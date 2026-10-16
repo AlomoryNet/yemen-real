@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yemen_real_estate_portal/core/constants/app_constants.dart';
 import 'package:yemen_real_estate_portal/models/property.dart';
+import 'package:yemen_real_estate_portal/repositories/admin_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/auth_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/commission_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/property_repository.dart';
@@ -118,6 +119,31 @@ void main() {
       expect(comm.totalAmount, equals(400));
       expect(comm.liableParty, equals(AppConstants.liableBoth));
       expect(comm.settlementStatus, equals(AppConstants.commStatusDue));
+    });
+
+    test('AdminRepository stats and CSV exports with UTF-8 BOM', () async {
+      final adminRepo = AdminRepository();
+      final stats = await adminRepo.getDashboardStats();
+      expect(stats.totalProperties, greaterThanOrEqualTo(0));
+      expect(stats.totalUsers, greaterThan(0));
+
+      final propRepo = PropertyRepository();
+      final properties = await propRepo.getProperties();
+      final propCsv = adminRepo.exportPropertiesToCsv(properties);
+      expect(propCsv, startsWith('\uFEFF'));
+      expect(propCsv, contains('عنوان العقار'));
+
+      final reqRepo = RentalRequestRepository();
+      final requests = await reqRepo.getUserRentalRequests('test-user-1');
+      final reqCsv = adminRepo.exportRentalRequestsToCsv(requests);
+      expect(reqCsv, startsWith('\uFEFF'));
+      expect(reqCsv, contains('رقم الطلب'));
+
+      final commRepo = CommissionRepository();
+      final commissions = await commRepo.getCommissions();
+      final commCsv = adminRepo.exportCommissionsToCsv(commissions);
+      expect(commCsv, startsWith('\uFEFF'));
+      expect(commCsv, contains('الطرف المتحمل'));
     });
   });
 }

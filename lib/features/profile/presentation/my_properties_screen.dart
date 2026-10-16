@@ -158,6 +158,10 @@ class MyPropertiesScreen extends ConsumerWidget {
                                           PopupMenuButton<String>(
                                             itemBuilder: (context) => [
                                               const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text('تعديل الإعلان'),
+                                              ),
+                                              const PopupMenuItem(
                                                 value: 'view',
                                                 child: Text('عرض الإعلان'),
                                               ),
@@ -194,7 +198,12 @@ class MyPropertiesScreen extends ConsumerWidget {
                                               final repo = ref.read(
                                                 propertyRepositoryProvider,
                                               );
-                                              if (action == 'view') {
+                                              if (action == 'edit') {
+                                                context.push(
+                                                  '/add-property',
+                                                  extra: prop,
+                                                );
+                                              } else if (action == 'view') {
                                                 context.push(
                                                   '/property/${prop.id}',
                                                 );

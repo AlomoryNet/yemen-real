@@ -14,6 +14,7 @@ import '../../../providers/property_provider.dart';
 import '../../../services/storage_service.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/empty_state_view.dart';
 
 class AddEditPropertyScreen extends ConsumerStatefulWidget {
   final Property? propertyToEdit;
@@ -382,6 +383,24 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
+    if (!authState.isAuthenticated) {
+      return Scaffold(
+        appBar: const AppHeader(),
+        body: Center(
+          child: EmptyStateView(
+            icon: Icons.add_business_outlined,
+            title: 'يرجى تسجيل الدخول أولاً',
+            description:
+                'يجب أن يكون لديك حساب مسجل في بوابة اليمن العقارية لإضافة إعلان عقاري جديد.',
+            actionText: 'تسجيل الدخول',
+            onAction: () => context.push('/login'),
+          ),
+        ),
+      );
+    }
+
     final typesAsync = ref.watch(propertyTypesProvider);
 
     return Scaffold(
