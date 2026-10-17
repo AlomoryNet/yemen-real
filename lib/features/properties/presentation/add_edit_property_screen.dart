@@ -116,6 +116,21 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
   }
 
   void _showSelfReviewModal({required bool isDraft}) {
+    final authUser = ref.read(authProvider).user;
+    if (authUser == null || !authUser.isVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'يلزم تسجيل الدخول بحساب مفعل عبر البريد الإلكتروني لنشر العقارات.',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      context.push('/login');
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
     if (!_hasOwnershipPledge) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -257,7 +272,16 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
   Future<void> _saveProperty({required String status}) async {
     final authUser = ref.read(authProvider).user;
-    if (authUser == null) {
+    if (authUser == null || !authUser.isVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'يلزم تأكيد بريدك الإلكتروني أولاً قبل نشر العقار.',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
       context.push('/login');
       return;
     }

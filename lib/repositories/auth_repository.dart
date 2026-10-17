@@ -16,6 +16,8 @@ class AuthRepository {
 
     final user = _client.auth.currentUser;
     if (user == null) return null;
+    // Unverified users are not considered to have an active authenticated session
+    if (user.emailConfirmedAt == null) return null;
 
     try {
       final data = await _client
@@ -32,6 +34,7 @@ class AuthRepository {
         fullName: user.userMetadata?['full_name'] as String? ?? 'مستخدم',
         phone: user.userMetadata?['phone'] as String?,
         role: AppConstants.roleUser,
+        isVerified: true,
         createdAt: DateTime.now(),
       );
     } catch (e) {
@@ -44,8 +47,9 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
+
     if (EnvConfig.isDemoMode || _client == null) {
-      final cleanEmail = email.trim().toLowerCase();
       if (cleanEmail == 'mohammed.f.saqqaf@gmail.com' ||
           cleanEmail.contains('admin') ||
           cleanEmail.contains('saqqaf')) {
@@ -58,27 +62,37 @@ class AuthRepository {
           isVerified: true,
           createdAt: DateTime.now(),
         );
-      } else {
-        final existing = SupabaseService.demoUsers.cast<UserProfile?>().firstWhere(
-          (u) => u?.email?.toLowerCase() == cleanEmail,
-          orElse: () => null,
-        );
-        SupabaseService.demoCurrentUser = existing ?? UserProfile(
-          id: 'user-${DateTime.now().millisecondsSinceEpoch}',
-          fullName: cleanEmail.split('@').first,
-          email: cleanEmail,
-          phone: '+967771234567',
-          role: AppConstants.roleUser,
-          isVerified: true,
-          createdAt: DateTime.now(),
+        return SupabaseService.demoCurrentUser!;
+      }
+
+      final existing = SupabaseService.demoUsers.cast<UserProfile?>().firstWhere(
+        (u) => u?.email?.toLowerCase() == cleanEmail,
+        orElse: () => null,
+      );
+
+      // Block unverified user from logging in
+      if (existing != null && !existing.isVerified) {
+        throw AppException(
+          'البريد الإلكتروني لم يتم تأكيده بعد. يرجى فتح بريدك الإلكتروني والضغط على رابط التفعيل للمتابعة.',
+          code: 'email_not_confirmed',
         );
       }
+
+      SupabaseService.demoCurrentUser = existing ?? UserProfile(
+        id: 'user-${DateTime.now().millisecondsSinceEpoch}',
+        fullName: cleanEmail.split('@').first,
+        email: cleanEmail,
+        phone: '+967771234567',
+        role: AppConstants.roleUser,
+        isVerified: true,
+        createdAt: DateTime.now(),
+      );
       return SupabaseService.demoCurrentUser!;
     }
 
     try {
       final response = await _client.auth.signInWithPassword(
-        email: email,
+        email: cleanEmail,
         password: password,
       );
 
@@ -87,14 +101,24 @@ class AuthRepository {
         throw AppException('فشل تسجيل الدخول');
       }
 
+      // Enforce email confirmation check on Supabase response
+      if (user.emailConfirmedAt == null) {
+        await _client.auth.signOut();
+        throw AppException(
+          'البريد الإلكتروني لم يتم تأكيده بعد. يرجى فتح بريدك الإلكتروني والضغط على رابط التفعيل للمتابعة.',
+          code: 'email_not_confirmed',
+        );
+      }
+
       final profile = await getCurrentUser();
       return profile ??
           UserProfile(
             id: user.id,
             fullName: user.userMetadata?['full_name'] as String? ?? 'مستخدم',
-            email: user.email ?? email,
+            email: user.email ?? cleanEmail,
             phone: user.userMetadata?['phone'] as String?,
             role: AppConstants.roleUser,
+            isVerified: true,
             createdAt: DateTime.now(),
           );
     } catch (e) {
@@ -111,26 +135,33 @@ class AuthRepository {
   }) async {
     final cleanEmail = email.trim().toLowerCase();
     if (EnvConfig.isDemoMode || _client == null) {
+      final exists = SupabaseService.demoUsers.any(
+        (u) => u.email?.toLowerCase() == cleanEmail,
+      );
+      if (exists) {
+        throw AppException('هذا البريد الإلكتروني مسجل بالفعل', code: 'user_already_exists');
+      }
+
       final newUser = UserProfile(
         id: 'new-user-${DateTime.now().millisecondsSinceEpoch}',
         fullName: fullName,
         email: cleanEmail,
         phone: phone,
         role: AppConstants.roleUser,
-        isVerified: true,
+        isVerified: false, // Requires email confirmation
         createdAt: DateTime.now(),
       );
-      // Automatically keep in registered users list for the Super Admin
       SupabaseService.demoUsers.insert(0, newUser);
-      SupabaseService.demoCurrentUser = newUser;
+      // Strictly do NOT set as active authenticated user
       return newUser;
     }
 
     try {
       final response = await _client.auth.signUp(
-        email: email,
+        email: cleanEmail,
         password: password,
         data: {'full_name': fullName, 'phone': phone},
+        emailRedirectTo: 'yemenreal://login-callback',
       );
 
       final user = response.user;
@@ -138,19 +169,50 @@ class AuthRepository {
         throw AppException('فشل إنشاء الحساب');
       }
 
-      // Profile is auto-created by trigger on auth.users in PostgreSQL
+      final isConfirmed = user.emailConfirmedAt != null;
       final newUser = UserProfile(
         id: user.id,
         fullName: fullName,
         email: user.email ?? cleanEmail,
         phone: phone,
         role: AppConstants.roleUser,
-        isVerified: false,
+        isVerified: isConfirmed,
         createdAt: DateTime.now(),
       );
       return newUser;
     } catch (e) {
       throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Resend confirmation email
+  Future<void> resendConfirmationEmail(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
+    if (EnvConfig.isDemoMode || _client == null) {
+      return;
+    }
+
+    try {
+      await _client.auth.resend(
+        type: OtpType.signup,
+        email: cleanEmail,
+        emailRedirectTo: 'yemenreal://login-callback',
+      );
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Verify user email (for testing or direct verification callback)
+  Future<void> verifyUserEmail(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
+    if (EnvConfig.isDemoMode || _client == null) {
+      final idx = SupabaseService.demoUsers.indexWhere(
+        (u) => u.email?.toLowerCase() == cleanEmail,
+      );
+      if (idx != -1) {
+        SupabaseService.demoUsers[idx] = SupabaseService.demoUsers[idx].copyWith(isVerified: true);
+      }
     }
   }
 

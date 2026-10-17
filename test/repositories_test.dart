@@ -6,12 +6,18 @@ import 'package:yemen_real_estate_portal/repositories/auth_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/commission_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/property_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/rental_request_repository.dart';
+import 'package:yemen_real_estate_portal/config/env_config.dart';
 import 'package:yemen_real_estate_portal/services/supabase_service.dart';
 
 void main() {
   setUp(() async {
-    // Ensure initialized in fallback/demo mode for local testing
+    // Ensure initialized in isolated mock/demo mode for local repository unit testing
+    EnvConfig.setForceDemoModeForTesting(true);
     await SupabaseService.initialize();
+  });
+
+  tearDownAll(() {
+    EnvConfig.setForceDemoModeForTesting(false);
   });
 
   group('Repositories Execution Tests', () {
@@ -153,6 +159,43 @@ void main() {
       final commCsv = adminRepo.exportCommissionsToCsv(commissions);
       expect(commCsv, startsWith('\uFEFF'));
       expect(commCsv, contains('الطرف المتحمل'));
+    });
+
+    test('AuthRepository strictly prevents unconfirmed email login and supports resend', () async {
+      final authRepo = AuthRepository();
+      const testEmail = 'unverified.tester@example.com';
+
+      // 1. Sign up creates user in unverified state
+      final signedUp = await authRepo.signUp(
+        email: testEmail,
+        password: 'Password123!',
+        fullName: 'مستخدم تجريبي للتحقق',
+        phone: '+967770112233',
+      );
+      expect(signedUp.isVerified, isFalse);
+
+      // Current active user should still be null (no authenticated session granted)
+      final currentBeforeConfirm = await authRepo.getCurrentUser();
+      expect(currentBeforeConfirm, isNull);
+
+      // 2. Attempting to sign in before confirmation throws email_not_confirmed
+      try {
+        await authRepo.signIn(email: testEmail, password: 'Password123!');
+        fail('Should not allow login for unconfirmed email');
+      } catch (e) {
+        expect(e.toString(), contains('تأكيده'));
+      }
+
+      // 3. Resend confirmation email executes successfully
+      await authRepo.resendConfirmationEmail(testEmail);
+
+      // 4. Verifying user email allows login to succeed
+      await authRepo.verifyUserEmail(testEmail);
+      final confirmedLogin = await authRepo.signIn(email: testEmail, password: 'Password123!');
+      expect(confirmedLogin.email?.toLowerCase(), equals(testEmail));
+      expect(confirmedLogin.isVerified, isTrue);
+
+      await authRepo.signOut();
     });
   });
 }

@@ -3,12 +3,12 @@ class EnvConfig {
   // Can be injected via --dart-define=SUPABASE_URL=... and --dart-define=SUPABASE_ANON_KEY=...
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://demo-yemen-real.supabase.co',
+    defaultValue: 'https://fwpckpzrhvvxltdiiatn.supabase.co',
   );
 
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo-anon-key',
+    defaultValue: '',
   );
 
   static const String defaultCurrency = String.fromEnvironment(
@@ -26,7 +26,15 @@ class EnvConfig {
     defaultValue: '967770000000',
   );
 
+  static bool _forceDemoModeForTesting = false;
+
+  static void setForceDemoModeForTesting(bool value) {
+    _forceDemoModeForTesting = value;
+  }
+
   static bool get isDemoMode =>
-      supabaseUrl.contains('demo-yemen-real') ||
-      supabaseAnonKey.contains('demo-anon-key');
+      _forceDemoModeForTesting ||
+      supabaseAnonKey.trim().isEmpty ||
+      supabaseAnonKey.contains('demo-anon-key') ||
+      supabaseAnonKey.contains('your-anon-key');
 }

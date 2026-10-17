@@ -57,6 +57,7 @@ class SupabaseService {
   static List<UserProfile> demoUsers = [];
 
   static void _initDemoData() {
+    demoCurrentUser = null;
     demoUsers = [
       UserProfile(
         id: 'admin-mohammed-saqqaf',
@@ -186,14 +187,8 @@ class SupabaseService {
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
     );
 
-    demoCurrentUser = UserProfile(
-      id: 'admin-mohammed-saqqaf',
-      fullName: 'م. محمد السقاف',
-      phone: '+967772522233',
-      role: AppConstants.roleSuperAdmin,
-      isVerified: true,
-      createdAt: DateTime.now().subtract(const Duration(days: 90)),
-    );
+    // Users must authenticate explicitly; no unverified/auto-authenticated session
+    demoCurrentUser = null;
 
     // 3. Realistic Demo Properties in Yemen
     demoProperties = [

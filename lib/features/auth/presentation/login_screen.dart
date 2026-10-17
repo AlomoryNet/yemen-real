@@ -19,6 +19,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isResending = false;
 
   @override
   void initState() {
@@ -32,6 +33,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resendVerification() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('يرجى كتابة البريد الإلكتروني أولاً', style: GoogleFonts.cairo())),
+      );
+      return;
+    }
+    setState(() => _isResending = true);
+    final sent = await ref.read(authProvider.notifier).resendConfirmationEmail(email);
+    setState(() => _isResending = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            sent
+                ? 'تم إرسال رابط تأكيد جديد إلى بريدك بنجاح. يرجى مراجعة صندوق الوارد.'
+                : (ref.read(authProvider).errorMessage ?? 'تعذر إعادة الإرسال حالياً'),
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: sent ? AppColors.success : AppColors.error,
+        ),
+      );
+    }
   }
 
   Future<void> _submit() async {
@@ -124,24 +151,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.errorMuted,
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.error.withOpacity(0.3)),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: AppColors.error,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  authState.errorMessage!,
-                                  style: GoogleFonts.cairo(
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
                                     color: AppColors.error,
-                                    fontSize: 13,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      authState.errorMessage!,
+                                      style: GoogleFonts.cairo(
+                                        color: AppColors.error,
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (authState.errorMessage!.contains('تأكيد') ||
+                                  authState.errorMessage!.contains('تفعيل') ||
+                                  authState.errorMessage!.contains('البريد')) ...[
+                                const SizedBox(height: 8),
+                                const Divider(height: 1),
+                                const SizedBox(height: 6),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: TextButton.icon(
+                                    onPressed: _isResending ? null : _resendVerification,
+                                    icon: _isResending
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : const Icon(Icons.mark_email_unread_outlined, size: 18),
+                                    label: Text(
+                                      _isResending
+                                          ? 'جارٍ الإرسال...'
+                                          : 'إعادة إرسال رابط التفعيل الآن إلى البريد',
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),

@@ -54,7 +54,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user, isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(isLoading: false, errorMessage: e.toString(), clearUser: true);
       return false;
     }
   }
@@ -73,7 +73,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
         fullName: fullName,
         phone: phone,
       );
-      state = state.copyWith(user: user, isLoading: false);
+      // If user requires confirmation, do NOT establish an authenticated session
+      if (user.isVerified) {
+        state = state.copyWith(user: user, isLoading: false);
+      } else {
+        state = state.copyWith(isLoading: false, clearUser: true);
+      }
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> resendConfirmationEmail(String email) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.resendConfirmationEmail(email);
+      state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());

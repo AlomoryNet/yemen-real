@@ -45,92 +45,143 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (success && mounted) {
       final userEmail = _emailController.text.trim();
+      bool isResending = false;
+
       await showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              const Icon(Icons.mark_email_read_outlined, color: AppColors.primary, size: 28),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'تحقق من بريدك الإلكتروني',
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 16),
+        builder: (ctx) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.mark_email_unread_outlined, color: AppColors.primary, size: 26),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'تأكيد وتفعيل الحساب',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'تم تسجيل حسابك بنجاح وحفظ بياناتك بشكل مشفر وآمن مجاناً.',
-                style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMuted,
-                  borderRadius: BorderRadius.circular(8),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'تم إرسال طلب إنشاء الحساب بنجاح. يلزم تفعيل البريد قبل السماح بتسجيل الدخول:',
+                  style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.email, color: AppColors.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        userEmail,
-                        style: GoogleFonts.cairo(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryDark,
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryMuted,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.email, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          userEmail,
+                          style: GoogleFonts.cairo(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryDark,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'تم إرسال رابط تأكيد إلى بريدك الإلكتروني أعلاه. يرجى فتح البريد والنقر على رابط الموافقة لتفعيل حسابك ومتابعة نشر العقارات والعروض.',
-                style: GoogleFonts.cairo(fontSize: 12, height: 1.5),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.green.shade200),
+                const SizedBox(height: 12),
+                Text(
+                  'يرجى فتح صندوق الوارد في بريدك الإلكتروني والنقر على رابط التفعيل المرسل لإكمال التحقق وتفعيل حسابك.',
+                  style: GoogleFonts.cairo(fontSize: 12, height: 1.5, color: Colors.grey.shade800),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 18),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'الخدمة السحابية مجانية بالكامل 100% بدون أي رسوم أو بطاقات بنكية.',
-                        style: GoogleFonts.cairo(fontSize: 11, color: Colors.green.shade900),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.amber.shade300),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.amber.shade800, size: 18),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'تنبيه: لن يتم تسجيل دخولك أو تفعيل الصلاحيات إلا بعد الضغط على الرابط في بريدك.',
+                          style: GoogleFonts.cairo(fontSize: 11, color: Colors.amber.shade900, fontWeight: FontWeight.w600),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 12),
+                // Resend Confirmation Action
+                Center(
+                  child: TextButton.icon(
+                    onPressed: isResending
+                        ? null
+                        : () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            setDialogState(() => isResending = true);
+                            final resent = await ref
+                                .read(authProvider.notifier)
+                                .resendConfirmationEmail(userEmail);
+                            setDialogState(() => isResending = false);
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  resent
+                                      ? 'تمت إعادة إرسال رابط التأكيد بنجاح إلى بريدك'
+                                      : (ref.read(authProvider).errorMessage ?? 'تعذر إعادة الإرسال حالياً'),
+                                  style: GoogleFonts.cairo(),
+                                ),
+                                backgroundColor: resent ? AppColors.success : AppColors.error,
+                              ),
+                            );
+                          },
+                    icon: isResending
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.refresh, size: 18, color: AppColors.primary),
+                    label: Text(
+                      isResending ? 'جارٍ إعادة الإرسال...' : 'لم تصلك الرسالة؟ إعادة إرسال رابط التفعيل',
+                      style: GoogleFonts.cairo(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  context.go('/');
+                },
+                child: Text('تصفح كزائر', style: GoogleFonts.cairo(color: Colors.grey.shade700)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  context.go('/login');
+                },
+                child: Text('الانتقال لتسجيل الدخول', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                context.go('/');
-              },
-              child: Text('حسناً، الانتقال للرئيسية', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
-            ),
-          ],
         ),
       );
     }

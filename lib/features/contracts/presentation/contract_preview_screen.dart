@@ -57,6 +57,7 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _ContractEditorSheet(
         contract: _contract,
@@ -1217,277 +1218,327 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.90,
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.edit_document, color: AppColors.primary, size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    'تعبئة وتعديل بيانات العقد',
-                    style: GoogleFonts.cairo(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary,
-            labelStyle: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12),
-            tabs: const [
-              Tab(icon: Icon(Icons.people_outline, size: 18), text: 'المستأجر والمؤجر'),
-              Tab(icon: Icon(Icons.gavel_outlined, size: 18), text: 'الشروط والماليات'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Tab 1: Parties Information
-                ListView(
-                  children: [
-                    // الطرف الثاني: المستأجر
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.person, color: AppColors.primary, size: 20),
-                              const SizedBox(width: 6),
-                              Text(
-                                'الطرف الثاني (المستأجر) - تعبئة الفراغات',
-                                style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          _buildField('اسم المستأجر الكامل *', _tenantNameController, hint: 'مثال: محمد عبدالله الأهدل'),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(child: _buildField('رقم البطاقة الشخصية / الهوية *', _tenantIdCardController, hint: 'مثال: 01010023456')),
-                              const SizedBox(width: 10),
-                              Expanded(child: _buildField('رقم الهاتف للتواصل *', _tenantPhoneController, hint: '770000000')),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          _buildField('العنوان ومحل الإقامة الحالي', _tenantAddressController, hint: 'مثال: صنعاء - الأصبحي'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+    final media = MediaQuery.of(context);
+    final keyboardHeight = media.viewInsets.bottom;
+    final availableHeight = media.size.height - media.viewPadding.top - keyboardHeight - 16;
+    final targetHeight = availableHeight.clamp(320.0, media.size.height * 0.90);
 
-                    // الطرف الأول: المؤجر / المالك
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.real_estate_agent, color: AppColors.accentDark, size: 20),
-                              const SizedBox(width: 6),
-                              Text(
-                                'الطرف الأول (المؤجر / المالك)',
-                                style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.accentDark),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          _buildField('اسم المؤجر / المالك *', _ownerNameController, hint: 'اسم المالك الرباعي'),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(child: _buildField('رقم البطاقة الشخصية للمؤجر', _ownerIdCardController, hint: 'رقم الهوية')),
-                              const SizedBox(width: 10),
-                              Expanded(child: _buildField('هاتف المؤجر *', _ownerPhoneController, hint: 'هاتف التواصل')),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          _buildField('عنوان المؤجر المعتمد', _ownerAddressController, hint: 'مثال: صنعاء - حدة'),
-                        ],
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: keyboardHeight),
+      child: Container(
+        height: targetHeight,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Drag indicator handle
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.edit_document, color: AppColors.primary, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      'تعبئة وتعديل بيانات العقد',
+                      style: GoogleFonts.cairo(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
                 ),
-
-                // Tab 2: Financials & Clauses
-                ListView(
-                  children: [
-                    _buildField('عنوان العقد الرسمي', _titleController),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: _buildField('مبلغ الإيجار (${widget.contract.currency})', _amountController, isNumber: true)),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildField('مبلغ الضمان والتأمين', _depositController, isNumber: true)),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: _buildField('مدة العقد', _durationController, hint: 'سنة كاملة')),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildField('تاريخ البدء', _startDateController, hint: '2026/10/17')),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildField('تاريخ الانتهاء', _endDateController, hint: '2027/10/17'),
-                    const SizedBox(height: 16),
-
-                    // Switches
-                    SwitchListTile(
-                      title: Text('غير قابل للتجديد إلا برغبة وموافقة المالك', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13)),
-                      subtitle: Text('حماية لحق المؤجر في تقرير التجديد من عدمه', style: GoogleFonts.cairo(fontSize: 11)),
-                      value: _isRenewableOnlyByOwner,
-                      onChanged: (val) => setState(() => _isRenewableOnlyByOwner = val),
-                      activeColor: AppColors.primary,
-                    ),
-                    SwitchListTile(
-                      title: Text('منع التأجير من الباطن أو التقبيل نهائياً', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13)),
-                      subtitle: Text('يمنع المستأجر من تسليم العين لشخص آخر دون موافقة المالك الخطية', style: GoogleFonts.cairo(fontSize: 11)),
-                      value: _forbidSubleasing,
-                      onChanged: (val) => setState(() => _forbidSubleasing = val),
-                      activeColor: AppColors.primary,
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildField('مسؤولية فواتير الخدمات (كهرباء، ماء)', _utilitiesController),
-                    const SizedBox(height: 12),
-                    _buildField('شروط الصيانة وتسليم العين', _maintenanceController),
-                    const SizedBox(height: 12),
-                    _buildField('شرط التأخير عن السداد والفسخ', _latePolicyController),
-                    const SizedBox(height: 16),
-
-                    // Custom Clauses
-                    Text(
-                      'شروط خاصة إضافية من المالك:',
-                      style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const SizedBox(height: 6),
-                    ..._customClauses.asMap().entries.map((entry) => Container(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(child: Text(entry.value, style: GoogleFonts.cairo(fontSize: 12))),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                                onPressed: () => setState(() => _customClauses.removeAt(entry.key)),
-                              ),
-                            ],
-                          ),
-                        )),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _newClauseController,
-                            decoration: InputDecoration(
-                              hintText: 'اكتب شرطاً مخصصاً (مثال: عدم التدخين بالداخل)...',
-                              hintStyle: GoogleFonts.cairo(fontSize: 12),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: _addCustomClause,
-                          child: const Text('إضافة'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Save as template switch
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withAlpha(20),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.accent.withAlpha(80)),
-                      ),
-                      child: SwitchListTile(
-                        title: Text(
-                          'حفظ هذا العقد كنموذج افتراضي لعقاراتي القادمة',
-                          style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
-                        ),
-                        subtitle: Text(
-                          'عند تفعيل هذا الخيار، سيتم تطبيق هذه الشروط تلقائياً عند إضافة أي عرض جديد',
-                          style: GoogleFonts.cairo(fontSize: 11),
-                        ),
-                        value: _saveAsDefault,
-                        onChanged: (val) => setState(() => _saveAsDefault = val),
-                        activeColor: AppColors.accent,
-                      ),
-                    ),
-                  ],
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: _save,
-              child: Text(
-                'حفظ وتطبيق التعديلات على العقد',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 15),
+            const SizedBox(height: 6),
+            TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              labelStyle: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12),
+              tabs: const [
+                Tab(icon: Icon(Icons.people_outline, size: 18), text: 'المستأجر والمؤجر'),
+                Tab(icon: Icon(Icons.gavel_outlined, size: 18), text: 'الشروط والماليات'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Tab 1: Parties Information
+                  ListView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                    padding: const EdgeInsets.only(bottom: 16),
+                    children: [
+                      // الطرف الثاني: المستأجر
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.person, color: AppColors.primary, size: 20),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'الطرف الثاني (المستأجر) - تعبئة الفراغات',
+                                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            _buildField('اسم المستأجر الكامل *', _tenantNameController, hint: 'مثال: محمد عبدالله الأهدل'),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(child: _buildField('رقم البطاقة الشخصية / الهوية *', _tenantIdCardController, hint: 'مثال: 01010023456')),
+                                const SizedBox(width: 10),
+                                Expanded(child: _buildField('رقم الهاتف للتواصل *', _tenantPhoneController, hint: '770000000')),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            _buildField('العنوان ومحل الإقامة الحالي', _tenantAddressController, hint: 'مثال: صنعاء - الأصبحي'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // الطرف الأول: المؤجر / المالك
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.real_estate_agent, color: AppColors.accentDark, size: 20),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'الطرف الأول (المؤجر / المالك)',
+                                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.accentDark),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            _buildField('اسم المؤجر / المالك *', _ownerNameController, hint: 'اسم المالك الرباعي'),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(child: _buildField('رقم البطاقة الشخصية للمؤجر', _ownerIdCardController, hint: 'رقم الهوية')),
+                                const SizedBox(width: 10),
+                                Expanded(child: _buildField('هاتف المؤجر *', _ownerPhoneController, hint: 'هاتف التواصل')),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            _buildField('عنوان المؤجر المعتمد', _ownerAddressController, hint: 'مثال: صنعاء - حدة'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Tab 2: Financials & Clauses
+                  ListView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                    padding: const EdgeInsets.only(bottom: 16),
+                    children: [
+                      _buildField('عنوان العقد الرسمي', _titleController),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(child: _buildField('مبلغ الإيجار (${widget.contract.currency})', _amountController, isNumber: true)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _buildField('مبلغ الضمان والتأمين', _depositController, isNumber: true)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(child: _buildField('مدة العقد', _durationController, hint: 'سنة كاملة')),
+                          const SizedBox(width: 12),
+                          Expanded(child: _buildField('تاريخ البدء', _startDateController, hint: '2026/10/17')),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildField('تاريخ الانتهاء', _endDateController, hint: '2027/10/17'),
+                      const SizedBox(height: 16),
+
+                      // Switches
+                      SwitchListTile(
+                        title: Text('غير قابل للتجديد إلا برغبة وموافقة المالك', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13)),
+                        subtitle: Text('حماية لحق المؤجر في تقرير التجديد من عدمه', style: GoogleFonts.cairo(fontSize: 11)),
+                        value: _isRenewableOnlyByOwner,
+                        onChanged: (val) => setState(() => _isRenewableOnlyByOwner = val),
+                        activeColor: AppColors.primary,
+                      ),
+                      SwitchListTile(
+                        title: Text('منع التأجير من الباطن أو التقبيل نهائياً', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13)),
+                        subtitle: Text('يمنع المستأجر من تسليم العين لشخص آخر دون موافقة المالك الخطية', style: GoogleFonts.cairo(fontSize: 11)),
+                        value: _forbidSubleasing,
+                        onChanged: (val) => setState(() => _forbidSubleasing = val),
+                        activeColor: AppColors.primary,
+                      ),
+                      const SizedBox(height: 12),
+
+                      _buildField('مسؤولية فواتير الخدمات (كهرباء، ماء)', _utilitiesController),
+                      const SizedBox(height: 12),
+                      _buildField('شروط الصيانة وتسليم العين', _maintenanceController),
+                      const SizedBox(height: 12),
+                      _buildField('شرط التأخير عن السداد والفسخ', _latePolicyController),
+                      const SizedBox(height: 16),
+
+                      // Custom Clauses
+                      Text(
+                        'شروط خاصة إضافية من المالك:',
+                        style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 6),
+                      ..._customClauses.asMap().entries.map((entry) => Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(child: Text(entry.value, style: GoogleFonts.cairo(fontSize: 12))),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                                  onPressed: () => setState(() => _customClauses.removeAt(entry.key)),
+                                ),
+                              ],
+                            ),
+                          )),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _newClauseController,
+                              scrollPadding: const EdgeInsets.only(bottom: 90),
+                              decoration: InputDecoration(
+                                hintText: 'اكتب شرطاً مخصصاً (مثال: عدم التدخين بالداخل)...',
+                                hintStyle: GoogleFonts.cairo(fontSize: 12),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: _addCustomClause,
+                            child: const Text('إضافة'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Save as template switch
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withAlpha(20),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.accent.withAlpha(80)),
+                        ),
+                        child: SwitchListTile(
+                          title: Text(
+                            'حفظ هذا العقد كنموذج افتراضي لعقاراتي القادمة',
+                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
+                          ),
+                          subtitle: Text(
+                            'عند تفعيل هذا الخيار، سيتم تطبيق هذه الشروط تلقائياً عند إضافة أي عرض جديد',
+                            style: GoogleFonts.cairo(fontSize: 11),
+                          ),
+                          value: _saveAsDefault,
+                          onChanged: (val) => setState(() => _saveAsDefault = val),
+                          activeColor: AppColors.accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+
+            // Persistent Action Buttons docked right above the keyboard
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.check_circle_outline, size: 20),
+                    label: Text(
+                      'حفظ وتطبيق التعديلات',
+                      style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _save,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey.shade700,
+                      side: BorderSide(color: Colors.grey.shade300),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('إلغاء', style: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 13)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1496,16 +1547,17 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12.5)),
+        Text(label, style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12)),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
+          scrollPadding: const EdgeInsets.only(bottom: 90),
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
           style: GoogleFonts.cairo(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.cairo(fontSize: 11, color: Colors.grey.shade400),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
