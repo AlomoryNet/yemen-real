@@ -12,6 +12,7 @@ import '../features/properties/presentation/add_edit_property_screen.dart';
 import '../features/properties/presentation/property_detail_screen.dart';
 import '../features/property_requests/presentation/my_rental_requests_screen.dart';
 import '../features/search/presentation/search_screen.dart';
+import '../features/contracts/presentation/contract_preview_screen.dart';
 import '../models/property.dart';
 import '../shared/widgets/empty_state_view.dart';
 
@@ -58,6 +59,19 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra;
         final prop = extra is Property ? extra : null;
         return AddEditPropertyScreen(propertyToEdit: prop);
+      },
+    ),
+    GoRoute(
+      path: '/contract',
+      name: 'contract',
+      builder: (context, state) {
+        final extra = state.extra;
+        if (extra is Property) {
+          return ContractPreviewScreen(property: extra);
+        }
+        return const Scaffold(
+          body: Center(child: Text('يرجى تحديد العقار أولاً')),
+        );
       },
     ),
     GoRoute(

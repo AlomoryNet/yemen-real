@@ -158,6 +158,20 @@ class MyPropertiesScreen extends ConsumerWidget {
                                           PopupMenuButton<String>(
                                             itemBuilder: (context) => [
                                               const PopupMenuItem(
+                                                value: 'contract',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.description_outlined,
+                                                      size: 18,
+                                                      color: AppColors.primary,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text('تشكيل وطباعة العقد'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
                                                 value: 'edit',
                                                 child: Text('تعديل الإعلان'),
                                               ),
@@ -198,7 +212,12 @@ class MyPropertiesScreen extends ConsumerWidget {
                                               final repo = ref.read(
                                                 propertyRepositoryProvider,
                                               );
-                                              if (action == 'edit') {
+                                              if (action == 'contract') {
+                                                context.push(
+                                                  '/contract',
+                                                  extra: prop,
+                                                );
+                                              } else if (action == 'edit') {
                                                 context.push(
                                                   '/add-property',
                                                   extra: prop,

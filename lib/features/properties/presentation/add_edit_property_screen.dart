@@ -470,8 +470,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
                             // Deal Type & Property Type Row
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
+                                  flex: 2,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -485,6 +487,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       ),
                                       const SizedBox(height: 6),
                                       DropdownButtonFormField<String>(
+                                        isExpanded: true,
                                         value: _dealType,
                                         items: const [
                                           DropdownMenuItem(
@@ -507,6 +510,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
+                                  flex: 3,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -522,6 +526,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       typesAsync.when(
                                         data: (types) =>
                                             DropdownButtonFormField<String>(
+                                              isExpanded: true,
                                               value: _propertyTypeId,
                                               items: types
                                                   .map(
@@ -532,10 +537,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                                   )
                                                   .toList(),
                                               onChanged: (val) {
-                                                if (val != null)
+                                                if (val != null) {
                                                   setState(
                                                     () => _propertyTypeId = val,
                                                   );
+                                                }
                                               },
                                             ),
                                         loading: () =>
@@ -559,9 +565,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                           icon: Icons.payments_outlined,
                           children: [
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
-                                  flex: 2,
+                                  flex: 3,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -591,6 +598,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
+                                  flex: 2,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -604,6 +612,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       ),
                                       const SizedBox(height: 6),
                                       DropdownButtonFormField<String>(
+                                        isExpanded: true,
                                         value: _currency,
                                         items: AppConstants.supportedCurrencies
                                             .map(
@@ -618,8 +627,9 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                             )
                                             .toList(),
                                         onChanged: (val) {
-                                          if (val != null)
+                                          if (val != null) {
                                             setState(() => _currency = val);
+                                          }
                                         },
                                       ),
                                     ],
@@ -720,36 +730,50 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                           icon: Icons.location_on_outlined,
                           children: [
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
+                                  flex: 2,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'المدينة / المحافظة *',
+                                        'المحافظة *',
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
                                       ),
                                       const SizedBox(height: 6),
-                                      TextFormField(
-                                        controller: _cityController,
-                                        validator: (val) =>
-                                            Validators.requiredField(
-                                              val,
-                                              'المدينة',
-                                            ),
-                                        decoration: const InputDecoration(
-                                          hintText: 'مثال: صنعاء',
-                                        ),
+                                      DropdownButtonFormField<String>(
+                                        isExpanded: true,
+                                        value: AppConstants.yemeniGovernorates
+                                                .contains(_cityController.text.trim())
+                                            ? _cityController.text.trim()
+                                            : 'صنعاء',
+                                        items: AppConstants.yemeniGovernorates
+                                            .map(
+                                              (gov) => DropdownMenuItem(
+                                                value: gov,
+                                                child: Text(gov),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onChanged: (val) {
+                                          if (val != null) {
+                                            setState(() {
+                                              _cityController.text = val;
+                                            });
+                                          }
+                                        },
                                       ),
                                     ],
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
+                                  flex: 3,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -770,13 +794,71 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                               'الحي أو المنطقة',
                                             ),
                                         decoration: const InputDecoration(
-                                          hintText: 'مثال: حدة، بيت بوس',
+                                          hintText: 'مثال: حدة، بيت بوس، المعلا...',
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
                               ],
+                            ),
+                            // Quick district chips for the selected governorate
+                            Builder(
+                              builder: (context) {
+                                final currentGov = _cityController.text.trim().isNotEmpty
+                                    ? _cityController.text.trim()
+                                    : 'صنعاء';
+                                final districts =
+                                    AppConstants.getDistrictsForGovernorate(currentGov);
+                                if (districts.isEmpty) return const SizedBox.shrink();
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'أحياء ومناطق شائعة في $currentGov (انقر للاختيار السريع):',
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 6,
+                                        children: districts.take(8).map((d) {
+                                          final isChosen =
+                                              _districtController.text.trim() == d;
+                                          return ChoiceChip(
+                                            label: Text(
+                                              d,
+                                              style: GoogleFonts.cairo(
+                                                fontSize: 11,
+                                                fontWeight: isChosen
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                color: isChosen
+                                                    ? AppColors.primaryDark
+                                                    : AppColors.textPrimary,
+                                              ),
+                                            ),
+                                            selected: isChosen,
+                                            selectedColor: AppColors.primaryMuted,
+                                            backgroundColor: AppColors.surfaceVariant,
+                                            onSelected: (_) {
+                                              setState(() {
+                                                _districtController.text = d;
+                                              });
+                                            },
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(height: 14),
                             Text(
@@ -969,6 +1051,76 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               onChanged: (val) => setState(
                                 () => _hasOwnershipPledge = val ?? false,
                               ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Section: Contract Customization & Print
+                        _buildSectionCard(
+                          title: 'تشكيل وطباعة عقد العقار اليمني',
+                          icon: Icons.description_outlined,
+                          children: [
+                            Text(
+                              'يمكنك تشكيل وتخصيص شروط العقد وحفظ نموذجك المعتمد لطباعته وتوثيقه عند إتمام الصفقة مع المستأجر أو المشتري.',
+                              style: GoogleFonts.cairo(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                side: const BorderSide(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.edit_note,
+                                color: AppColors.primary,
+                              ),
+                              label: Text(
+                                'تخصيص بنود العقد والطباعة',
+                                style: GoogleFonts.cairo(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              onPressed: () {
+                                final tempProp = Property(
+                                  id: widget.propertyToEdit?.id ??
+                                      'temp-${DateTime.now().millisecondsSinceEpoch}',
+                                  ownerId:
+                                      ref.read(authProvider).user?.id ??
+                                      'owner',
+                                  title:
+                                      _titleController.text.trim().isNotEmpty
+                                      ? _titleController.text.trim()
+                                      : 'عقار معلن',
+                                  description: _descriptionController.text.trim(),
+                                  dealType: _dealType,
+                                  propertyTypeId: _propertyTypeId,
+                                  city: _cityController.text.trim().isNotEmpty
+                                      ? _cityController.text.trim()
+                                      : 'صنعاء',
+                                  district: _districtController.text.trim(),
+                                  addressDetails: _addressController.text.trim(),
+                                  price:
+                                      double.tryParse(_priceController.text) ?? 0,
+                                  currency: _currency,
+                                  areaSqm:
+                                      double.tryParse(_areaController.text) ?? 100,
+                                  contactPhone: _phoneController.text.trim(),
+                                  contactWhatsapp: _whatsappController.text.trim(),
+                                  createdAt: DateTime.now(),
+                                );
+                                context.push('/contract', extra: tempProp);
+                              },
                             ),
                           ],
                         ),

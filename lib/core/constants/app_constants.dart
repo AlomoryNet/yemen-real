@@ -7,6 +7,12 @@ class AppConstants {
   static const String appTaglineAr = 'منصتك الموثوقة للعقارات في اليمن';
   static const String appVersion = '1.0.0';
 
+  // Developer & Copyright Branding
+  static const String developerNameAr = 'شركة هيبه سوفت';
+  static const String developerNameEn = 'Hiba Soft';
+  static const String copyrightNoticeAr = 'تم التطوير بواسطة شركة هيبه سوفت (Hiba Soft) — جميع الحقوق محفوظة © 2026';
+  static const String copyrightNoticeEn = 'Developed by Hiba Soft — All rights reserved © 2026';
+
   // Supported Currencies
   static const String currencyYer = 'YER';
   static const String currencySar = 'SAR';
@@ -144,4 +150,160 @@ class AppConstants {
   // Storage
   static const String propertyImagesBucket = 'property-images';
   static const int maxImageSizeInBytes = 5 * 1024 * 1024; // 5 MB
+
+  // Yemeni Governorates & Popular Districts
+  static const List<String> yemeniGovernorates = [
+    'صنعاء',
+    'عدن',
+    'تعز',
+    'حضرموت',
+    'إب',
+    'الحديدة',
+    'مأرب',
+    'ذمار',
+    'شبوة',
+    'لحج',
+    'أبين',
+    'صعدة',
+    'المهرة',
+    'عمران',
+    'حجة',
+    'البيضاء',
+    'الضالع',
+    'ريمة',
+    'المحويت',
+    'سقطرى',
+    'الجوف',
+  ];
+
+  static const Map<String, List<String>> governorateDistricts = {
+    'صنعاء': [
+      'حدة',
+      'الأصبحي',
+      'بيت بوس',
+      'السبعين',
+      'عصر',
+      'الستين الغربي',
+      'الستين الجنوبي',
+      'شيراتون',
+      'الحصبة',
+      'مذبح',
+      'الروضة',
+      'دار سلم',
+      'بني حشيش',
+      'نقم',
+      'شميلة',
+    ],
+    'عدن': [
+      'المعلا',
+      'كريتر',
+      'خور مكسر',
+      'المنصورة',
+      'الشيخ عثمان',
+      'التواهي',
+      'مدينة إنماء',
+      'البريقة',
+      'كابوتا',
+      'الممدارة',
+    ],
+    'تعز': [
+      'الحوبان',
+      'المسبح',
+      'وادي القاضي',
+      'صالة',
+      'التحرير',
+      'الدحي',
+      'عصيفرة',
+      'بئر باشا',
+      'حي الروضة',
+    ],
+    'حضرموت': [
+      'المكلا',
+      'الشرج',
+      'الديس',
+      'فوه',
+      'بويش',
+      'روكب',
+      'سيئون',
+      'تريم',
+      'الشحر',
+      'القطن',
+      'شبام',
+    ],
+    'إب': [
+      'المشنة',
+      'الظهار',
+      'حي الجامعة',
+      'الميدان',
+      'القاعدة',
+      'يريم',
+      'السحول',
+      'جبلة',
+    ],
+    'الحديدة': [
+      'الحوك',
+      'الميناء',
+      'الحالي',
+      'شارع صنعاء',
+      'شارع فلسطين',
+      'كيلو 16',
+      'باجل',
+      'زبيد',
+    ],
+    'مأرب': [
+      'المدينة',
+      'الوادي',
+      'المجمع',
+      'حي الروضة',
+      'حي الزراعة',
+    ],
+    'ذمار': [
+      'المدينة',
+      'الدائري الغربي',
+      'حي الجامعة',
+      'معبر',
+      'عنس',
+    ],
+    'شبوة': [
+      'عتق',
+      'بيحان',
+      'حبان',
+      'نصاب',
+    ],
+    'لحج': [
+      'الحوطة',
+      'تبن',
+      'صبر',
+      'يافع',
+    ],
+    'أبين': [
+      'زنجبار',
+      'خنفر',
+      'جعار',
+      'لودر',
+    ],
+    'صعدة': [
+      'المدينة',
+      'سحار',
+      'الطلح',
+    ],
+    'المهرة': [
+      'الغيضة',
+      'حوف',
+      'شحن',
+      'سيحوت',
+    ],
+  };
+
+  static List<String> getDistrictsForGovernorate(String? gov) {
+    if (gov == null || gov.isEmpty) return const [];
+    // Try exact match or match if gov starts with key
+    for (final entry in governorateDistricts.entries) {
+      if (gov.contains(entry.key) || entry.key.contains(gov)) {
+        return entry.value;
+      }
+    }
+    return const [];
+  }
 }
+

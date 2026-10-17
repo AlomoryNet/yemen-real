@@ -3,6 +3,7 @@ import '../core/constants/app_constants.dart';
 class UserProfile {
   final String id;
   final String fullName;
+  final String? email;
   final String? phone;
   final String? avatarUrl;
   final String role;
@@ -13,6 +14,7 @@ class UserProfile {
   UserProfile({
     required this.id,
     required this.fullName,
+    this.email,
     this.phone,
     this.avatarUrl,
     this.role = AppConstants.roleUser,
@@ -28,6 +30,7 @@ class UserProfile {
     return UserProfile(
       id: json['id'] as String,
       fullName: json['full_name'] as String? ?? 'مستخدم',
+      email: json['email'] as String?,
       phone: json['phone'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       role: json['role'] as String? ?? AppConstants.roleUser,
@@ -45,6 +48,7 @@ class UserProfile {
     return {
       'id': id,
       'full_name': fullName,
+      'email': email,
       'phone': phone,
       'avatar_url': avatarUrl,
       'role': role,
@@ -54,6 +58,7 @@ class UserProfile {
 
   UserProfile copyWith({
     String? fullName,
+    String? email,
     String? phone,
     String? avatarUrl,
     String? role,
@@ -62,6 +67,7 @@ class UserProfile {
     return UserProfile(
       id: id,
       fullName: fullName ?? this.fullName,
+      email: email ?? this.email,
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       role: role ?? this.role,

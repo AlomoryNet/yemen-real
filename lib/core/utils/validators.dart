@@ -21,8 +21,8 @@ class Validators {
     if (value == null || value.isEmpty) {
       return 'يرجى إدخال كلمة المرور';
     }
-    if (value.length < 6) {
-      return 'يجب أن لا تقل كلمة المرور عن 6 أحرف أو أرقام';
+    if (value.length < 8) {
+      return 'يجب أن لا تقل كلمة المرور عن 8 أحرف أو أرقام لضمان حماية حسابك';
     }
     return null;
   }

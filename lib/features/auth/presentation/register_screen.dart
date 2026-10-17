@@ -44,16 +44,95 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'تم إنشاء الحساب بنجاح. أهلاً بك في بوابة اليمن العقارية',
-            style: GoogleFonts.cairo(),
+      final userEmail = _emailController.text.trim();
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.mark_email_read_outlined, color: AppColors.primary, size: 28),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'تحقق من بريدك الإلكتروني',
+                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+            ],
           ),
-          backgroundColor: AppColors.success,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'تم تسجيل حسابك بنجاح وحفظ بياناتك بشكل مشفر وآمن مجاناً.',
+                style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMuted,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.email, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        userEmail,
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'تم إرسال رابط تأكيد إلى بريدك الإلكتروني أعلاه. يرجى فتح البريد والنقر على رابط الموافقة لتفعيل حسابك ومتابعة نشر العقارات والعروض.',
+                style: GoogleFonts.cairo(fontSize: 12, height: 1.5),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 18),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'الخدمة السحابية مجانية بالكامل 100% بدون أي رسوم أو بطاقات بنكية.',
+                        style: GoogleFonts.cairo(fontSize: 11, color: Colors.green.shade900),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                context.go('/');
+              },
+              child: Text('حسناً، الانتقال للرئيسية', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+            ),
+          ],
         ),
       );
-      context.go('/');
     }
   }
 
@@ -204,7 +283,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         obscureText: _obscurePassword,
                         validator: Validators.password,
                         decoration: InputDecoration(
-                          hintText: 'لا تقل عن 6 خانات',
+                          hintText: 'لا تقل عن 8 خانات (أرقام وحروف لضمان الحماية)',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(

@@ -396,6 +396,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         const SizedBox(height: 8),
         typesAsync.when(
           data: (types) => DropdownButtonFormField<String>(
+            isExpanded: true,
             value: filterState.propertyTypeId,
             decoration: const InputDecoration(hintText: 'جميع الأنواع'),
             items: [
@@ -411,6 +412,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           loading: () => const LinearProgressIndicator(),
           error: (_, __) => const SizedBox.shrink(),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Governorate Filter
+        Text(
+          'المحافظة',
+          style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: filterState.city,
+          isExpanded: true,
+          decoration: const InputDecoration(hintText: 'كافة المحافظات'),
+          items: [
+            const DropdownMenuItem(value: null, child: Text('كافة المحافظات')),
+            ...AppConstants.yemeniGovernorates.map(
+              (gov) => DropdownMenuItem(value: gov, child: Text(gov)),
+            ),
+          ],
+          onChanged: (val) {
+            notifier.setCity(val);
+            ref.refresh(searchPropertiesProvider);
+          },
         ),
 
         const SizedBox(height: 16),

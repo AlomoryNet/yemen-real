@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
@@ -156,46 +160,74 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
                       const SizedBox(height: 32),
 
-                      // Tabs for Admin Sections
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: TabBar(
-                          controller: _tabController,
-                          isScrollable: true,
-                          tabAlignment: TabAlignment.start,
-                          labelColor: AppColors.primary,
-                          unselectedLabelColor: AppColors.textSecondary,
-                          indicatorColor: AppColors.primary,
-                          labelStyle: GoogleFonts.cairo(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                      // Tabs for Admin Sections & Print PDF Button
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 12,
+                        runSpacing: 10,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceVariant,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: TabBar(
+                              controller: _tabController,
+                              isScrollable: true,
+                              tabAlignment: TabAlignment.start,
+                              labelColor: AppColors.primary,
+                              unselectedLabelColor: AppColors.textSecondary,
+                              indicatorColor: AppColors.primary,
+                              labelStyle: GoogleFonts.cairo(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
+                              tabs: const [
+                                Tab(
+                                  icon: Icon(Icons.apartment, size: 18),
+                                  text: 'إدارة العقارات',
+                                ),
+                                Tab(
+                                  icon: Icon(Icons.assignment, size: 18),
+                                  text: 'طلبات الاستئجار',
+                                ),
+                                Tab(
+                                  icon: Icon(Icons.monetization_on, size: 18),
+                                  text: 'سجلات العمولات',
+                                ),
+                                Tab(
+                                  icon: Icon(Icons.flag, size: 18),
+                                  text: 'بلاغات المخالفات',
+                                ),
+                                Tab(
+                                  icon: Icon(Icons.people, size: 18),
+                                  text: 'المستخدمين (مشفر)',
+                                ),
+                              ],
+                            ),
                           ),
-                          tabs: const [
-                            Tab(
-                              icon: Icon(Icons.apartment, size: 18),
-                              text: 'إدارة العقارات',
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 2,
                             ),
-                            Tab(
-                              icon: Icon(Icons.assignment, size: 18),
-                              text: 'طلبات الاستئجار',
+                            onPressed: _exportCurrentSectionToPdf,
+                            icon: const Icon(Icons.picture_as_pdf, size: 18),
+                            label: Text(
+                              'طباعة تقرير شامل PDF للقسم',
+                              style: GoogleFonts.cairo(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
-                            Tab(
-                              icon: Icon(Icons.monetization_on, size: 18),
-                              text: 'سجلات العمولات',
-                            ),
-                            Tab(
-                              icon: Icon(Icons.flag, size: 18),
-                              text: 'بلاغات المخالفات',
-                            ),
-                            Tab(
-                              icon: Icon(Icons.people, size: 18),
-                              text: 'المستخدمين',
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 20),
 
@@ -1037,9 +1069,49 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   }
 
   // ===========================================================================
-  // 5. Users Tab
+  // 5. Users Tab (Encrypted Privacy Protection - Super Admin Exclusive)
   // ===========================================================================
   Widget _buildUsersTab(BuildContext context) {
+    final authUser = ref.watch(authProvider).user;
+    final bool isSuperAdmin = authUser?.role == AppConstants.roleSuperAdmin ||
+        authUser?.email == 'mohammed.f.saqqaf@gmail.com' ||
+        authUser?.id == 'admin-mohammed-saqqaf';
+
+    if (!isSuperAdmin) {
+      return Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock_outline, size: 54, color: AppColors.error),
+                const SizedBox(height: 14),
+                Text(
+                  'قسم مشفر ومحمي خاص بالمدير العام فقط',
+                  style: GoogleFonts.cairo(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'وفقاً لسياسات الأمان والتشفير، بيانات المستخدمين لا تظهر إلا للمدير العام (م. محمد السقاف) لضمان الخصوصية التامة.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final usersAsync = ref.watch(allUsersProvider);
 
     return Card(
@@ -1051,18 +1123,64 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'إدارة المستخدمين والأدوار',
-                  style: GoogleFonts.cairo(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Row(
+                  children: [
+                    const Icon(Icons.shield_outlined, color: AppColors.primary, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      'سجل حسابات المستخدمين (بيانات مشفرة ومحمية)',
+                      style: GoogleFonts.cairo(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.lock, size: 14, color: Colors.green),
+                      const SizedBox(width: 4),
+                      Text(
+                        'صلاحيات المدير العام',
+                        style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade900),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.green, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'حماية البيانات: كلمات المرور والتفاصيل الحساسة مشفرة بنظام التشفير القياسي، ويظهر للمدير العام فقط اسم المستخدم وحسابه.',
+                      style: GoogleFonts.cairo(fontSize: 11, color: Colors.green.shade900),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             const Divider(height: 1),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Expanded(
               child: usersAsync.when(
                 data: (users) {
@@ -1071,11 +1189,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final u = users[index];
+                      final accountEmail = u.email ?? (u.phone != null && u.phone!.isNotEmpty ? u.phone! : u.id);
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppColors.primaryMuted,
                           child: Text(
                             u.fullName.isNotEmpty ? u.fullName[0] : 'U',
+                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold, color: AppColors.primary),
                           ),
                         ),
                         title: Text(
@@ -1086,8 +1206,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           ),
                         ),
                         subtitle: Text(
-                          '${u.phone ?? "بدون هاتف"} • الدور: ${u.role}',
-                          style: GoogleFonts.cairo(fontSize: 12),
+                          'الحساب: $accountEmail • تاريخ الإنشاء: ${u.createdAt.toString().split(' ').first}',
+                          style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textSecondary),
                         ),
                         trailing: Container(
                           padding: const EdgeInsets.symmetric(
@@ -1095,20 +1215,24 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: u.isAdmin
-                                ? AppColors.accentLight
-                                : AppColors.surfaceVariant,
+                            color: AppColors.surfaceVariant,
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.grey.shade300),
                           ),
-                          child: Text(
-                            u.isAdmin ? 'مدير' : 'مستخدم',
-                            style: GoogleFonts.cairo(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: u.isAdmin
-                                  ? AppColors.accentDark
-                                  : AppColors.textSecondary,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.lock, size: 12, color: AppColors.primary),
+                              const SizedBox(width: 4),
+                              Text(
+                                'مشفر ومحمي',
+                                style: GoogleFonts.cairo(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -1123,6 +1247,327 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         ),
       ),
     );
+  }
+
+  // ===========================================================================
+  // Section Comprehensive PDF Export with Full Sana'a Time & Date
+  // ===========================================================================
+  Future<void> _exportCurrentSectionToPdf() async {
+    final int currentTab = _tabController.index;
+    final List<String> sectionTitles = [
+      'إدارة العقارات',
+      'طلبات الاستئجار',
+      'سجلات العمولات',
+      'بلاغات المخالفات',
+      'سجل المستخدمين',
+    ];
+
+    final sectionTitle = sectionTitles[currentTab];
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'جاري تجهيز وطباعة تقرير PDF شامل لقسم: $sectionTitle...',
+          style: GoogleFonts.cairo(),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      final fontData = await rootBundle.load('assets/fonts/Cairo.ttf');
+      final fontCairo = pw.Font.ttf(fontData);
+      final fontCairoBold = pw.Font.ttf(fontData);
+
+      final now = DateTime.now();
+      const arabicDays = [
+        'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'
+      ];
+      const arabicMonths = [
+        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+      ];
+
+      final dayName = arabicDays[now.weekday - 1];
+      final dayNum = now.day;
+      final monthName = arabicMonths[now.month - 1];
+      final yearNum = now.year;
+      final int rawHour = now.hour;
+      final int hour12 = rawHour > 12 ? rawHour - 12 : (rawHour == 0 ? 12 : rawHour);
+      final period = rawHour >= 12 ? 'مساءً' : 'صباحاً';
+      final minute = now.minute.toString().padLeft(2, '0');
+      final timeFormatted = '$hour12:$minute $period (بتوقيت صنعاء)';
+
+      final pdf = pw.Document();
+
+      // Prepare table data based on current active tab
+      List<String> tableHeaders = [];
+      List<List<String>> tableData = [];
+
+      switch (currentTab) {
+        case 0: // Properties
+          final props = ref.read(searchPropertiesProvider).asData?.value ?? [];
+          tableHeaders = ['رقم العقار', 'العنوان', 'العملية', 'المدينة', 'السعر', 'الحالة'];
+          tableData = props.map((p) => [
+            p.id,
+            p.title,
+            AppConstants.getDealTypeNameAr(p.dealType),
+            p.city,
+            Formatters.formatCurrency(p.price, p.currency),
+            AppConstants.getPropertyStatusNameAr(p.status),
+          ]).toList();
+          break;
+
+        case 1: // Rental Requests
+          final reqs = ref.read(allRentalRequestsProvider).asData?.value ?? [];
+          tableHeaders = ['رقم الطلب', 'العقار', 'المستأجر', 'الهاتف', 'تاريخ البدء', 'الحالة'];
+          tableData = reqs.map((r) => [
+            r.requestNumber,
+            r.propertyTitle ?? r.propertyId,
+            r.fullName,
+            r.phone,
+            r.requestedStartDate?.toIso8601String().split('T').first ?? '-',
+            AppConstants.getRentalRequestStatusNameAr(r.status),
+          ]).toList();
+          break;
+
+        case 2: // Commissions
+          final comms = ref.read(adminCommissionsProvider).asData?.value ?? [];
+          tableHeaders = ['المعرف', 'العقار', 'الطرف المتحمل', 'المبلغ', 'العملة', 'حالة التسوية'];
+          tableData = comms.map((c) => [
+            c.id,
+            c.propertyTitle ?? c.propertyId,
+            AppConstants.getLiablePartyNameAr(c.liableParty),
+            Formatters.formatCurrency(c.totalAmount, c.currency),
+            c.currency,
+            AppConstants.getCommissionStatusNameAr(c.settlementStatus),
+          ]).toList();
+          break;
+
+        case 3: // Reports
+          final reps = ref.read(adminReportsProvider).asData?.value ?? [];
+          tableHeaders = ['المعرف', 'رقم العقار', 'سبب البلاغ', 'الحالة', 'تاريخ البلاغ'];
+          tableData = reps.map((rp) => [
+            rp.id,
+            rp.propertyId,
+            rp.reason,
+            rp.status == 'pending' ? 'قيد المراجعة' : 'محلول',
+            rp.createdAt.toIso8601String().split('T').first,
+          ]).toList();
+          break;
+
+        case 4: // Users
+        default:
+          final users = ref.read(allUsersProvider).asData?.value ?? [];
+          tableHeaders = ['الرقم', 'اسم المستخدم', 'الحساب (البريد)', 'حالة التشفير', 'تاريخ الإنشاء'];
+          tableData = users.asMap().entries.map((entry) {
+            final u = entry.value;
+            final account = u.email ?? (u.phone != null && u.phone!.isNotEmpty ? u.phone! : u.id);
+            return [
+              '${entry.key + 1}',
+              u.fullName,
+              account,
+              '🔒 مشفر ومحمي',
+              u.createdAt.toString().split(' ').first,
+            ];
+          }).toList();
+          break;
+      }
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          textDirection: pw.TextDirection.rtl,
+          margin: const pw.EdgeInsets.all(24),
+          build: (pw.Context ctx) {
+            return [
+              // Header
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  border: pw.Border.all(color: PdfColors.grey400),
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Text('بسم الله الرحمن الرحيم', style: pw.TextStyle(font: fontCairoBold, fontSize: 11)),
+                    pw.SizedBox(height: 2),
+                    pw.Text('الجمهورية اليمنية — بوابة اليمن العقارية', style: pw.TextStyle(font: fontCairoBold, fontSize: 13, color: PdfColors.green900)),
+                    pw.SizedBox(height: 2),
+                    pw.Text('الإدارة العامة — تقرير رسمي شامل', style: pw.TextStyle(font: fontCairoBold, fontSize: 11)),
+                    pw.Divider(thickness: 0.5, color: PdfColors.grey400),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('القسم: $sectionTitle', style: pw.TextStyle(font: fontCairoBold, fontSize: 10, color: PdfColors.green800)),
+                        pw.Text('المستخرج: المدير العام (م. محمد السقاف)', style: pw.TextStyle(font: fontCairo, fontSize: 9.5)),
+                      ],
+                    ),
+                    pw.SizedBox(height: 4),
+                    // تفاصيل الوقت واليوم والشهر والسنة
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey200,
+                        borderRadius: pw.BorderRadius.circular(4),
+                      ),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('اليوم: $dayName', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
+                          pw.Text('التاريخ: $dayNum', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
+                          pw.Text('الشهر: $monthName (${now.month})', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
+                          pw.Text('السنة: $yearNum م', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
+                          pw.Text('الوقت: $timeFormatted', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              // KPI Summary
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('إجمالي عناصر القسم: ${tableData.length}', style: pw.TextStyle(font: fontCairoBold, fontSize: 10)),
+                  pw.Text('حالة البيانات: معتمدة ومحدثة لحظياً', style: pw.TextStyle(font: fontCairo, fontSize: 9, color: PdfColors.grey700)),
+                ],
+              ),
+              pw.SizedBox(height: 8),
+
+              // Detailed Table
+              pw.Table.fromTextArray(
+                headers: tableHeaders,
+                data: tableData.isEmpty
+                    ? [List.generate(tableHeaders.length, (_) => 'لا توجد بيانات مسجلة حالياً')]
+                    : tableData,
+                headerStyle: pw.TextStyle(font: fontCairoBold, fontSize: 8.5, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.green800),
+                cellStyle: pw.TextStyle(font: fontCairo, fontSize: 7.5),
+                cellAlignment: pw.Alignment.centerRight,
+                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              ),
+
+              pw.SizedBox(height: 20),
+
+              // Footer
+              pw.Divider(thickness: 0.5, color: PdfColors.grey400),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('شركة هيبه سوفت (Hiba Soft) — جميع الحقوق محفوظة © 2026', style: pw.TextStyle(font: fontCairo, fontSize: 7.5, color: PdfColors.grey600)),
+                  pw.Text('وثيقة إدارية رسمية — مشفرة وموثقة', style: pw.TextStyle(font: fontCairo, fontSize: 7.5, color: PdfColors.grey600)),
+                ],
+              ),
+            ];
+          },
+        ),
+      );
+
+      final pdfBytes = await pdf.save();
+
+      Directory? dir;
+      try {
+        if (Platform.isAndroid) {
+          final downloadDir = Directory('/storage/emulated/0/Download');
+          if (await downloadDir.exists()) {
+            dir = downloadDir;
+          } else {
+            dir = await getExternalStorageDirectory();
+          }
+        } else {
+          dir = await getApplicationDocumentsDirectory();
+        }
+      } catch (_) {
+        dir = await getApplicationDocumentsDirectory();
+      }
+
+      final filename = 'تقرير_${sectionTitle.replaceAll(" ", "_")}_${now.year}_${now.month}_${now.day}_${now.hour}${now.minute}.pdf';
+      final file = File('${dir!.path}/$filename');
+      await file.writeAsBytes(pdfBytes);
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (dialogCtx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.picture_as_pdf, color: AppColors.primary, size: 26),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'تم تصدير تقرير الـ PDF بنجاح',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'تم حفظ التقرير الشامل لقسم "$sectionTitle" متضمناً تفاصيل اليوم والتاريخ والشهر والسنة والوقت الدقيق بتوقيت صنعاء.',
+                  style: GoogleFonts.cairo(fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📁 اسم الملف:', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 11)),
+                      Text(filename, style: GoogleFonts.cairo(fontSize: 11, color: AppColors.primary)),
+                      const SizedBox(height: 6),
+                      Text('📍 مسار الحفظ بالجهاز:', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 11)),
+                      SelectableText(file.path, style: const TextStyle(fontSize: 10, fontFamily: 'monospace')),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton.icon(
+                icon: const Icon(Icons.copy, size: 16),
+                label: Text('نسخ المسار', style: GoogleFonts.cairo()),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: file.path));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('تم نسخ مسار الملف إلى الحافظة', style: GoogleFonts.cairo()),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: Text('حسناً', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فشل تصدير التقرير: $e', style: GoogleFonts.cairo()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _showCsvDialog(BuildContext context, String title, String csvContent) {

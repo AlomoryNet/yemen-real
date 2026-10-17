@@ -54,8 +54,38 @@ class SupabaseService {
   static List<ReportItem> demoReports = [];
   static Set<String> demoFavoriteIds = {};
   static UserProfile? demoCurrentUser;
+  static List<UserProfile> demoUsers = [];
 
   static void _initDemoData() {
+    demoUsers = [
+      UserProfile(
+        id: 'admin-mohammed-saqqaf',
+        fullName: 'م. محمد السقاف',
+        email: 'mohammed.f.saqqaf@gmail.com',
+        phone: '+967772522233',
+        role: AppConstants.roleSuperAdmin,
+        isVerified: true,
+        createdAt: DateTime(2026, 1, 1),
+      ),
+      UserProfile(
+        id: 'user-ahmed-seif',
+        fullName: 'أحمد سيف المعمري',
+        email: 'ahmed.seif@example.com',
+        phone: '+967771234567',
+        role: AppConstants.roleUser,
+        isVerified: true,
+        createdAt: DateTime(2026, 2, 10),
+      ),
+      UserProfile(
+        id: 'user-tareq-abdulkarim',
+        fullName: 'طارق عبدالكريم الصنعاني',
+        email: 'tareq.sanaa@example.com',
+        phone: '+967772223334',
+        role: AppConstants.roleUser,
+        isVerified: true,
+        createdAt: DateTime(2026, 3, 5),
+      ),
+    ];
     // 1. Property Types
     demoPropertyTypes = [
       PropertyType(
@@ -157,9 +187,9 @@ class SupabaseService {
     );
 
     demoCurrentUser = UserProfile(
-      id: 'demo-admin-1',
-      fullName: 'مدير المنصة العام',
-      phone: '+967770000000',
+      id: 'admin-mohammed-saqqaf',
+      fullName: 'م. محمد السقاف',
+      phone: '+967772522233',
       role: AppConstants.roleSuperAdmin,
       isVerified: true,
       createdAt: DateTime.now().subtract(const Duration(days: 90)),

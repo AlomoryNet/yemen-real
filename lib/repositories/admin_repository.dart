@@ -103,26 +103,7 @@ class AdminRepository {
   /// Get all user profiles
   Future<List<UserProfile>> getAllUsers() async {
     if (EnvConfig.isDemoMode || _client == null) {
-      return [
-        if (SupabaseService.demoCurrentUser != null)
-          SupabaseService.demoCurrentUser!,
-        UserProfile(
-          id: 'demo-user-1',
-          fullName: 'أحمد سيف المعمري',
-          phone: '+967771234567',
-          role: AppConstants.roleUser,
-          isVerified: true,
-          createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        ),
-        UserProfile(
-          id: 'demo-user-2',
-          fullName: 'طارق عبدالكريم',
-          phone: '+967772223334',
-          role: AppConstants.roleUser,
-          isVerified: false,
-          createdAt: DateTime.now().subtract(const Duration(days: 10)),
-        ),
-      ];
+      return List.from(SupabaseService.demoUsers);
     }
 
     try {

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/locale_provider.dart';
 import 'app_logo.dart';
 
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
@@ -16,6 +17,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final isMobile = Responsive.isMobile(context);
     final isDesktop = Responsive.isDesktop(context);
 
     return Container(
@@ -25,14 +27,20 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 12 : 20,
+            vertical: 8,
+          ),
           child: Row(
             children: [
               // Logo
               InkWell(
                 onTap: () => context.go('/'),
                 borderRadius: BorderRadius.circular(8),
-                child: const AppLogo(size: 38),
+                child: AppLogo(
+                  size: isMobile ? 32 : 38,
+                  showText: !isMobile,
+                ),
               ),
 
               const Spacer(),
@@ -61,9 +69,9 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 10 : 16,
+                    vertical: isMobile ? 8 : 10,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -71,10 +79,10 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 ),
                 icon: const Icon(Icons.add_home_outlined, size: 18),
                 label: Text(
-                  'أضف عقارك',
+                  isMobile ? 'إضافة' : 'أضف عقارك',
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontSize: isMobile ? 12 : 13,
                   ),
                 ),
                 onPressed: () {
@@ -98,7 +106,47 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 },
               ),
 
-              const SizedBox(width: 12),
+              // Language Switcher Button (عربي / EN)
+              InkWell(
+                onTap: () {
+                  ref.read(localeProvider.notifier).toggleLocale();
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 8 : 10,
+                    vertical: isMobile ? 6 : 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.language,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        ref.watch(localeProvider).languageCode == 'ar'
+                            ? 'EN'
+                            : 'عربي',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(width: isMobile ? 6 : 10),
 
               // Auth Profile / Login
               if (authState.isAuthenticated)
@@ -232,18 +280,18 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
               else
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 10 : 16,
+                      vertical: isMobile ? 8 : 10,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: Text(
-                    'دخول / تسجيل',
+                    isMobile ? 'دخول' : 'دخول / تسجيل',
                     style: GoogleFonts.cairo(
-                      fontSize: 13,
+                      fontSize: isMobile ? 12 : 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

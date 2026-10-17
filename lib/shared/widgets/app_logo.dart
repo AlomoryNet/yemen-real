@@ -21,9 +21,18 @@ class AppLogo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        CustomPaint(
-          size: Size(size, size),
-          painter: _YemenRealEstateLogoPainter(),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(size * 0.22),
+          child: Image.asset(
+            'assets/images/app_logo.png',
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => CustomPaint(
+              size: Size(size, size),
+              painter: _YemenRealEstateLogoPainter(),
+            ),
+          ),
         ),
         if (showText) ...[
           const SizedBox(width: 10),

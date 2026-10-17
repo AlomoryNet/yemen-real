@@ -25,20 +25,24 @@ class AppFooter extends StatelessWidget {
               const SizedBox(height: 32),
               const Divider(color: Colors.white24, height: 1),
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
                 children: [
                   Text(
-                    '© ${DateTime.now().year} ${AppConstants.appNameAr}. جميع الحقوق محفوظة.',
+                    AppConstants.copyrightNoticeAr,
                     style: GoogleFonts.cairo(
-                      color: AppColors.textLight.withAlpha(180),
+                      color: AppColors.accentLight,
                       fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     'الجمهورية اليمنية',
                     style: GoogleFonts.cairo(
-                      color: AppColors.accentLight,
+                      color: AppColors.textLight.withAlpha(200),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),

@@ -507,6 +507,34 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               ),
             ],
 
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(
+                  Icons.description_outlined,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                label: Text(
+                  'معاينة وتشكيل العقد والطباعة',
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                onPressed: () => context.push('/contract', extra: property),
+              ),
+            ),
+
             const SizedBox(height: 16),
 
             // Secondary Actions (Share & Report)

@@ -204,26 +204,24 @@ class PropertyCard extends ConsumerWidget {
                   const SizedBox(height: 10),
 
                   // Specs (Area, Rooms, Bathrooms)
-                  Row(
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
                     children: [
                       _buildSpecItem(
                         Icons.straighten_outlined,
                         Formatters.formatArea(property.areaSqm),
                       ),
-                      if (property.bedrooms > 0) ...[
-                        const SizedBox(width: 14),
+                      if (property.bedrooms > 0)
                         _buildSpecItem(
                           Icons.bed_outlined,
                           '${property.bedrooms} غرف',
                         ),
-                      ],
-                      if (property.bathrooms > 0) ...[
-                        const SizedBox(width: 14),
+                      if (property.bathrooms > 0)
                         _buildSpecItem(
                           Icons.bathtub_outlined,
                           '${property.bathrooms} حمام',
                         ),
-                      ],
                     ],
                   ),
                 ],

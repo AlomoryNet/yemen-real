@@ -21,6 +21,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _emailController.text = 'mohammed.f.saqqaf@gmail.com';
+    _passwordController.text = '772522233';
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -40,13 +47,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _fillDemoAdmin() {
-    _emailController.text = 'admin@yemenrealestate.local';
-    _passwordController.text = 'Admin@123456';
+    _emailController.text = 'mohammed.f.saqqaf@gmail.com';
+    _passwordController.clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'تمت كتابة بريد المدير العام فقط. يرجى إدخال كلمة المرور يدوياً للمتابعة بأمان',
+          style: GoogleFonts.cairo(),
+        ),
+        backgroundColor: AppColors.primaryDark,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   void _fillDemoUser() {
     _emailController.text = 'user@yemenrealestate.local';
-    _passwordController.text = 'User@123456';
+    _passwordController.clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'تمت كتابة بريد المستخدم التجريبي. يرجى إدخال كلمة المرور للمتابعة',
+          style: GoogleFonts.cairo(),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -246,7 +272,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       // Demo Quick Fill Helpers
                       Text(
-                        'حسابات تجريبية سريعة للاختبار:',
+                        'تسجيل دخول سريع بحسابات النظام:',
                         style: GoogleFonts.cairo(
                           fontSize: 11,
                           color: AppColors.textMuted,
@@ -264,8 +290,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               onPressed: _fillDemoAdmin,
                               child: Text(
-                                'حساب مدير عام',
-                                style: GoogleFonts.cairo(fontSize: 11),
+                                'المدير العام (إيميل فقط)',
+                                style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -279,7 +305,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               onPressed: _fillDemoUser,
                               child: Text(
-                                'حساب مستخدم معلن',
+                                'حساب معلن (إيميل فقط)',
                                 style: GoogleFonts.cairo(fontSize: 11),
                               ),
                             ),

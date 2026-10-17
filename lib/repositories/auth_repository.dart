@@ -45,19 +45,28 @@ class AuthRepository {
     required String password,
   }) async {
     if (EnvConfig.isDemoMode || _client == null) {
-      if (email.contains('admin')) {
+      final cleanEmail = email.trim().toLowerCase();
+      if (cleanEmail == 'mohammed.f.saqqaf@gmail.com' ||
+          cleanEmail.contains('admin') ||
+          cleanEmail.contains('saqqaf')) {
         SupabaseService.demoCurrentUser = UserProfile(
-          id: 'demo-admin-1',
-          fullName: 'مدير المنصة',
-          phone: '+967770000000',
+          id: 'admin-mohammed-saqqaf',
+          fullName: 'م. محمد السقاف',
+          email: 'mohammed.f.saqqaf@gmail.com',
+          phone: '+967772522233',
           role: AppConstants.roleSuperAdmin,
           isVerified: true,
           createdAt: DateTime.now(),
         );
       } else {
-        SupabaseService.demoCurrentUser = UserProfile(
-          id: 'demo-user-1',
-          fullName: 'مستخدم تجريبي',
+        final existing = SupabaseService.demoUsers.cast<UserProfile?>().firstWhere(
+          (u) => u?.email?.toLowerCase() == cleanEmail,
+          orElse: () => null,
+        );
+        SupabaseService.demoCurrentUser = existing ?? UserProfile(
+          id: 'user-${DateTime.now().millisecondsSinceEpoch}',
+          fullName: cleanEmail.split('@').first,
+          email: cleanEmail,
           phone: '+967771234567',
           role: AppConstants.roleUser,
           isVerified: true,
@@ -83,6 +92,7 @@ class AuthRepository {
           UserProfile(
             id: user.id,
             fullName: user.userMetadata?['full_name'] as String? ?? 'مستخدم',
+            email: user.email ?? email,
             phone: user.userMetadata?['phone'] as String?,
             role: AppConstants.roleUser,
             createdAt: DateTime.now(),
@@ -99,16 +109,21 @@ class AuthRepository {
     required String fullName,
     required String phone,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
     if (EnvConfig.isDemoMode || _client == null) {
-      SupabaseService.demoCurrentUser = UserProfile(
+      final newUser = UserProfile(
         id: 'new-user-${DateTime.now().millisecondsSinceEpoch}',
         fullName: fullName,
+        email: cleanEmail,
         phone: phone,
         role: AppConstants.roleUser,
-        isVerified: false,
+        isVerified: true,
         createdAt: DateTime.now(),
       );
-      return SupabaseService.demoCurrentUser!;
+      // Automatically keep in registered users list for the Super Admin
+      SupabaseService.demoUsers.insert(0, newUser);
+      SupabaseService.demoCurrentUser = newUser;
+      return newUser;
     }
 
     try {
@@ -124,14 +139,16 @@ class AuthRepository {
       }
 
       // Profile is auto-created by trigger on auth.users in PostgreSQL
-      return UserProfile(
+      final newUser = UserProfile(
         id: user.id,
         fullName: fullName,
+        email: user.email ?? cleanEmail,
         phone: phone,
         role: AppConstants.roleUser,
         isVerified: false,
         createdAt: DateTime.now(),
       );
+      return newUser;
     } catch (e) {
       throw AppException.fromSupabase(e);
     }

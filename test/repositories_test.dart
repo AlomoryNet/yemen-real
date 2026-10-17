@@ -24,6 +24,15 @@ void main() {
       expect(user.id, isNotEmpty);
       expect(user.fullName, isNotEmpty);
 
+      // Test Admin login with user specified credentials
+      final adminUser = await authRepo.signIn(
+        email: 'mohammed.f.saqqaf@gmail.com',
+        password: '772522233',
+      );
+      expect(adminUser.isAdmin, isTrue);
+      expect(adminUser.fullName, equals('م. محمد السقاف'));
+      expect(adminUser.phone, equals('+967772522233'));
+
       await authRepo.signOut();
       final current = await authRepo.getCurrentUser();
       expect(current, isNull);
