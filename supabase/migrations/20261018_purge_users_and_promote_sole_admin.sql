@@ -2,7 +2,7 @@
 -- Migration & Maintenance: User Purge & Sole Administrator Promotion
 -- Target: Yemen Real Estate Portal (بوابة اليمن العقارية)
 -- Target Project: https://fwpckpzrhvvxltdiiatn.supabase.co
--- Sole Publishing Administrator: Mohammed Al-Saqqaf (mohammed.f.saqqaf@gmail.com)
+-- Sole Publishing Administrator: Eng. Mohammed Al-Saqqaf (mo772522233@gmail.com)
 -- Target UUID: daa0d684-f82b-4878-9d86-ce2810be9786
 -- ==============================================================================
 
@@ -14,7 +14,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
 DO $$
 DECLARE
     v_admin_id CONSTANT UUID := 'daa0d684-f82b-4878-9d86-ce2810be9786'::UUID;
-    v_admin_email CONSTANT TEXT := 'mohammed.f.saqqaf@gmail.com';
+    v_admin_email CONSTANT TEXT := 'mo772522233@gmail.com';
     v_deleted_auth_users INT := 0;
     v_deleted_profiles INT := 0;
 BEGIN
@@ -24,12 +24,12 @@ BEGIN
         WHERE table_schema = 'auth' AND table_name = 'users'
     ) THEN
         IF NOT EXISTS (
-            SELECT 1 FROM auth.users WHERE id = v_admin_id
+            SELECT 1 FROM auth.users WHERE id = v_admin_id OR lower(email) = lower(v_admin_email)
         ) THEN
-            RAISE EXCEPTION 'MIGRATION ABORTED: Administrator with UUID % does not exist in auth.users.', v_admin_id;
+            RAISE EXCEPTION 'MIGRATION ABORTED: Administrator with UUID % or email % does not exist in auth.users.', v_admin_id, v_admin_email;
         END IF;
 
-        -- Ensure admin email is confirmed
+        -- Ensure admin email is confirmed and updated
         UPDATE auth.users
         SET 
             email = v_admin_email,
@@ -40,7 +40,7 @@ BEGIN
         -- 2. Safely remove non-admin application user accounts from auth.users
         WITH deleted AS (
             DELETE FROM auth.users
-            WHERE id <> v_admin_id
+            WHERE id <> v_admin_id AND lower(email) <> lower(v_admin_email)
             RETURNING id
         )
         SELECT COUNT(*) INTO v_deleted_auth_users FROM deleted;
@@ -50,7 +50,7 @@ BEGIN
     -- 3. Safely remove non-admin profiles if not cascaded
     WITH deleted_p AS (
         DELETE FROM public.profiles
-        WHERE id <> v_admin_id
+        WHERE id <> v_admin_id AND (email IS NULL OR lower(email) <> lower(v_admin_email))
         RETURNING id
     )
     SELECT COUNT(*) INTO v_deleted_profiles FROM deleted_p;
@@ -59,9 +59,9 @@ BEGIN
     -- 5. Promote Sole Administrator profile to super_admin and verified
     UPDATE public.profiles
     SET 
-        full_name = 'محمد السقاف',
+        full_name = 'م/محمد السقاف',
         email = v_admin_email,
-        phone = COALESCE(phone, '772606709'),
+        phone = COALESCE(phone, '772522233'),
         role = 'super_admin',
         is_verified = TRUE,
         updated_at = pg_catalog.now()
@@ -69,7 +69,7 @@ BEGIN
 
     IF NOT FOUND THEN
         INSERT INTO public.profiles (id, full_name, email, phone, role, is_verified, created_at, updated_at)
-        VALUES (v_admin_id, 'محمد السقاف', v_admin_email, '772606709', 'super_admin', TRUE, pg_catalog.now(), pg_catalog.now());
+        VALUES (v_admin_id, 'م/محمد السقاف', v_admin_email, '772522233', 'super_admin', TRUE, pg_catalog.now(), pg_catalog.now());
     END IF;
 
     RAISE NOTICE 'Sole Administrator (%) successfully confirmed and promoted to super_admin.', v_admin_email;

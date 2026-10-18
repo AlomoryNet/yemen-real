@@ -20,7 +20,7 @@ DO $$
 DECLARE
     -- Admin parameters
     v_admin_id CONSTANT UUID := 'daa0d684-f82b-4878-9d86-ce2810be9786'::UUID;
-    v_admin_email CONSTANT TEXT := 'mohammed.f.saqqaf@gmail.com';
+    v_admin_email CONSTANT TEXT := 'mo772522233@gmail.com';
 
     -- Dynamic test entity UUIDs (Guarantees isolation)
     v_user_a UUID := gen_random_uuid();
@@ -55,9 +55,9 @@ BEGIN
 
     -- Ensure admin fixture exists in local environment
     INSERT INTO public.profiles (id, email, full_name, role, is_verified, phone)
-    VALUES (v_admin_id, v_admin_email, 'Mohammed Al-Saqqaf', 'super_admin', TRUE, '772606709')
+    VALUES (v_admin_id, v_admin_email, 'م/محمد السقاف', 'super_admin', TRUE, '772522233')
     ON CONFLICT (id) DO UPDATE 
-    SET role = 'super_admin', is_verified = TRUE, email = v_admin_email;
+    SET role = 'super_admin', is_verified = TRUE, email = v_admin_email, full_name = 'م/محمد السقاف';
 
     -- ------------------------------------------------------------------------
     -- TEST 1: Privilege Escalation Prevention (Role modification by user)

@@ -89,7 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _fillDemoAdmin() {
-    _emailController.text = 'mohammed.f.saqqaf@gmail.com';
+    _emailController.text = 'mo772522233@gmail.com';
     _passwordController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

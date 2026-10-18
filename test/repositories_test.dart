@@ -32,11 +32,11 @@ void main() {
 
       // Test Admin login with user specified credentials
       final adminUser = await authRepo.signIn(
-        email: 'mohammed.f.saqqaf@gmail.com',
-        password: '772522233',
+        email: 'mo772522233@gmail.com',
+        password: 'Password123!',
       );
       expect(adminUser.isAdmin, isTrue);
-      expect(adminUser.fullName, equals('م. محمد السقاف'));
+      expect(adminUser.fullName, equals('م/محمد السقاف'));
       expect(adminUser.phone, equals('+967772522233'));
 
       await authRepo.signOut();

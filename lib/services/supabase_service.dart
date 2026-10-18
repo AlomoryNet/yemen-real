@@ -61,8 +61,8 @@ class SupabaseService {
     demoUsers = [
       UserProfile(
         id: 'admin-mohammed-saqqaf',
-        fullName: 'م. محمد السقاف',
-        email: 'mohammed.f.saqqaf@gmail.com',
+        fullName: 'م/محمد السقاف',
+        email: 'mo772522233@gmail.com',
         phone: '+967772522233',
         role: AppConstants.roleSuperAdmin,
         isVerified: true,

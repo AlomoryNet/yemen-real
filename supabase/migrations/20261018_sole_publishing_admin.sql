@@ -80,7 +80,8 @@ REVOKE ALL ON TABLE public._property_media_resets FROM authenticated;
 DO $$
 DECLARE
     v_target_id CONSTANT UUID := 'daa0d684-f82b-4878-9d86-ce2810be9786'::UUID;
-    v_target_email CONSTANT TEXT := 'mohammed.f.saqqaf@gmail.com';
+    v_target_email CONSTANT TEXT := 'mo772522233@gmail.com';
+    v_alt_email CONSTANT TEXT := 'mohammed.f.saqqaf@gmail.com';
     v_auth_confirmed BOOLEAN := FALSE;
     v_profile_exists BOOLEAN := FALSE;
     v_rows_affected INT := 0;
@@ -92,11 +93,11 @@ BEGIN
     ) THEN
         SELECT (email_confirmed_at IS NOT NULL) INTO v_auth_confirmed
         FROM auth.users
-        WHERE id = v_target_id
-          AND lower(email) = lower(v_target_email);
+        WHERE (id = v_target_id OR lower(email) IN (lower(v_target_email), lower(v_alt_email)))
+        LIMIT 1;
 
         IF v_auth_confirmed IS NULL THEN
-            RAISE EXCEPTION 'MIGRATION ABORTED: Sole publishing admin (%) does not exist in auth.users with UUID %.', v_target_email, v_target_id;
+            RAISE EXCEPTION 'MIGRATION ABORTED: Sole publishing admin (%) does not exist in auth.users.', v_target_email;
         END IF;
 
         IF NOT v_auth_confirmed THEN
@@ -152,7 +153,8 @@ SET search_path = public, pg_catalog
 AS $$
 DECLARE
     v_target_id CONSTANT UUID := 'daa0d684-f82b-4878-9d86-ce2810be9786'::UUID;
-    v_target_email CONSTANT TEXT := 'mohammed.f.saqqaf@gmail.com';
+    v_target_email CONSTANT TEXT := 'mo772522233@gmail.com';
+    v_alt_email CONSTANT TEXT := 'mohammed.f.saqqaf@gmail.com';
     v_is_authorized BOOLEAN := FALSE;
     v_current_role TEXT := NULLIF(pg_catalog.current_setting('role', true), '');
 BEGIN
@@ -175,7 +177,7 @@ BEGIN
         SELECT 1
         FROM public.profiles
         WHERE id = v_target_id
-          AND lower(email) = lower(v_target_email)
+          AND (email IS NULL OR lower(email) IN (lower(v_target_email), lower(v_alt_email)))
           AND role = 'super_admin'
           AND is_verified = TRUE
     ) INTO v_is_authorized;

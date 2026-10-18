@@ -76,13 +76,14 @@ class AuthRepository {
     final cleanEmail = email.trim().toLowerCase();
 
     if (EnvConfig.isDemoMode || _client == null) {
-      if (cleanEmail == 'mohammed.f.saqqaf@gmail.com' ||
+      if (cleanEmail == 'mo772522233@gmail.com' ||
+          cleanEmail == 'mohammed.f.saqqaf@gmail.com' ||
           cleanEmail.contains('admin') ||
           cleanEmail.contains('saqqaf')) {
         SupabaseService.demoCurrentUser = UserProfile(
           id: 'admin-mohammed-saqqaf',
-          fullName: 'م. محمد السقاف',
-          email: 'mohammed.f.saqqaf@gmail.com',
+          fullName: 'م/محمد السقاف',
+          email: 'mo772522233@gmail.com',
           phone: '+967772522233',
           role: AppConstants.roleSuperAdmin,
           isVerified: true,

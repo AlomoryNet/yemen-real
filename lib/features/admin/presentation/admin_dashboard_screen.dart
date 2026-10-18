@@ -1169,6 +1169,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final authUser = ref.watch(authProvider).user;
     final bool isSuperAdmin =
         authUser?.role == AppConstants.roleSuperAdmin ||
+        authUser?.email == 'mo772522233@gmail.com' ||
         authUser?.email == 'mohammed.f.saqqaf@gmail.com' ||
         authUser?.id == 'admin-mohammed-saqqaf';
 

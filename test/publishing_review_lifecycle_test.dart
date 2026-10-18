@@ -22,8 +22,8 @@ void main() {
       () {
         final admin = UserProfile(
           id: 'admin-mohammed-saqqaf',
-          fullName: 'محمد السقاف',
-          email: 'mohammed.f.saqqaf@gmail.com',
+          fullName: 'م/محمد السقاف',
+          email: 'mo772522233@gmail.com',
           role: AppConstants.roleSuperAdmin,
           isVerified: true,
           createdAt: DateTime.now(),
@@ -31,8 +31,8 @@ void main() {
 
         expect(admin.isAdmin, isTrue);
         expect(admin.role, equals(AppConstants.roleSuperAdmin));
-        expect(admin.fullName, equals('محمد السقاف'));
-        expect(admin.email, equals('mohammed.f.saqqaf@gmail.com'));
+        expect(admin.fullName, equals('م/محمد السقاف'));
+        expect(admin.email, equals('mo772522233@gmail.com'));
       },
     );
 
