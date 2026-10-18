@@ -52,15 +52,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         barrierDismissible: false,
         builder: (ctx) => StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Row(
               children: [
-                const Icon(Icons.mark_email_unread_outlined, color: AppColors.primary, size: 26),
+                const Icon(
+                  Icons.mark_email_unread_outlined,
+                  color: AppColors.primary,
+                  size: 26,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'تأكيد وتفعيل الحساب',
-                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ],
@@ -70,20 +79,34 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'تم إرسال طلب إنشاء الحساب بنجاح. يلزم تفعيل البريد قبل السماح بتسجيل الدخول:',
-                  style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  'تم إرسال رسالة تأكيد إلى بريدك الإلكتروني. يرجى مراجعة صندوق الوارد والضغط على رابط التأكيد لإكمال إنشاء حسابك.',
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    height: 1.5,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryMuted,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.2),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.email, color: AppColors.primary, size: 20),
+                      const Icon(
+                        Icons.email,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -101,7 +124,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'يرجى فتح صندوق الوارد في بريدك الإلكتروني والنقر على رابط التفعيل المرسل لإكمال التحقق وتفعيل حسابك.',
-                  style: GoogleFonts.cairo(fontSize: 12, height: 1.5, color: Colors.grey.shade800),
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    height: 1.5,
+                    color: Colors.grey.shade800,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -114,12 +141,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, color: Colors.amber.shade800, size: 18),
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.amber.shade800,
+                        size: 18,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           'تنبيه: لن يتم تسجيل دخولك أو تفعيل الصلاحيات إلا بعد الضغط على الرابط في بريدك.',
-                          style: GoogleFonts.cairo(fontSize: 11, color: Colors.amber.shade900, fontWeight: FontWeight.w600),
+                          style: GoogleFonts.cairo(
+                            fontSize: 11,
+                            color: Colors.amber.shade900,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -143,19 +178,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 content: Text(
                                   resent
                                       ? 'تمت إعادة إرسال رابط التأكيد بنجاح إلى بريدك'
-                                      : (ref.read(authProvider).errorMessage ?? 'تعذر إعادة الإرسال حالياً'),
+                                      : (ref.read(authProvider).errorMessage ??
+                                            'تعذر إعادة الإرسال حالياً'),
                                   style: GoogleFonts.cairo(),
                                 ),
-                                backgroundColor: resent ? AppColors.success : AppColors.error,
+                                backgroundColor: resent
+                                    ? AppColors.success
+                                    : AppColors.error,
                               ),
                             );
                           },
                     icon: isResending
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.refresh, size: 18, color: AppColors.primary),
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(
+                            Icons.refresh,
+                            size: 18,
+                            color: AppColors.primary,
+                          ),
                     label: Text(
-                      isResending ? 'جارٍ إعادة الإرسال...' : 'لم تصلك الرسالة؟ إعادة إرسال رابط التفعيل',
-                      style: GoogleFonts.cairo(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      isResending
+                          ? 'جارٍ إعادة الإرسال...'
+                          : 'لم تصلك الرسالة؟ إعادة إرسال رابط التفعيل',
+                      style: GoogleFonts.cairo(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -167,7 +219,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   Navigator.of(ctx).pop();
                   context.go('/');
                 },
-                child: Text('تصفح كزائر', style: GoogleFonts.cairo(color: Colors.grey.shade700)),
+                child: Text(
+                  'تصفح كزائر',
+                  style: GoogleFonts.cairo(color: Colors.grey.shade700),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -176,9 +231,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  context.go('/login');
+                  final redirectTo = GoRouterState.of(
+                    context,
+                  ).uri.queryParameters['redirectTo'];
+                  final uri = Uri(
+                    path: '/login',
+                    queryParameters: {
+                      if (redirectTo != null) 'redirectTo': redirectTo,
+                    },
+                  );
+                  context.go(uri.toString());
                 },
-                child: Text('الانتقال لتسجيل الدخول', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                child: Text(
+                  'الانتقال لتسجيل الدخول',
+                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -230,30 +297,106 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       const SizedBox(height: 24),
 
+                      Builder(
+                        builder: (context) {
+                          final reason = GoRouterState.of(
+                            context,
+                          ).uri.queryParameters['reason'];
+                          if (reason == null || reason.isEmpty)
+                            return const SizedBox.shrink();
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryMuted,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.primary.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.info_outline,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    reason,
+                                    style: GoogleFonts.cairo(
+                                      color: AppColors.primaryDark,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+
                       if (authState.errorMessage != null) ...[
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: AppColors.errorMuted,
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.error.withOpacity(0.3),
+                            ),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: AppColors.error,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  authState.errorMessage!,
-                                  style: GoogleFonts.cairo(
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
                                     color: AppColors.error,
-                                    fontSize: 13,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      authState.errorMessage!,
+                                      style: GoogleFonts.cairo(
+                                        color: AppColors.error,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (authState.errorCode ==
+                                  'user_already_exists') ...[
+                                const SizedBox(height: 8),
+                                Divider(
+                                  height: 1,
+                                  color: AppColors.error.withOpacity(0.2),
+                                ),
+                                const SizedBox(height: 6),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: TextButton.icon(
+                                    onPressed: () => context.go('/login'),
+                                    icon: const Icon(Icons.login, size: 18),
+                                    label: Text(
+                                      'الانتقال لتسجيل الدخول الآن',
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),
@@ -334,7 +477,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         obscureText: _obscurePassword,
                         validator: Validators.password,
                         decoration: InputDecoration(
-                          hintText: 'لا تقل عن 8 خانات (أرقام وحروف لضمان الحماية)',
+                          hintText:
+                              'لا تقل عن 8 خانات (أرقام وحروف لضمان الحماية)',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(

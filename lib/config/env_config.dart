@@ -8,7 +8,8 @@ class EnvConfig {
 
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: '',
+    defaultValue:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3cGNrcHpyaHZ2eGx0ZGlpYXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxODAzNTUsImV4cCI6MjEwNzc1NjM1NX0.6m2soM8Rhc2ZuG8VQZUiSnrBzmzeY6pgjLFNb7go8CM',
   );
 
   static const String defaultCurrency = String.fromEnvironment(

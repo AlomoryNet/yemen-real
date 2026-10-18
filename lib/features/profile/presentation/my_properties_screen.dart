@@ -9,6 +9,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
@@ -27,10 +28,16 @@ class MyPropertiesScreen extends ConsumerWidget {
         body: Center(
           child: EmptyStateView(
             icon: Icons.apartment,
-            title: 'يرجى تسجيل الدخول',
-            description: 'سجّل الدخول إلى حسابك لإدارة عقاراتك المعلنة',
-            actionText: 'تسجيل الدخول',
-            onAction: () => context.push('/login'),
+            title: 'تسجيل الدخول مطلوب',
+            description:
+                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            onAction: () => AuthPromptDialog.show(
+              context,
+              message:
+                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              redirectTo: '/my-properties',
+            ),
           ),
         ),
       );
@@ -162,7 +169,8 @@ class MyPropertiesScreen extends ConsumerWidget {
                                                 child: Row(
                                                   children: [
                                                     Icon(
-                                                      Icons.description_outlined,
+                                                      Icons
+                                                          .description_outlined,
                                                       size: 18,
                                                       color: AppColors.primary,
                                                     ),

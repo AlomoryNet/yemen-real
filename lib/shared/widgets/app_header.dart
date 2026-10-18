@@ -7,6 +7,7 @@ import '../../core/utils/responsive.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import 'app_logo.dart';
+import 'auth_prompt_dialog.dart';
 
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   const AppHeader({super.key});
@@ -37,10 +38,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
               InkWell(
                 onTap: () => context.go('/'),
                 borderRadius: BorderRadius.circular(8),
-                child: AppLogo(
-                  size: isMobile ? 32 : 38,
-                  showText: !isMobile,
-                ),
+                child: AppLogo(size: isMobile ? 32 : 38, showText: !isMobile),
               ),
 
               const Spacer(),
@@ -87,19 +85,12 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 ),
                 onPressed: () {
                   if (!authState.isAuthenticated) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'يرجى تسجيل الدخول أو إنشاء حساب لنشر عقارك',
-                          style: GoogleFonts.cairo(),
-                        ),
-                        action: SnackBarAction(
-                          label: 'دخول',
-                          onPressed: () => context.push('/login'),
-                        ),
-                      ),
+                    AuthPromptDialog.show(
+                      context,
+                      message:
+                          'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+                      redirectTo: '/add-property',
                     );
-                    context.push('/login');
                     return;
                   }
                   context.push('/add-property');

@@ -7,7 +7,8 @@ import '../models/property.dart';
 import '../models/property_contract.dart';
 
 class ContractService {
-  static const String _defaultTemplateKey = 'yemen_real_estate_owner_default_contract';
+  static const String _defaultTemplateKey =
+      'yemen_real_estate_owner_default_contract';
   static const String _contractsPrefix = 'yemen_real_estate_contract_';
 
   /// In-memory cache for demo/fast access

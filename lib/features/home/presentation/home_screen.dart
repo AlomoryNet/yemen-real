@@ -78,7 +78,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                const Icon(Icons.location_on, color: AppColors.primary, size: 24),
+                const Icon(
+                  Icons.location_on,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'اختر المحافظة اليمنية لعرض العقارات',
@@ -136,7 +140,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 itemBuilder: (context, index) {
                   final gov = AppConstants.yemeniGovernorates[index];
                   final isSelected = _selectedGovernorate == gov;
-                  final districts = AppConstants.getDistrictsForGovernorate(gov);
+                  final districts = AppConstants.getDistrictsForGovernorate(
+                    gov,
+                  );
                   return ExpansionTile(
                     initiallyExpanded: isSelected,
                     leading: Container(
@@ -149,21 +155,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: Icon(
                         Icons.location_city,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSecondary,
                         size: 18,
                       ),
                     ),
                     title: Text(
                       gov,
                       style: GoogleFonts.cairo(
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.w600,
-                        color:
-                            isSelected ? AppColors.primary : AppColors.textPrimary,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
                       ),
                     ),
                     trailing: isSelected
-                        ? const Icon(Icons.check_circle, color: AppColors.primary)
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary,
+                          )
                         : const Icon(Icons.keyboard_arrow_down),
                     children: [
                       Padding(
@@ -209,7 +222,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 runSpacing: 6,
                                 children: districts.map((dist) {
                                   return ActionChip(
-                                    label: Text(dist, style: GoogleFonts.cairo(fontSize: 12)),
+                                    label: Text(
+                                      dist,
+                                      style: GoogleFonts.cairo(fontSize: 12),
+                                    ),
                                     onPressed: () {
                                       setState(() {
                                         _selectedGovernorate = gov;
@@ -530,11 +546,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           _buildGovernoratePill('كافة المحافظات', null),
                           const SizedBox(width: 6),
-                          ...['صنعاء', 'عدن', 'تعز', 'حضرموت', 'إب', 'مأرب', 'الحديدة', 'ذمار']
-                              .map((gov) => Padding(
-                                    padding: const EdgeInsets.only(left: 6),
-                                    child: _buildGovernoratePill(gov, gov),
-                                  )),
+                          ...[
+                            'صنعاء',
+                            'عدن',
+                            'تعز',
+                            'حضرموت',
+                            'إب',
+                            'مأرب',
+                            'الحديدة',
+                            'ذمار',
+                          ].map(
+                            (gov) => Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: _buildGovernoratePill(gov, gov),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -547,10 +573,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
-                              hintText:
-                                  _selectedGovernorate != null
-                                      ? 'ابحث في $_selectedGovernorate (مثال: حي حدة، شقة)...'
-                                      : 'ابحث بالحي، المدينة، أو الكلمات الدلالية (مثال: شقة حدة)...',
+                              hintText: _selectedGovernorate != null
+                                  ? 'ابحث في $_selectedGovernorate (مثال: حي حدة، شقة)...'
+                                  : 'ابحث بالحي، المدينة، أو الكلمات الدلالية (مثال: شقة حدة)...',
                               prefixIcon: const Icon(
                                 Icons.search,
                                 color: AppColors.primary,
@@ -603,7 +628,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Builder(
                         builder: (context) {
                           final districts =
-                              AppConstants.getDistrictsForGovernorate(_selectedGovernorate!);
+                              AppConstants.getDistrictsForGovernorate(
+                                _selectedGovernorate!,
+                              );
                           if (districts.isEmpty) return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(top: 10),
@@ -625,7 +652,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     return Padding(
                                       padding: const EdgeInsets.only(left: 6),
                                       child: ActionChip(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
                                         backgroundColor: isDistrictChosen
                                             ? AppColors.primaryMuted
                                             : AppColors.surfaceVariant,

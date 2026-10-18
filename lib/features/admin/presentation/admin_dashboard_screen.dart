@@ -134,7 +134,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'صلاحيات موحدة: ويب وهاتف',
+                              'المسؤول العام: محمد السقاف',
                               style: GoogleFonts.cairo(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -211,7 +211,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -448,20 +451,80 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             StatusBadge.propertyStatus(p.status),
+                            if (p.status == AppConstants.statusPending) ...[
+                              const SizedBox(width: 4),
+                              IconButton(
+                                tooltip: 'قبول ونشر الإعلان (محمد السقاف)',
+                                icon: const Icon(
+                                  Icons.check_circle,
+                                  color: AppColors.success,
+                                  size: 22,
+                                ),
+                                onPressed: () async {
+                                  final repo = PropertyRepository();
+                                  await repo.approvePropertyPublishing(p.id);
+                                  ref.refresh(searchPropertiesProvider);
+                                  ref.refresh(adminStatsProvider);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'تم قبول ونشر العقار بواسطة المسؤول: محمد السقاف',
+                                          style: GoogleFonts.cairo(),
+                                        ),
+                                        backgroundColor: AppColors.success,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                tooltip: 'رفض طلب النشر',
+                                icon: const Icon(
+                                  Icons.cancel,
+                                  color: AppColors.error,
+                                  size: 22,
+                                ),
+                                onPressed: () async {
+                                  final repo = PropertyRepository();
+                                  await repo.rejectPropertyPublishing(
+                                    p.id,
+                                    'مرفوض من قبل الإدارة بعد المراجعة',
+                                  );
+                                  ref.refresh(searchPropertiesProvider);
+                                  ref.refresh(adminStatsProvider);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'تم رفض طلب النشر وتحديث الحالة',
+                                          style: GoogleFonts.cairo(),
+                                        ),
+                                        backgroundColor: AppColors.error,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
                             const SizedBox(width: 8),
                             PopupMenuButton<String>(
                               onSelected: (action) async {
                                 final repo = PropertyRepository();
-                                if (action == 'hide') {
+                                if (action == 'approve') {
+                                  await repo.approvePropertyPublishing(p.id);
+                                } else if (action == 'reject') {
+                                  await repo.rejectPropertyPublishing(
+                                    p.id,
+                                    'مرفوض من قبل الإدارة بعد المراجعة',
+                                  );
+                                } else if (action == 'hide') {
                                   await repo.updatePropertyStatus(
                                     p.id,
                                     AppConstants.statusHidden,
                                   );
                                 } else if (action == 'publish') {
-                                  await repo.updatePropertyStatus(
-                                    p.id,
-                                    AppConstants.statusPublished,
-                                  );
+                                  await repo.approvePropertyPublishing(p.id);
                                 } else if (action == 'archive') {
                                   await repo.updatePropertyStatus(
                                     p.id,
@@ -474,17 +537,48 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                 ref.refresh(adminStatsProvider);
                               },
                               itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  value:
-                                      p.status == AppConstants.statusPublished
-                                      ? 'hide'
-                                      : 'publish',
-                                  child: Text(
-                                    p.status == AppConstants.statusPublished
-                                        ? 'إخفاء الإعلان'
-                                        : 'إعادة نشر',
+                                if (p.status == AppConstants.statusPending) ...[
+                                  const PopupMenuItem(
+                                    value: 'approve',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle_outline,
+                                          color: AppColors.success,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text('قبول واعتماد النشر'),
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                  const PopupMenuItem(
+                                    value: 'reject',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.cancel_outlined,
+                                          color: AppColors.error,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text('رفض طلب النشر'),
+                                      ],
+                                    ),
+                                  ),
+                                ] else ...[
+                                  PopupMenuItem(
+                                    value:
+                                        p.status == AppConstants.statusPublished
+                                        ? 'hide'
+                                        : 'publish',
+                                    child: Text(
+                                      p.status == AppConstants.statusPublished
+                                          ? 'إخفاء الإعلان'
+                                          : 'إعادة نشر',
+                                    ),
+                                  ),
+                                ],
                                 const PopupMenuItem(
                                   value: 'archive',
                                   child: Text('أرشفة'),
@@ -1073,7 +1167,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   // ===========================================================================
   Widget _buildUsersTab(BuildContext context) {
     final authUser = ref.watch(authProvider).user;
-    final bool isSuperAdmin = authUser?.role == AppConstants.roleSuperAdmin ||
+    final bool isSuperAdmin =
+        authUser?.role == AppConstants.roleSuperAdmin ||
         authUser?.email == 'mohammed.f.saqqaf@gmail.com' ||
         authUser?.id == 'admin-mohammed-saqqaf';
 
@@ -1086,7 +1181,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.lock_outline, size: 54, color: AppColors.error),
+                const Icon(
+                  Icons.lock_outline,
+                  size: 54,
+                  color: AppColors.error,
+                ),
                 const SizedBox(height: 14),
                 Text(
                   'قسم مشفر ومحمي خاص بالمدير العام فقط',
@@ -1125,7 +1224,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.shield_outlined, color: AppColors.primary, size: 22),
+                    const Icon(
+                      Icons.shield_outlined,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'سجل حسابات المستخدمين (بيانات مشفرة ومحمية)',
@@ -1138,7 +1241,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -1150,7 +1256,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       const SizedBox(width: 4),
                       Text(
                         'صلاحيات المدير العام',
-                        style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade900),
+                        style: GoogleFonts.cairo(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade900,
+                        ),
                       ),
                     ],
                   ),
@@ -1172,7 +1282,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   Expanded(
                     child: Text(
                       'حماية البيانات: كلمات المرور والتفاصيل الحساسة مشفرة بنظام التشفير القياسي، ويظهر للمدير العام فقط اسم المستخدم وحسابه.',
-                      style: GoogleFonts.cairo(fontSize: 11, color: Colors.green.shade900),
+                      style: GoogleFonts.cairo(
+                        fontSize: 11,
+                        color: Colors.green.shade900,
+                      ),
                     ),
                   ),
                 ],
@@ -1189,13 +1302,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final u = users[index];
-                      final accountEmail = u.email ?? (u.phone != null && u.phone!.isNotEmpty ? u.phone! : u.id);
+                      final accountEmail =
+                          u.email ??
+                          (u.phone != null && u.phone!.isNotEmpty
+                              ? u.phone!
+                              : u.id);
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppColors.primaryMuted,
                           child: Text(
                             u.fullName.isNotEmpty ? u.fullName[0] : 'U',
-                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold, color: AppColors.primary),
+                            style: GoogleFonts.cairo(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
                         title: Text(
@@ -1207,7 +1327,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         ),
                         subtitle: Text(
                           'الحساب: $accountEmail • تاريخ الإنشاء: ${u.createdAt.toString().split(' ').first}',
-                          style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textSecondary),
+                          style: GoogleFonts.cairo(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         trailing: Container(
                           padding: const EdgeInsets.symmetric(
@@ -1222,7 +1345,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.lock, size: 12, color: AppColors.primary),
+                              const Icon(
+                                Icons.lock,
+                                size: 12,
+                                color: AppColors.primary,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 'مشفر ومحمي',
@@ -1281,11 +1408,27 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
       final now = DateTime.now();
       const arabicDays = [
-        'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'
+        'الإثنين',
+        'الثلاثاء',
+        'الأربعاء',
+        'الخميس',
+        'الجمعة',
+        'السبت',
+        'الأحد',
       ];
       const arabicMonths = [
-        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+        'يناير',
+        'فبراير',
+        'مارس',
+        'أبريل',
+        'مايو',
+        'يونيو',
+        'يوليو',
+        'أغسطس',
+        'سبتمبر',
+        'أكتوبر',
+        'نوفمبر',
+        'ديسمبر',
       ];
 
       final dayName = arabicDays[now.weekday - 1];
@@ -1293,7 +1436,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       final monthName = arabicMonths[now.month - 1];
       final yearNum = now.year;
       final int rawHour = now.hour;
-      final int hour12 = rawHour > 12 ? rawHour - 12 : (rawHour == 0 ? 12 : rawHour);
+      final int hour12 = rawHour > 12
+          ? rawHour - 12
+          : (rawHour == 0 ? 12 : rawHour);
       final period = rawHour >= 12 ? 'مساءً' : 'صباحاً';
       final minute = now.minute.toString().padLeft(2, '0');
       final timeFormatted = '$hour12:$minute $period (بتوقيت صنعاء)';
@@ -1307,62 +1452,114 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       switch (currentTab) {
         case 0: // Properties
           final props = ref.read(searchPropertiesProvider).asData?.value ?? [];
-          tableHeaders = ['رقم العقار', 'العنوان', 'العملية', 'المدينة', 'السعر', 'الحالة'];
-          tableData = props.map((p) => [
-            p.id,
-            p.title,
-            AppConstants.getDealTypeNameAr(p.dealType),
-            p.city,
-            Formatters.formatCurrency(p.price, p.currency),
-            AppConstants.getPropertyStatusNameAr(p.status),
-          ]).toList();
+          tableHeaders = [
+            'رقم العقار',
+            'العنوان',
+            'العملية',
+            'المدينة',
+            'السعر',
+            'الحالة',
+          ];
+          tableData = props
+              .map(
+                (p) => [
+                  p.id,
+                  p.title,
+                  AppConstants.getDealTypeNameAr(p.dealType),
+                  p.city,
+                  Formatters.formatCurrency(p.price, p.currency),
+                  AppConstants.getPropertyStatusNameAr(p.status),
+                ],
+              )
+              .toList();
           break;
 
         case 1: // Rental Requests
           final reqs = ref.read(allRentalRequestsProvider).asData?.value ?? [];
-          tableHeaders = ['رقم الطلب', 'العقار', 'المستأجر', 'الهاتف', 'تاريخ البدء', 'الحالة'];
-          tableData = reqs.map((r) => [
-            r.requestNumber,
-            r.propertyTitle ?? r.propertyId,
-            r.fullName,
-            r.phone,
-            r.requestedStartDate?.toIso8601String().split('T').first ?? '-',
-            AppConstants.getRentalRequestStatusNameAr(r.status),
-          ]).toList();
+          tableHeaders = [
+            'رقم الطلب',
+            'العقار',
+            'المستأجر',
+            'الهاتف',
+            'تاريخ البدء',
+            'الحالة',
+          ];
+          tableData = reqs
+              .map(
+                (r) => [
+                  r.requestNumber,
+                  r.propertyTitle ?? r.propertyId,
+                  r.fullName,
+                  r.phone,
+                  r.requestedStartDate?.toIso8601String().split('T').first ??
+                      '-',
+                  AppConstants.getRentalRequestStatusNameAr(r.status),
+                ],
+              )
+              .toList();
           break;
 
         case 2: // Commissions
           final comms = ref.read(adminCommissionsProvider).asData?.value ?? [];
-          tableHeaders = ['المعرف', 'العقار', 'الطرف المتحمل', 'المبلغ', 'العملة', 'حالة التسوية'];
-          tableData = comms.map((c) => [
-            c.id,
-            c.propertyTitle ?? c.propertyId,
-            AppConstants.getLiablePartyNameAr(c.liableParty),
-            Formatters.formatCurrency(c.totalAmount, c.currency),
-            c.currency,
-            AppConstants.getCommissionStatusNameAr(c.settlementStatus),
-          ]).toList();
+          tableHeaders = [
+            'المعرف',
+            'العقار',
+            'الطرف المتحمل',
+            'المبلغ',
+            'العملة',
+            'حالة التسوية',
+          ];
+          tableData = comms
+              .map(
+                (c) => [
+                  c.id,
+                  c.propertyTitle ?? c.propertyId,
+                  AppConstants.getLiablePartyNameAr(c.liableParty),
+                  Formatters.formatCurrency(c.totalAmount, c.currency),
+                  c.currency,
+                  AppConstants.getCommissionStatusNameAr(c.settlementStatus),
+                ],
+              )
+              .toList();
           break;
 
         case 3: // Reports
           final reps = ref.read(adminReportsProvider).asData?.value ?? [];
-          tableHeaders = ['المعرف', 'رقم العقار', 'سبب البلاغ', 'الحالة', 'تاريخ البلاغ'];
-          tableData = reps.map((rp) => [
-            rp.id,
-            rp.propertyId,
-            rp.reason,
-            rp.status == 'pending' ? 'قيد المراجعة' : 'محلول',
-            rp.createdAt.toIso8601String().split('T').first,
-          ]).toList();
+          tableHeaders = [
+            'المعرف',
+            'رقم العقار',
+            'سبب البلاغ',
+            'الحالة',
+            'تاريخ البلاغ',
+          ];
+          tableData = reps
+              .map(
+                (rp) => [
+                  rp.id,
+                  rp.propertyId,
+                  rp.reason,
+                  rp.status == 'pending' ? 'قيد المراجعة' : 'محلول',
+                  rp.createdAt.toIso8601String().split('T').first,
+                ],
+              )
+              .toList();
           break;
 
         case 4: // Users
         default:
           final users = ref.read(allUsersProvider).asData?.value ?? [];
-          tableHeaders = ['الرقم', 'اسم المستخدم', 'الحساب (البريد)', 'حالة التشفير', 'تاريخ الإنشاء'];
+          tableHeaders = [
+            'الرقم',
+            'اسم المستخدم',
+            'الحساب (البريد)',
+            'حالة التشفير',
+            'تاريخ الإنشاء',
+          ];
           tableData = users.asMap().entries.map((entry) {
             final u = entry.value;
-            final account = u.email ?? (u.phone != null && u.phone!.isNotEmpty ? u.phone! : u.id);
+            final account =
+                u.email ??
+                (u.phone != null && u.phone!.isNotEmpty ? u.phone! : u.id);
             return [
               '${entry.key + 1}',
               u.fullName,
@@ -1392,23 +1589,49 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    pw.Text('بسم الله الرحمن الرحيم', style: pw.TextStyle(font: fontCairoBold, fontSize: 11)),
+                    pw.Text(
+                      'بسم الله الرحمن الرحيم',
+                      style: pw.TextStyle(font: fontCairoBold, fontSize: 11),
+                    ),
                     pw.SizedBox(height: 2),
-                    pw.Text('الجمهورية اليمنية — بوابة اليمن العقارية', style: pw.TextStyle(font: fontCairoBold, fontSize: 13, color: PdfColors.green900)),
+                    pw.Text(
+                      'الجمهورية اليمنية — بوابة اليمن العقارية',
+                      style: pw.TextStyle(
+                        font: fontCairoBold,
+                        fontSize: 13,
+                        color: PdfColors.green900,
+                      ),
+                    ),
                     pw.SizedBox(height: 2),
-                    pw.Text('الإدارة العامة — تقرير رسمي شامل', style: pw.TextStyle(font: fontCairoBold, fontSize: 11)),
+                    pw.Text(
+                      'الإدارة العامة — تقرير رسمي شامل',
+                      style: pw.TextStyle(font: fontCairoBold, fontSize: 11),
+                    ),
                     pw.Divider(thickness: 0.5, color: PdfColors.grey400),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('القسم: $sectionTitle', style: pw.TextStyle(font: fontCairoBold, fontSize: 10, color: PdfColors.green800)),
-                        pw.Text('المستخرج: المدير العام (م. محمد السقاف)', style: pw.TextStyle(font: fontCairo, fontSize: 9.5)),
+                        pw.Text(
+                          'القسم: $sectionTitle',
+                          style: pw.TextStyle(
+                            font: fontCairoBold,
+                            fontSize: 10,
+                            color: PdfColors.green800,
+                          ),
+                        ),
+                        pw.Text(
+                          'المستخرج: المدير العام (م. محمد السقاف)',
+                          style: pw.TextStyle(font: fontCairo, fontSize: 9.5),
+                        ),
                       ],
                     ),
                     pw.SizedBox(height: 4),
                     // تفاصيل الوقت واليوم والشهر والسنة
                     pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: pw.BoxDecoration(
                         color: PdfColors.grey200,
                         borderRadius: pw.BorderRadius.circular(4),
@@ -1416,11 +1639,41 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       child: pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
-                          pw.Text('اليوم: $dayName', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
-                          pw.Text('التاريخ: $dayNum', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
-                          pw.Text('الشهر: $monthName (${now.month})', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
-                          pw.Text('السنة: $yearNum م', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
-                          pw.Text('الوقت: $timeFormatted', style: pw.TextStyle(font: fontCairoBold, fontSize: 8.5)),
+                          pw.Text(
+                            'اليوم: $dayName',
+                            style: pw.TextStyle(
+                              font: fontCairoBold,
+                              fontSize: 8.5,
+                            ),
+                          ),
+                          pw.Text(
+                            'التاريخ: $dayNum',
+                            style: pw.TextStyle(
+                              font: fontCairoBold,
+                              fontSize: 8.5,
+                            ),
+                          ),
+                          pw.Text(
+                            'الشهر: $monthName (${now.month})',
+                            style: pw.TextStyle(
+                              font: fontCairoBold,
+                              fontSize: 8.5,
+                            ),
+                          ),
+                          pw.Text(
+                            'السنة: $yearNum م',
+                            style: pw.TextStyle(
+                              font: fontCairoBold,
+                              fontSize: 8.5,
+                            ),
+                          ),
+                          pw.Text(
+                            'الوقت: $timeFormatted',
+                            style: pw.TextStyle(
+                              font: fontCairoBold,
+                              fontSize: 8.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1433,8 +1686,18 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('إجمالي عناصر القسم: ${tableData.length}', style: pw.TextStyle(font: fontCairoBold, fontSize: 10)),
-                  pw.Text('حالة البيانات: معتمدة ومحدثة لحظياً', style: pw.TextStyle(font: fontCairo, fontSize: 9, color: PdfColors.grey700)),
+                  pw.Text(
+                    'إجمالي عناصر القسم: ${tableData.length}',
+                    style: pw.TextStyle(font: fontCairoBold, fontSize: 10),
+                  ),
+                  pw.Text(
+                    'حالة البيانات: معتمدة ومحدثة لحظياً',
+                    style: pw.TextStyle(
+                      font: fontCairo,
+                      fontSize: 9,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
                 ],
               ),
               pw.SizedBox(height: 8),
@@ -1443,13 +1706,27 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               pw.Table.fromTextArray(
                 headers: tableHeaders,
                 data: tableData.isEmpty
-                    ? [List.generate(tableHeaders.length, (_) => 'لا توجد بيانات مسجلة حالياً')]
+                    ? [
+                        List.generate(
+                          tableHeaders.length,
+                          (_) => 'لا توجد بيانات مسجلة حالياً',
+                        ),
+                      ]
                     : tableData,
-                headerStyle: pw.TextStyle(font: fontCairoBold, fontSize: 8.5, color: PdfColors.white),
-                headerDecoration: const pw.BoxDecoration(color: PdfColors.green800),
+                headerStyle: pw.TextStyle(
+                  font: fontCairoBold,
+                  fontSize: 8.5,
+                  color: PdfColors.white,
+                ),
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.green800,
+                ),
                 cellStyle: pw.TextStyle(font: fontCairo, fontSize: 7.5),
                 cellAlignment: pw.Alignment.centerRight,
-                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                cellPadding: const pw.EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 4,
+                ),
               ),
 
               pw.SizedBox(height: 20),
@@ -1459,8 +1736,22 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('شركة هيبه سوفت (Hiba Soft) — جميع الحقوق محفوظة © 2026', style: pw.TextStyle(font: fontCairo, fontSize: 7.5, color: PdfColors.grey600)),
-                  pw.Text('وثيقة إدارية رسمية — مشفرة وموثقة', style: pw.TextStyle(font: fontCairo, fontSize: 7.5, color: PdfColors.grey600)),
+                  pw.Text(
+                    'شركة هيبه سوفت (Hiba Soft) — جميع الحقوق محفوظة © 2026',
+                    style: pw.TextStyle(
+                      font: fontCairo,
+                      fontSize: 7.5,
+                      color: PdfColors.grey600,
+                    ),
+                  ),
+                  pw.Text(
+                    'وثيقة إدارية رسمية — مشفرة وموثقة',
+                    style: pw.TextStyle(
+                      font: fontCairo,
+                      fontSize: 7.5,
+                      color: PdfColors.grey600,
+                    ),
+                  ),
                 ],
               ),
             ];
@@ -1486,7 +1777,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         dir = await getApplicationDocumentsDirectory();
       }
 
-      final filename = 'تقرير_${sectionTitle.replaceAll(" ", "_")}_${now.year}_${now.month}_${now.day}_${now.hour}${now.minute}.pdf';
+      final filename =
+          'تقرير_${sectionTitle.replaceAll(" ", "_")}_${now.year}_${now.month}_${now.day}_${now.hour}${now.minute}.pdf';
       final file = File('${dir!.path}/$filename');
       await file.writeAsBytes(pdfBytes);
 
@@ -1494,15 +1786,24 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         showDialog(
           context: context,
           builder: (dialogCtx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Row(
               children: [
-                const Icon(Icons.picture_as_pdf, color: AppColors.primary, size: 26),
+                const Icon(
+                  Icons.picture_as_pdf,
+                  color: AppColors.primary,
+                  size: 26,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'تم تصدير تقرير الـ PDF بنجاح',
-                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ],
@@ -1526,11 +1827,35 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('📁 اسم الملف:', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 11)),
-                      Text(filename, style: GoogleFonts.cairo(fontSize: 11, color: AppColors.primary)),
+                      Text(
+                        '📁 اسم الملف:',
+                        style: GoogleFonts.cairo(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        filename,
+                        style: GoogleFonts.cairo(
+                          fontSize: 11,
+                          color: AppColors.primary,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      Text('📍 مسار الحفظ بالجهاز:', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 11)),
-                      SelectableText(file.path, style: const TextStyle(fontSize: 10, fontFamily: 'monospace')),
+                      Text(
+                        '📍 مسار الحفظ بالجهاز:',
+                        style: GoogleFonts.cairo(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                      SelectableText(
+                        file.path,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1544,7 +1869,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   Clipboard.setData(ClipboardData(text: file.path));
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('تم نسخ مسار الملف إلى الحافظة', style: GoogleFonts.cairo()),
+                      content: Text(
+                        'تم نسخ مسار الملف إلى الحافظة',
+                        style: GoogleFonts.cairo(),
+                      ),
                       duration: const Duration(seconds: 2),
                     ),
                   );
@@ -1552,7 +1880,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(dialogCtx),
-                child: Text('حسناً', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                child: Text(
+                  'حسناً',
+                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),

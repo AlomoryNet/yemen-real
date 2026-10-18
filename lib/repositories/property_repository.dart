@@ -319,6 +319,67 @@ class PropertyRepository {
     }
   }
 
+  /// Approve property publishing (Exclusive to sole admin: Mohammed Al-Saqqaf)
+  Future<void> approvePropertyPublishing(String id) async {
+    if (EnvConfig.isDemoMode || _client == null) {
+      final idx = SupabaseService.demoProperties.indexWhere((p) => p.id == id);
+      if (idx != -1) {
+        final current = SupabaseService.demoProperties[idx];
+        SupabaseService.demoProperties[idx] = current.copyWith(
+          status: AppConstants.statusPublished,
+          reviewedAt: DateTime.now(),
+        );
+      }
+      return;
+    }
+
+    try {
+      final currentUserId = _client.auth.currentUser?.id;
+      await _client
+          .from('properties')
+          .update({
+            'status': AppConstants.statusPublished,
+            'reviewed_by': currentUserId,
+            'reviewed_at': DateTime.now().toIso8601String(),
+            'rejection_reason': null,
+          })
+          .eq('id', id);
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Reject property publishing (Exclusive to sole admin: Mohammed Al-Saqqaf)
+  Future<void> rejectPropertyPublishing(String id, String reason) async {
+    if (EnvConfig.isDemoMode || _client == null) {
+      final idx = SupabaseService.demoProperties.indexWhere((p) => p.id == id);
+      if (idx != -1) {
+        final current = SupabaseService.demoProperties[idx];
+        SupabaseService.demoProperties[idx] = current.copyWith(
+          status: AppConstants.statusRejected,
+          rejectionReason: reason,
+          reviewedAt: DateTime.now(),
+        );
+      }
+      return;
+    }
+
+    try {
+      final currentUserId = _client.auth.currentUser?.id;
+      await _client
+          .from('properties')
+          .update({
+            'status': AppConstants.statusRejected,
+            'reviewed_by': currentUserId,
+            'reviewed_at': DateTime.now().toIso8601String(),
+            'rejection_reason': reason,
+          })
+          .eq('id', id);
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
   /// Delete property
   Future<void> deleteProperty(String id) async {
     if (EnvConfig.isDemoMode || _client == null) {

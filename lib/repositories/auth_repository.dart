@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/env_config.dart';
 import '../core/constants/app_constants.dart';
@@ -7,6 +8,16 @@ import '../services/supabase_service.dart';
 
 class AuthRepository {
   final SupabaseClient? _client = SupabaseService.client;
+  static DateTime? _lastResendTime;
+
+  /// Dynamic email redirect URL based on platform
+  static String getEmailRedirectUrl() {
+    if (kIsWeb) {
+      final origin = Uri.base.origin;
+      return '$origin/login-callback';
+    }
+    return 'yemenreal://login-callback';
+  }
 
   /// Check current active user profile
   Future<UserProfile?> getCurrentUser() async {
@@ -29,10 +40,25 @@ class AuthRepository {
       if (data != null) {
         return UserProfile.fromJson(data);
       }
+
+      // If profile does not exist yet in DB, safely insert it once (upsert with DO NOTHING)
+      final fullName = user.userMetadata?['full_name'] as String? ?? 'مستخدم';
+      final phone = user.userMetadata?['phone'] as String?;
+      try {
+        await _client.from('profiles').upsert({
+          'id': user.id,
+          'full_name': fullName,
+          'phone': phone,
+          'role': AppConstants.roleUser,
+        }, onConflict: 'id');
+      } catch (_) {
+        // Table trigger might have handled it concurrently
+      }
+
       return UserProfile(
         id: user.id,
-        fullName: user.userMetadata?['full_name'] as String? ?? 'مستخدم',
-        phone: user.userMetadata?['phone'] as String?,
+        fullName: fullName,
+        phone: phone,
         role: AppConstants.roleUser,
         isVerified: true,
         createdAt: DateTime.now(),
@@ -65,10 +91,12 @@ class AuthRepository {
         return SupabaseService.demoCurrentUser!;
       }
 
-      final existing = SupabaseService.demoUsers.cast<UserProfile?>().firstWhere(
-        (u) => u?.email?.toLowerCase() == cleanEmail,
-        orElse: () => null,
-      );
+      final existing = SupabaseService.demoUsers
+          .cast<UserProfile?>()
+          .firstWhere(
+            (u) => u?.email?.toLowerCase() == cleanEmail,
+            orElse: () => null,
+          );
 
       // Block unverified user from logging in
       if (existing != null && !existing.isVerified) {
@@ -78,15 +106,17 @@ class AuthRepository {
         );
       }
 
-      SupabaseService.demoCurrentUser = existing ?? UserProfile(
-        id: 'user-${DateTime.now().millisecondsSinceEpoch}',
-        fullName: cleanEmail.split('@').first,
-        email: cleanEmail,
-        phone: '+967771234567',
-        role: AppConstants.roleUser,
-        isVerified: true,
-        createdAt: DateTime.now(),
-      );
+      SupabaseService.demoCurrentUser =
+          existing ??
+          UserProfile(
+            id: 'user-${DateTime.now().millisecondsSinceEpoch}',
+            fullName: cleanEmail.split('@').first,
+            email: cleanEmail,
+            phone: '+967771234567',
+            role: AppConstants.roleUser,
+            isVerified: true,
+            createdAt: DateTime.now(),
+          );
       return SupabaseService.demoCurrentUser!;
     }
 
@@ -98,7 +128,7 @@ class AuthRepository {
 
       final user = response.user;
       if (user == null) {
-        throw AppException('فشل تسجيل الدخول');
+        throw AppException('فشل تسجيل الدخول', code: 'invalid_credentials');
       }
 
       // Enforce email confirmation check on Supabase response
@@ -139,7 +169,10 @@ class AuthRepository {
         (u) => u.email?.toLowerCase() == cleanEmail,
       );
       if (exists) {
-        throw AppException('هذا البريد الإلكتروني مسجل بالفعل', code: 'user_already_exists');
+        throw AppException(
+          'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد.',
+          code: 'user_already_exists',
+        );
       }
 
       final newUser = UserProfile(
@@ -157,16 +190,25 @@ class AuthRepository {
     }
 
     try {
+      final redirectUrl = getEmailRedirectUrl();
       final response = await _client.auth.signUp(
         email: cleanEmail,
         password: password,
         data: {'full_name': fullName, 'phone': phone},
-        emailRedirectTo: 'yemenreal://login-callback',
+        emailRedirectTo: redirectUrl,
       );
 
       final user = response.user;
       if (user == null) {
         throw AppException('فشل إنشاء الحساب');
+      }
+
+      // Check if user already exists in Supabase (identities will be empty on duplicate signup)
+      if (user.identities != null && user.identities!.isEmpty) {
+        throw AppException(
+          'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد.',
+          code: 'user_already_exists',
+        );
       }
 
       final isConfirmed = user.emailConfirmedAt != null;
@@ -185,10 +227,29 @@ class AuthRepository {
     }
   }
 
-  /// Resend confirmation email
+  /// Resend confirmation email with cooldown throttling
   Future<void> resendConfirmationEmail(String email) async {
     final cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail.isEmpty) {
+      throw AppException(
+        'يرجى إدخال البريد الإلكتروني أولاً',
+        code: 'invalid_email',
+      );
+    }
+
+    if (_lastResendTime != null) {
+      final diff = DateTime.now().difference(_lastResendTime!);
+      if (diff.inSeconds < 60) {
+        final remaining = 60 - diff.inSeconds;
+        throw AppException(
+          'يرجى الانتظار $remaining ثانية قبل طلب إعادة إرسال رابط التفعيل مجدداً لمنع تكرار الطلبات.',
+          code: 'rate_limit',
+        );
+      }
+    }
+
     if (EnvConfig.isDemoMode || _client == null) {
+      _lastResendTime = DateTime.now();
       return;
     }
 
@@ -196,8 +257,9 @@ class AuthRepository {
       await _client.auth.resend(
         type: OtpType.signup,
         email: cleanEmail,
-        emailRedirectTo: 'yemenreal://login-callback',
+        emailRedirectTo: getEmailRedirectUrl(),
       );
+      _lastResendTime = DateTime.now();
     } catch (e) {
       throw AppException.fromSupabase(e);
     }
@@ -211,7 +273,8 @@ class AuthRepository {
         (u) => u.email?.toLowerCase() == cleanEmail,
       );
       if (idx != -1) {
-        SupabaseService.demoUsers[idx] = SupabaseService.demoUsers[idx].copyWith(isVerified: true);
+        SupabaseService.demoUsers[idx] = SupabaseService.demoUsers[idx]
+            .copyWith(isVerified: true);
       }
     }
   }

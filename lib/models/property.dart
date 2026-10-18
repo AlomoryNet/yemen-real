@@ -23,13 +23,16 @@ class Property {
   final int bathrooms;
   final String contactPhone;
   final String? contactWhatsapp;
-  final String status; // draft, published, hidden, archived, rejected
-  final String publishingMode; // self_review
+  final String status; // draft, pending, published, hidden, archived, rejected
+  final String publishingMode; // self_review, admin_approval
   final bool isFeatured;
   final int viewsCount;
   final bool hasOwnershipPledge;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final String? reviewedBy;
+  final DateTime? reviewedAt;
+  final String? rejectionReason;
   final List<PropertyImage> images;
   final PropertyType? propertyType;
   final UserProfile? owner;
@@ -55,12 +58,15 @@ class Property {
     required this.contactPhone,
     this.contactWhatsapp,
     this.status = AppConstants.statusPublished,
-    this.publishingMode = 'self_review',
+    this.publishingMode = 'admin_approval',
     this.isFeatured = false,
     this.viewsCount = 0,
     this.hasOwnershipPledge = true,
     required this.createdAt,
     this.updatedAt,
+    this.reviewedBy,
+    this.reviewedAt,
+    this.rejectionReason,
     this.images = const [],
     this.propertyType,
     this.owner,
@@ -129,8 +135,8 @@ class Property {
       bathrooms: json['bathrooms'] as int? ?? 0,
       contactPhone: json['contact_phone'] as String? ?? '',
       contactWhatsapp: json['contact_whatsapp'] as String?,
-      status: json['status'] as String? ?? AppConstants.statusPublished,
-      publishingMode: json['publishing_mode'] as String? ?? 'self_review',
+      status: json['status'] as String? ?? AppConstants.statusPending,
+      publishingMode: json['publishing_mode'] as String? ?? 'admin_approval',
       isFeatured: json['is_featured'] as bool? ?? false,
       viewsCount: json['views_count'] as int? ?? 0,
       hasOwnershipPledge: json['has_ownership_pledge'] as bool? ?? true,
@@ -140,6 +146,11 @@ class Property {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
+      reviewedBy: json['reviewed_by'] as String?,
+      reviewedAt: json['reviewed_at'] != null
+          ? DateTime.parse(json['reviewed_at'] as String)
+          : null,
+      rejectionReason: json['rejection_reason'] as String?,
       images: parsedImages,
       propertyType: parsedType,
       owner: parsedOwner,
@@ -172,6 +183,9 @@ class Property {
       'is_featured': isFeatured,
       'views_count': viewsCount,
       'has_ownership_pledge': hasOwnershipPledge,
+      if (reviewedBy != null) 'reviewed_by': reviewedBy,
+      if (reviewedAt != null) 'reviewed_at': reviewedAt!.toIso8601String(),
+      if (rejectionReason != null) 'rejection_reason': rejectionReason,
     };
   }
 
@@ -196,6 +210,9 @@ class Property {
     String? status,
     bool? isFeatured,
     int? viewsCount,
+    String? reviewedBy,
+    DateTime? reviewedAt,
+    String? rejectionReason,
     List<PropertyImage>? images,
   }) {
     return Property(
@@ -225,6 +242,9 @@ class Property {
       hasOwnershipPledge: hasOwnershipPledge,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
+      reviewedBy: reviewedBy ?? this.reviewedBy,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
       images: images ?? this.images,
       propertyType: propertyType,
       owner: owner,

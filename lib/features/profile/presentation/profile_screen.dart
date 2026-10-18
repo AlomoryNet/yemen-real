@@ -9,6 +9,7 @@ import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -79,10 +80,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         body: Center(
           child: EmptyStateView(
             icon: Icons.person_off_outlined,
-            title: 'لم يتم تسجيل الدخول',
-            description: 'سجّل الدخول للوصول إلى بيانات حسابك وإدارة إعلاناتك',
-            actionText: 'تسجيل الدخول',
-            onAction: () => context.push('/login'),
+            title: 'تسجيل الدخول مطلوب',
+            description:
+                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            onAction: () => AuthPromptDialog.show(
+              context,
+              message:
+                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              redirectTo: '/profile',
+            ),
           ),
         ),
       );

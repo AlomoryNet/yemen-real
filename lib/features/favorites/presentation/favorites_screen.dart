@@ -7,6 +7,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
@@ -25,11 +26,16 @@ class FavoritesScreen extends ConsumerWidget {
         body: Center(
           child: EmptyStateView(
             icon: Icons.favorite_border,
-            title: 'قائمة العقارات المفضلة',
+            title: 'تسجيل الدخول مطلوب',
             description:
-                'سجّل الدخول للوصول إلى قائمة عقاراتك المحفوظة من أي جهاز',
-            actionText: 'تسجيل الدخول',
-            onAction: () => context.push('/login'),
+                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            onAction: () => AuthPromptDialog.show(
+              context,
+              message:
+                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              redirectTo: '/favorites',
+            ),
           ),
         ),
       );

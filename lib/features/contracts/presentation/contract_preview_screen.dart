@@ -4,6 +4,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -13,9 +14,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/property.dart';
 import '../../../models/property_contract.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../services/contract_service.dart';
+import '../../../shared/widgets/auth_prompt_dialog.dart';
 
-class ContractPreviewScreen extends StatefulWidget {
+class ContractPreviewScreen extends ConsumerStatefulWidget {
   final Property property;
   final PropertyContract? initialContract;
 
@@ -26,10 +29,11 @@ class ContractPreviewScreen extends StatefulWidget {
   });
 
   @override
-  State<ContractPreviewScreen> createState() => _ContractPreviewScreenState();
+  ConsumerState<ContractPreviewScreen> createState() =>
+      _ContractPreviewScreenState();
 }
 
-class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
+class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
   late PropertyContract _contract;
   bool _isLoading = true;
 
@@ -54,6 +58,17 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
   }
 
   void _openContractEditor() {
+    final auth = ref.read(authProvider);
+    if (!auth.isAuthenticated) {
+      AuthPromptDialog.show(
+        context,
+        message:
+            'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+        redirectTo: '/property/${widget.property.id}',
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -91,32 +106,52 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
     buffer.writeln('==============================');
     buffer.writeln(_contract.title);
     buffer.writeln('==============================');
-    buffer.writeln('تاريخ التحرير: ${_contract.startDate.isNotEmpty ? _contract.startDate : DateTime.now().toString().split(' ').first}');
+    buffer.writeln(
+      'تاريخ التحرير: ${_contract.startDate.isNotEmpty ? _contract.startDate : DateTime.now().toString().split(' ').first}',
+    );
     buffer.writeln('');
-    buffer.writeln('الطرف الأول (المؤجر / المالك): ${_contract.ownerName.isNotEmpty ? _contract.ownerName : widget.property.owner?.fullName ?? 'المالك'}');
-    buffer.writeln('هاتف: ${_contract.ownerPhone.isNotEmpty ? _contract.ownerPhone : widget.property.contactPhone}');
+    buffer.writeln(
+      'الطرف الأول (المؤجر / المالك): ${_contract.ownerName.isNotEmpty ? _contract.ownerName : widget.property.owner?.fullName ?? 'المالك'}',
+    );
+    buffer.writeln(
+      'هاتف: ${_contract.ownerPhone.isNotEmpty ? _contract.ownerPhone : widget.property.contactPhone}',
+    );
     buffer.writeln('العنوان: ${_contract.ownerAddress}');
     buffer.writeln('');
-    buffer.writeln('الطرف الثاني (المستأجر): ${_contract.tenantName.isNotEmpty ? _contract.tenantName : "........................................"}');
-    buffer.writeln('بطاقة شخصية رقم: ${_contract.tenantIdCard.isNotEmpty ? _contract.tenantIdCard : "...................."}');
+    buffer.writeln(
+      'الطرف الثاني (المستأجر): ${_contract.tenantName.isNotEmpty ? _contract.tenantName : "........................................"}',
+    );
+    buffer.writeln(
+      'بطاقة شخصية رقم: ${_contract.tenantIdCard.isNotEmpty ? _contract.tenantIdCard : "...................."}',
+    );
     buffer.writeln('');
     buffer.writeln('العين المؤجرة:');
-    buffer.writeln('عقار كائن في محافظة ${widget.property.city} - مديرية ${widget.property.district} - ${widget.property.addressDetails ?? ""}');
+    buffer.writeln(
+      'عقار كائن في محافظة ${widget.property.city} - مديرية ${widget.property.district} - ${widget.property.addressDetails ?? ""}',
+    );
     buffer.writeln('المواصفات: ${widget.property.title}');
     buffer.writeln('');
     buffer.writeln('بنود وشروط الاتفاق:');
-    buffer.writeln('1. مدة العقد: ${_contract.durationText} تبدأ من تاريخ ${_contract.startDate} وحتى ${_contract.endDate}، ${_contract.isRenewableOnlyByOwner ? "غير قابلة للتجديد إلا برغبة وموافقة خطية من الطرف الأول." : "تجدد تلقائياً ما لم يخطر أحد الطرفين الآخر قبل شهر."}');
-    buffer.writeln('2. الإيجار المتفق عليه: مبلغ وقدره ${Formatters.formatCurrency(_contract.amount, _contract.currency)} يدفع ${_contract.paymentFrequency}.');
+    buffer.writeln(
+      '1. مدة العقد: ${_contract.durationText} تبدأ من تاريخ ${_contract.startDate} وحتى ${_contract.endDate}، ${_contract.isRenewableOnlyByOwner ? "غير قابلة للتجديد إلا برغبة وموافقة خطية من الطرف الأول." : "تجدد تلقائياً ما لم يخطر أحد الطرفين الآخر قبل شهر."}',
+    );
+    buffer.writeln(
+      '2. الإيجار المتفق عليه: مبلغ وقدره ${Formatters.formatCurrency(_contract.amount, _contract.currency)} يدفع ${_contract.paymentFrequency}.',
+    );
     if (_contract.securityDeposit > 0) {
-      buffer.writeln('3. مبلغ الضمان / التأمين: ${Formatters.formatCurrency(_contract.securityDeposit, _contract.currency)} يسلم للمؤجر ويُعاد للمستأجر عند انتهاء العقد وتسليم العين بحالتها الأولى.');
+      buffer.writeln(
+        '3. مبلغ الضمان / التأمين: ${Formatters.formatCurrency(_contract.securityDeposit, _contract.currency)} يسلم للمؤجر ويُعاد للمستأجر عند انتهاء العقد وتسليم العين بحالتها الأولى.',
+      );
     }
     buffer.writeln('4. فواتير الخدمات: ${_contract.utilitiesPayableBy}.');
     buffer.writeln('5. الصيانة والاستخدام: ${_contract.maintenanceLiability}.');
     if (_contract.forbidSubleasing) {
-      buffer.writeln('6. منع التأجير من الباطن: هذا العقد شخصي للمستأجر ولا يحق له التنازل أو التقبيل أو التأجير من الباطن كلياً أو جزئياً.');
+      buffer.writeln(
+        '6. منع التأجير من الباطن: هذا العقد شخصي للمستأجر ولا يحق له التنازل أو التقبيل أو التأجير من الباطن كلياً أو جزئياً.',
+      );
     }
     buffer.writeln('7. التخلف عن السداد: ${_contract.latePaymentPolicy}.');
-    
+
     if (_contract.customClauses.isNotEmpty) {
       buffer.writeln('8. شروط خاصة إضافية من المؤجر:');
       for (int i = 0; i < _contract.customClauses.length; i++) {
@@ -127,7 +162,9 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
     buffer.writeln('');
     buffer.writeln('توقيع الطرف الأول (المؤجر): .....................');
     buffer.writeln('توقيع الطرف الثاني (المستأجر): .....................');
-    buffer.writeln('الشاهد الأول: .....................    الشاهد الثاني: .....................');
+    buffer.writeln(
+      'الشاهد الأول: .....................    الشاهد الثاني: .....................',
+    );
     return buffer.toString();
   }
 
@@ -189,10 +226,7 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
       pw.Page(
         pageFormat: format,
         margin: const pw.EdgeInsets.all(28),
-        theme: pw.ThemeData.withFont(
-          base: fontCairo,
-          bold: fontCairoBold,
-        ),
+        theme: pw.ThemeData.withFont(base: fontCairo, bold: fontCairoBold),
         build: (pw.Context ctx) {
           return pw.Directionality(
             textDirection: pw.TextDirection.rtl,
@@ -216,7 +250,9 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                   ),
                   pw.SizedBox(height: 6),
                   pw.Text(
-                    _contract.title.isNotEmpty ? _contract.title : 'عقد إيجار شرعي وقانوني',
+                    _contract.title.isNotEmpty
+                        ? _contract.title
+                        : 'عقد إيجار شرعي وقانوني',
                     style: pw.TextStyle(
                       font: fontCairoBold,
                       fontSize: 15,
@@ -238,7 +274,10 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                           children: [
                             pw.Text(
                               'الطرف الأول (المؤجر/المالك): ${_contract.ownerName.isNotEmpty ? _contract.ownerName : widget.property.owner?.fullName ?? "المالك"}',
-                              style: pw.TextStyle(font: fontCairoBold, fontSize: 9.5),
+                              style: pw.TextStyle(
+                                font: fontCairoBold,
+                                fontSize: 9.5,
+                              ),
                             ),
                             pw.Text(
                               'هوية رقم: ${_contract.ownerIdCard.isNotEmpty ? _contract.ownerIdCard : "...................."}',
@@ -262,7 +301,10 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                           children: [
                             pw.Text(
                               'الطرف الثاني (المستأجر): ${_contract.tenantName.isNotEmpty ? _contract.tenantName : "...................................."}',
-                              style: pw.TextStyle(font: fontCairoBold, fontSize: 9.5),
+                              style: pw.TextStyle(
+                                font: fontCairoBold,
+                                fontSize: 9.5,
+                              ),
                             ),
                             pw.Text(
                               'بطاقة شخصية رقم: ${_contract.tenantIdCard.isNotEmpty ? _contract.tenantIdCard : "...................."}',
@@ -290,7 +332,10 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                   // Leased Property Box
                   pw.Container(
                     width: double.infinity,
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: pw.BoxDecoration(
                       color: PdfColors.grey200,
                       borderRadius: pw.BorderRadius.circular(4),
@@ -359,13 +404,13 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
 
                   if (_contract.customClauses.isNotEmpty)
                     ..._contract.customClauses.asMap().entries.map(
-                          (entry) => _buildPdfClause(
-                            8 + entry.key,
-                            entry.value,
-                            fontCairo,
-                            fontCairoBold,
-                          ),
-                        ),
+                      (entry) => _buildPdfClause(
+                        8 + entry.key,
+                        entry.value,
+                        fontCairo,
+                        fontCairoBold,
+                      ),
+                    ),
 
                   pw.Spacer(),
 
@@ -377,30 +422,48 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                         children: [
                           pw.Text(
                             'توقيع المؤجر (الطرف الأول)',
-                            style: pw.TextStyle(font: fontCairoBold, fontSize: 9),
+                            style: pw.TextStyle(
+                              font: fontCairoBold,
+                              fontSize: 9,
+                            ),
                           ),
                           pw.SizedBox(height: 20),
-                          pw.Text('................................', style: pw.TextStyle(font: fontCairo, fontSize: 9)),
+                          pw.Text(
+                            '................................',
+                            style: pw.TextStyle(font: fontCairo, fontSize: 9),
+                          ),
                         ],
                       ),
                       pw.Column(
                         children: [
                           pw.Text(
                             'توقيع المستأجر (الطرف الثاني)',
-                            style: pw.TextStyle(font: fontCairoBold, fontSize: 9),
+                            style: pw.TextStyle(
+                              font: fontCairoBold,
+                              fontSize: 9,
+                            ),
                           ),
                           pw.SizedBox(height: 20),
-                          pw.Text('................................', style: pw.TextStyle(font: fontCairo, fontSize: 9)),
+                          pw.Text(
+                            '................................',
+                            style: pw.TextStyle(font: fontCairo, fontSize: 9),
+                          ),
                         ],
                       ),
                       pw.Column(
                         children: [
                           pw.Text(
                             'الشاهد الأول / الثاني',
-                            style: pw.TextStyle(font: fontCairoBold, fontSize: 9),
+                            style: pw.TextStyle(
+                              font: fontCairoBold,
+                              fontSize: 9,
+                            ),
                           ),
                           pw.SizedBox(height: 20),
-                          pw.Text('................................', style: pw.TextStyle(font: fontCairo, fontSize: 9)),
+                          pw.Text(
+                            '................................',
+                            style: pw.TextStyle(font: fontCairo, fontSize: 9),
+                          ),
                         ],
                       ),
                     ],
@@ -427,6 +490,17 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
   }
 
   Future<void> _saveAsPdf() async {
+    final auth = ref.read(authProvider);
+    if (!auth.isAuthenticated) {
+      AuthPromptDialog.show(
+        context,
+        message:
+            'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+        redirectTo: '/property/${widget.property.id}',
+      );
+      return;
+    }
+
     try {
       final pdfBytes = await _generatePdf(PdfPageFormat.a4);
 
@@ -515,9 +589,7 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -699,11 +771,17 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                       children: [
                         Text(
                           'تاريخ التحرير: ${_contract.startDate.isNotEmpty ? _contract.startDate : DateTime.now().toString().split(" ").first}',
-                          style: GoogleFonts.cairo(fontSize: 12, color: Colors.black87),
+                          style: GoogleFonts.cairo(
+                            fontSize: 12,
+                            color: Colors.black87,
+                          ),
                         ),
                         Text(
                           'رقم العقد: ${_contract.id}',
-                          style: GoogleFonts.outfit(fontSize: 12, color: Colors.black54),
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
                         ),
                       ],
                     ),
@@ -716,11 +794,17 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.primaryMuted,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.edit_note, color: AppColors.primary, size: 28),
+                          const Icon(
+                            Icons.edit_note,
+                            color: AppColors.primary,
+                            size: 28,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
@@ -728,11 +812,18 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                               children: [
                                 Text(
                                   'تعبئة وكتابة بيانات العقد مباشرة',
-                                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
+                                  style: GoogleFonts.cairo(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: AppColors.primaryDark,
+                                  ),
                                 ),
                                 Text(
                                   'اضغط هنا أو على أي خانة لكتابة اسم المستأجر والمؤجر وأرقام الهويات ومبالغ وشروط العقد لتظهر مطبوعة في الـ PDF دون فراغات',
-                                  style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textSecondary),
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
                               ],
                             ),
@@ -741,11 +832,20 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                             ),
                             onPressed: _openContractEditor,
                             icon: const Icon(Icons.edit, size: 15),
-                            label: Text('تعبئة الخانات', style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.bold)),
+                            label: Text(
+                              'تعبئة الخانات',
+                              style: GoogleFonts.cairo(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -756,19 +856,33 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                     const SizedBox(height: 8),
                     _buildPartyBox(
                       title: 'الطرف الأول (المؤجر / المالك):',
-                      name: _contract.ownerName.isNotEmpty ? _contract.ownerName : (widget.property.owner?.fullName ?? 'المالك'),
-                      phone: _contract.ownerPhone.isNotEmpty ? _contract.ownerPhone : widget.property.contactPhone,
-                      idCard: _contract.ownerIdCard.isNotEmpty ? _contract.ownerIdCard : '................................',
+                      name: _contract.ownerName.isNotEmpty
+                          ? _contract.ownerName
+                          : (widget.property.owner?.fullName ?? 'المالك'),
+                      phone: _contract.ownerPhone.isNotEmpty
+                          ? _contract.ownerPhone
+                          : widget.property.contactPhone,
+                      idCard: _contract.ownerIdCard.isNotEmpty
+                          ? _contract.ownerIdCard
+                          : '................................',
                       address: _contract.ownerAddress,
                       onEdit: _openContractEditor,
                     ),
                     const SizedBox(height: 10),
                     _buildPartyBox(
                       title: 'الطرف الثاني (المستأجر):',
-                      name: _contract.tenantName.isNotEmpty ? _contract.tenantName : '................................................',
-                      phone: _contract.tenantPhone.isNotEmpty ? _contract.tenantPhone : '................................',
-                      idCard: _contract.tenantIdCard.isNotEmpty ? _contract.tenantIdCard : '................................',
-                      address: _contract.tenantAddress.isNotEmpty ? _contract.tenantAddress : '................................',
+                      name: _contract.tenantName.isNotEmpty
+                          ? _contract.tenantName
+                          : '................................................',
+                      phone: _contract.tenantPhone.isNotEmpty
+                          ? _contract.tenantPhone
+                          : '................................',
+                      idCard: _contract.tenantIdCard.isNotEmpty
+                          ? _contract.tenantIdCard
+                          : '................................',
+                      address: _contract.tenantAddress.isNotEmpty
+                          ? _contract.tenantAddress
+                          : '................................',
                       onEdit: _openContractEditor,
                     ),
                     const SizedBox(height: 20),
@@ -791,45 +905,53 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                     const SizedBox(height: 20),
 
                     // Contract Clauses
-                    _buildSectionTitle('ثالثاً: بنود وشروط الاتفاق الشرعية والقانونية'),
+                    _buildSectionTitle(
+                      'ثالثاً: بنود وشروط الاتفاق الشرعية والقانونية',
+                    ),
                     const SizedBox(height: 10),
 
                     _buildClauseItem(
                       number: '1',
                       title: 'مدة العقد وتاريخ السريان:',
-                      body: 'مدة العقد (${_contract.durationText}) تبدأ من تاريخ ${_contract.startDate} وتنتهي في تاريخ ${_contract.endDate}، ${_contract.isRenewableOnlyByOwner ? "وهي غير قابلة للتجديد إلا برغبة وموافقة خطية صريحة من الطرف الأول." : "قابلة للتجديد برضا الطرفين."}',
+                      body:
+                          'مدة العقد (${_contract.durationText}) تبدأ من تاريخ ${_contract.startDate} وتنتهي في تاريخ ${_contract.endDate}، ${_contract.isRenewableOnlyByOwner ? "وهي غير قابلة للتجديد إلا برغبة وموافقة خطية صريحة من الطرف الأول." : "قابلة للتجديد برضا الطرفين."}',
                     ),
 
                     _buildClauseItem(
                       number: '2',
                       title: 'القيمة الإيجارية وطريقة السداد:',
-                      body: 'اتفق الطرفان على قيمة إيجارية شهرية قدرها (${Formatters.formatCurrency(_contract.amount, _contract.currency)}) تدفع (${_contract.paymentFrequency}) وبسندات قبض موقعة.',
+                      body:
+                          'اتفق الطرفان على قيمة إيجارية شهرية قدرها (${Formatters.formatCurrency(_contract.amount, _contract.currency)}) تدفع (${_contract.paymentFrequency}) وبسندات قبض موقعة.',
                     ),
 
                     if (_contract.securityDeposit > 0)
                       _buildClauseItem(
                         number: '3',
                         title: 'مبلغ الضمان والتأمين:',
-                        body: 'يدفع الطرف الثاني مبلغ تأمين وضمان قدره (${Formatters.formatCurrency(_contract.securityDeposit, _contract.currency)}) يبقى لدى الطرف الأول كوديعة ضمان لصيانة ونظافة العين وتسديد الفواتير، ويُرد للمستأجر عند الإخلاء بحالة سليمة.',
+                        body:
+                            'يدفع الطرف الثاني مبلغ تأمين وضمان قدره (${Formatters.formatCurrency(_contract.securityDeposit, _contract.currency)}) يبقى لدى الطرف الأول كوديعة ضمان لصيانة ونظافة العين وتسديد الفواتير، ويُرد للمستأجر عند الإخلاء بحالة سليمة.',
                       ),
 
                     _buildClauseItem(
                       number: '4',
                       title: 'فواتير الخدمات والاستهلاك:',
-                      body: 'يتحمل ${_contract.utilitiesPayableBy} كافة فواتير الكهرباء والمياه وخدمات النظافة والاتصالات المترتبة على العين المؤجرة طوال فترة الإيجار.',
+                      body:
+                          'يتحمل ${_contract.utilitiesPayableBy} كافة فواتير الكهرباء والمياه وخدمات النظافة والاتصالات المترتبة على العين المؤجرة طوال فترة الإيجار.',
                     ),
 
                     _buildClauseItem(
                       number: '5',
                       title: 'المحافظة على العين والصيانة:',
-                      body: '${_contract.maintenanceLiability}. ولا يحق للمستأجر إحداث أي فتحات أو تغييرات في المبنى إلا بإذن كتابي مسبق.',
+                      body:
+                          '${_contract.maintenanceLiability}. ولا يحق للمستأجر إحداث أي فتحات أو تغييرات في المبنى إلا بإذن كتابي مسبق.',
                     ),
 
                     if (_contract.forbidSubleasing)
                       _buildClauseItem(
                         number: '6',
                         title: 'منع التأجير من الباطن أو التقبيل:',
-                        body: 'هذا العقد شخصي للمستأجر فقط، ولا يجوز له التنازل عنه للغير كلياً أو جزئياً من الباطن أو التقبيل نهائياً.',
+                        body:
+                            'هذا العقد شخصي للمستأجر فقط، ولا يجوز له التنازل عنه للغير كلياً أو جزئياً من الباطن أو التقبيل نهائياً.',
                       ),
 
                     _buildClauseItem(
@@ -849,21 +971,29 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      ..._contract.customClauses.map((clause) => Padding(
-                            padding: const EdgeInsets.only(bottom: 6, right: 12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
-                                Expanded(
-                                  child: Text(
-                                    clause,
-                                    style: GoogleFonts.cairo(fontSize: 12.5, height: 1.5),
+                      ..._contract.customClauses.map(
+                        (clause) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6, right: 12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '• ',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  clause,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 12.5,
+                                    height: 1.5,
                                   ),
                                 ),
-                              ],
-                            ),
-                          )),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
 
                     const SizedBox(height: 30),
@@ -914,7 +1044,9 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(6),
-        border: const Border(right: BorderSide(color: AppColors.primary, width: 4)),
+        border: const Border(
+          right: BorderSide(color: AppColors.primary, width: 4),
+        ),
       ),
       child: Text(
         title,
@@ -945,7 +1077,9 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
           color: isFilled ? const Color(0xFFF9FCF9) : const Color(0xFFFAFAFA),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isFilled ? AppColors.primary.withOpacity(0.4) : const Color(0xFFE5E7EB),
+            color: isFilled
+                ? AppColors.primary.withOpacity(0.4)
+                : const Color(0xFFE5E7EB),
           ),
         ),
         child: Column(
@@ -964,28 +1098,67 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
                 ),
                 TextButton.icon(
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   onPressed: onEdit,
-                  icon: const Icon(Icons.edit_note, size: 16, color: AppColors.primary),
-                  label: Text('كتابة / تعديل', style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  icon: const Icon(
+                    Icons.edit_note,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  label: Text(
+                    'كتابة / تعديل',
+                    style: GoogleFonts.cairo(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                Expanded(child: Text('الاسم: $name', style: GoogleFonts.cairo(fontSize: 12, fontWeight: isFilled ? FontWeight.bold : FontWeight.normal))),
-                Expanded(child: Text('هاتف: $phone', style: GoogleFonts.cairo(fontSize: 12))),
+                Expanded(
+                  child: Text(
+                    'الاسم: $name',
+                    style: GoogleFonts.cairo(
+                      fontSize: 12,
+                      fontWeight: isFilled
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'هاتف: $phone',
+                    style: GoogleFonts.cairo(fontSize: 12),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                Expanded(child: Text('الهوية / البطاقة: $idCard', style: GoogleFonts.cairo(fontSize: 12))),
-                Expanded(child: Text('العنوان: $address', style: GoogleFonts.cairo(fontSize: 12))),
+                Expanded(
+                  child: Text(
+                    'الهوية / البطاقة: $idCard',
+                    style: GoogleFonts.cairo(fontSize: 12),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'العنوان: $address',
+                    style: GoogleFonts.cairo(fontSize: 12),
+                  ),
+                ),
               ],
             ),
           ],
@@ -1026,11 +1199,18 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: GoogleFonts.cairo(color: Colors.black87, fontSize: 13, height: 1.6),
+                style: GoogleFonts.cairo(
+                  color: Colors.black87,
+                  fontSize: 13,
+                  height: 1.6,
+                ),
                 children: [
                   TextSpan(
                     text: '$title ',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
                   TextSpan(text: body),
                 ],
@@ -1056,8 +1236,17 @@ class _ContractPreviewScreenState extends State<ContractPreviewScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(role, style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.bold)),
-            const Text('التوقيع / البصمة: ...................', style: TextStyle(fontSize: 10, color: Colors.black45)),
+            Text(
+              role,
+              style: GoogleFonts.cairo(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Text(
+              'التوقيع / البصمة: ...................',
+              style: TextStyle(fontSize: 10, color: Colors.black45),
+            ),
           ],
         ),
       ),
@@ -1081,7 +1270,8 @@ class _ContractEditorSheet extends StatefulWidget {
   State<_ContractEditorSheet> createState() => _ContractEditorSheetState();
 }
 
-class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleTickerProviderStateMixin {
+class _ContractEditorSheetState extends State<_ContractEditorSheet>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   // الطرف الأول (المؤجر)
@@ -1128,23 +1318,49 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
           ? widget.contract.ownerPhone
           : widget.property.contactPhone,
     );
-    _ownerIdCardController = TextEditingController(text: widget.contract.ownerIdCard);
-    _ownerAddressController = TextEditingController(text: widget.contract.ownerAddress);
+    _ownerIdCardController = TextEditingController(
+      text: widget.contract.ownerIdCard,
+    );
+    _ownerAddressController = TextEditingController(
+      text: widget.contract.ownerAddress,
+    );
 
-    _tenantNameController = TextEditingController(text: widget.contract.tenantName);
-    _tenantPhoneController = TextEditingController(text: widget.contract.tenantPhone);
-    _tenantIdCardController = TextEditingController(text: widget.contract.tenantIdCard);
-    _tenantAddressController = TextEditingController(text: widget.contract.tenantAddress);
+    _tenantNameController = TextEditingController(
+      text: widget.contract.tenantName,
+    );
+    _tenantPhoneController = TextEditingController(
+      text: widget.contract.tenantPhone,
+    );
+    _tenantIdCardController = TextEditingController(
+      text: widget.contract.tenantIdCard,
+    );
+    _tenantAddressController = TextEditingController(
+      text: widget.contract.tenantAddress,
+    );
 
     _titleController = TextEditingController(text: widget.contract.title);
-    _amountController = TextEditingController(text: widget.contract.amount.toStringAsFixed(0));
-    _depositController = TextEditingController(text: widget.contract.securityDeposit.toStringAsFixed(0));
-    _durationController = TextEditingController(text: widget.contract.durationText);
-    _startDateController = TextEditingController(text: widget.contract.startDate);
+    _amountController = TextEditingController(
+      text: widget.contract.amount.toStringAsFixed(0),
+    );
+    _depositController = TextEditingController(
+      text: widget.contract.securityDeposit.toStringAsFixed(0),
+    );
+    _durationController = TextEditingController(
+      text: widget.contract.durationText,
+    );
+    _startDateController = TextEditingController(
+      text: widget.contract.startDate,
+    );
     _endDateController = TextEditingController(text: widget.contract.endDate);
-    _utilitiesController = TextEditingController(text: widget.contract.utilitiesPayableBy);
-    _maintenanceController = TextEditingController(text: widget.contract.maintenanceLiability);
-    _latePolicyController = TextEditingController(text: widget.contract.latePaymentPolicy);
+    _utilitiesController = TextEditingController(
+      text: widget.contract.utilitiesPayableBy,
+    );
+    _maintenanceController = TextEditingController(
+      text: widget.contract.maintenanceLiability,
+    );
+    _latePolicyController = TextEditingController(
+      text: widget.contract.latePaymentPolicy,
+    );
     _newClauseController = TextEditingController();
 
     _isRenewableOnlyByOwner = widget.contract.isRenewableOnlyByOwner;
@@ -1199,7 +1415,9 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
       tenantIdCard: _tenantIdCardController.text.trim(),
       tenantAddress: _tenantAddressController.text.trim(),
       amount: double.tryParse(_amountController.text) ?? widget.contract.amount,
-      securityDeposit: double.tryParse(_depositController.text) ?? widget.contract.securityDeposit,
+      securityDeposit:
+          double.tryParse(_depositController.text) ??
+          widget.contract.securityDeposit,
       durationText: _durationController.text.trim(),
       startDate: _startDateController.text.trim(),
       endDate: _endDateController.text.trim(),
@@ -1220,7 +1438,8 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardHeight = media.viewInsets.bottom;
-    final availableHeight = media.size.height - media.viewPadding.top - keyboardHeight - 16;
+    final availableHeight =
+        media.size.height - media.viewPadding.top - keyboardHeight - 16;
     final targetHeight = availableHeight.clamp(320.0, media.size.height * 0.90);
 
     return AnimatedPadding(
@@ -1253,7 +1472,11 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.edit_document, color: AppColors.primary, size: 22),
+                    const Icon(
+                      Icons.edit_document,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'تعبئة وتعديل بيانات العقد',
@@ -1279,10 +1502,19 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
               indicatorColor: AppColors.primary,
-              labelStyle: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12),
+              labelStyle: GoogleFonts.cairo(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
               tabs: const [
-                Tab(icon: Icon(Icons.people_outline, size: 18), text: 'المستأجر والمؤجر'),
-                Tab(icon: Icon(Icons.gavel_outlined, size: 18), text: 'الشروط والماليات'),
+                Tab(
+                  icon: Icon(Icons.people_outline, size: 18),
+                  text: 'المستأجر والمؤجر',
+                ),
+                Tab(
+                  icon: Icon(Icons.gavel_outlined, size: 18),
+                  text: 'الشروط والماليات',
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -1292,7 +1524,8 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
                 children: [
                   // Tab 1: Parties Information
                   ListView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.manual,
                     padding: const EdgeInsets.only(bottom: 16),
                     children: [
                       // الطرف الثاني: المستأجر
@@ -1301,33 +1534,63 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
                         decoration: BoxDecoration(
                           color: const Color(0xFFF9FAFB),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.person, color: AppColors.primary, size: 20),
+                                const Icon(
+                                  Icons.person,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'الطرف الثاني (المستأجر) - تعبئة الفراغات',
-                                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
+                                  style: GoogleFonts.cairo(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: AppColors.primaryDark,
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 10),
-                            _buildField('اسم المستأجر الكامل *', _tenantNameController, hint: 'مثال: محمد عبدالله الأهدل'),
+                            _buildField(
+                              'اسم المستأجر الكامل *',
+                              _tenantNameController,
+                              hint: 'مثال: محمد عبدالله الأهدل',
+                            ),
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                Expanded(child: _buildField('رقم البطاقة الشخصية / الهوية *', _tenantIdCardController, hint: 'مثال: 01010023456')),
+                                Expanded(
+                                  child: _buildField(
+                                    'رقم البطاقة الشخصية / الهوية *',
+                                    _tenantIdCardController,
+                                    hint: 'مثال: 01010023456',
+                                  ),
+                                ),
                                 const SizedBox(width: 10),
-                                Expanded(child: _buildField('رقم الهاتف للتواصل *', _tenantPhoneController, hint: '770000000')),
+                                Expanded(
+                                  child: _buildField(
+                                    'رقم الهاتف للتواصل *',
+                                    _tenantPhoneController,
+                                    hint: '770000000',
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 10),
-                            _buildField('العنوان ومحل الإقامة الحالي', _tenantAddressController, hint: 'مثال: صنعاء - الأصبحي'),
+                            _buildField(
+                              'العنوان ومحل الإقامة الحالي',
+                              _tenantAddressController,
+                              hint: 'مثال: صنعاء - الأصبحي',
+                            ),
                           ],
                         ),
                       ),
@@ -1346,26 +1609,54 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.real_estate_agent, color: AppColors.accentDark, size: 20),
+                                const Icon(
+                                  Icons.real_estate_agent,
+                                  color: AppColors.accentDark,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'الطرف الأول (المؤجر / المالك)',
-                                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.accentDark),
+                                  style: GoogleFonts.cairo(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: AppColors.accentDark,
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 10),
-                            _buildField('اسم المؤجر / المالك *', _ownerNameController, hint: 'اسم المالك الرباعي'),
+                            _buildField(
+                              'اسم المؤجر / المالك *',
+                              _ownerNameController,
+                              hint: 'اسم المالك الرباعي',
+                            ),
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                Expanded(child: _buildField('رقم البطاقة الشخصية للمؤجر', _ownerIdCardController, hint: 'رقم الهوية')),
+                                Expanded(
+                                  child: _buildField(
+                                    'رقم البطاقة الشخصية للمؤجر',
+                                    _ownerIdCardController,
+                                    hint: 'رقم الهوية',
+                                  ),
+                                ),
                                 const SizedBox(width: 10),
-                                Expanded(child: _buildField('هاتف المؤجر *', _ownerPhoneController, hint: 'هاتف التواصل')),
+                                Expanded(
+                                  child: _buildField(
+                                    'هاتف المؤجر *',
+                                    _ownerPhoneController,
+                                    hint: 'هاتف التواصل',
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 10),
-                            _buildField('عنوان المؤجر المعتمد', _ownerAddressController, hint: 'مثال: صنعاء - حدة'),
+                            _buildField(
+                              'عنوان المؤجر المعتمد',
+                              _ownerAddressController,
+                              hint: 'مثال: صنعاء - حدة',
+                            ),
                           ],
                         ),
                       ),
@@ -1374,77 +1665,154 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
 
                   // Tab 2: Financials & Clauses
                   ListView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.manual,
                     padding: const EdgeInsets.only(bottom: 16),
                     children: [
                       _buildField('عنوان العقد الرسمي', _titleController),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildField('مبلغ الإيجار (${widget.contract.currency})', _amountController, isNumber: true)),
+                          Expanded(
+                            child: _buildField(
+                              'مبلغ الإيجار (${widget.contract.currency})',
+                              _amountController,
+                              isNumber: true,
+                            ),
+                          ),
                           const SizedBox(width: 12),
-                          Expanded(child: _buildField('مبلغ الضمان والتأمين', _depositController, isNumber: true)),
+                          Expanded(
+                            child: _buildField(
+                              'مبلغ الضمان والتأمين',
+                              _depositController,
+                              isNumber: true,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildField('مدة العقد', _durationController, hint: 'سنة كاملة')),
+                          Expanded(
+                            child: _buildField(
+                              'مدة العقد',
+                              _durationController,
+                              hint: 'سنة كاملة',
+                            ),
+                          ),
                           const SizedBox(width: 12),
-                          Expanded(child: _buildField('تاريخ البدء', _startDateController, hint: '2026/10/17')),
+                          Expanded(
+                            child: _buildField(
+                              'تاريخ البدء',
+                              _startDateController,
+                              hint: '2026/10/17',
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      _buildField('تاريخ الانتهاء', _endDateController, hint: '2027/10/17'),
+                      _buildField(
+                        'تاريخ الانتهاء',
+                        _endDateController,
+                        hint: '2027/10/17',
+                      ),
                       const SizedBox(height: 16),
 
                       // Switches
                       SwitchListTile(
-                        title: Text('غير قابل للتجديد إلا برغبة وموافقة المالك', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13)),
-                        subtitle: Text('حماية لحق المؤجر في تقرير التجديد من عدمه', style: GoogleFonts.cairo(fontSize: 11)),
+                        title: Text(
+                          'غير قابل للتجديد إلا برغبة وموافقة المالك',
+                          style: GoogleFonts.cairo(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'حماية لحق المؤجر في تقرير التجديد من عدمه',
+                          style: GoogleFonts.cairo(fontSize: 11),
+                        ),
                         value: _isRenewableOnlyByOwner,
-                        onChanged: (val) => setState(() => _isRenewableOnlyByOwner = val),
+                        onChanged: (val) =>
+                            setState(() => _isRenewableOnlyByOwner = val),
                         activeColor: AppColors.primary,
                       ),
                       SwitchListTile(
-                        title: Text('منع التأجير من الباطن أو التقبيل نهائياً', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13)),
-                        subtitle: Text('يمنع المستأجر من تسليم العين لشخص آخر دون موافقة المالك الخطية', style: GoogleFonts.cairo(fontSize: 11)),
+                        title: Text(
+                          'منع التأجير من الباطن أو التقبيل نهائياً',
+                          style: GoogleFonts.cairo(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'يمنع المستأجر من تسليم العين لشخص آخر دون موافقة المالك الخطية',
+                          style: GoogleFonts.cairo(fontSize: 11),
+                        ),
                         value: _forbidSubleasing,
-                        onChanged: (val) => setState(() => _forbidSubleasing = val),
+                        onChanged: (val) =>
+                            setState(() => _forbidSubleasing = val),
                         activeColor: AppColors.primary,
                       ),
                       const SizedBox(height: 12),
 
-                      _buildField('مسؤولية فواتير الخدمات (كهرباء، ماء)', _utilitiesController),
+                      _buildField(
+                        'مسؤولية فواتير الخدمات (كهرباء، ماء)',
+                        _utilitiesController,
+                      ),
                       const SizedBox(height: 12),
-                      _buildField('شروط الصيانة وتسليم العين', _maintenanceController),
+                      _buildField(
+                        'شروط الصيانة وتسليم العين',
+                        _maintenanceController,
+                      ),
                       const SizedBox(height: 12),
-                      _buildField('شرط التأخير عن السداد والفسخ', _latePolicyController),
+                      _buildField(
+                        'شرط التأخير عن السداد والفسخ',
+                        _latePolicyController,
+                      ),
                       const SizedBox(height: 16),
 
                       // Custom Clauses
                       Text(
                         'شروط خاصة إضافية من المالك:',
-                        style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: GoogleFonts.cairo(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 6),
-                      ..._customClauses.asMap().entries.map((entry) => Container(
-                            margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(child: Text(entry.value, style: GoogleFonts.cairo(fontSize: 12))),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                                  onPressed: () => setState(() => _customClauses.removeAt(entry.key)),
+                      ..._customClauses.asMap().entries.map(
+                        (entry) => Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  entry.value,
+                                  style: GoogleFonts.cairo(fontSize: 12),
                                 ),
-                              ],
-                            ),
-                          )),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                  color: AppColors.error,
+                                ),
+                                onPressed: () => setState(
+                                  () => _customClauses.removeAt(entry.key),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       Row(
                         children: [
                           Expanded(
@@ -1452,10 +1820,16 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
                               controller: _newClauseController,
                               scrollPadding: const EdgeInsets.only(bottom: 90),
                               decoration: InputDecoration(
-                                hintText: 'اكتب شرطاً مخصصاً (مثال: عدم التدخين بالداخل)...',
+                                hintText:
+                                    'اكتب شرطاً مخصصاً (مثال: عدم التدخين بالداخل)...',
                                 hintStyle: GoogleFonts.cairo(fontSize: 12),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                             ),
                           ),
@@ -1478,19 +1852,26 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
                         decoration: BoxDecoration(
                           color: AppColors.accent.withAlpha(20),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.accent.withAlpha(80)),
+                          border: Border.all(
+                            color: AppColors.accent.withAlpha(80),
+                          ),
                         ),
                         child: SwitchListTile(
                           title: Text(
                             'حفظ هذا العقد كنموذج افتراضي لعقاراتي القادمة',
-                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
+                            style: GoogleFonts.cairo(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: AppColors.primaryDark,
+                            ),
                           ),
                           subtitle: Text(
                             'عند تفعيل هذا الخيار، سيتم تطبيق هذه الشروط تلقائياً عند إضافة أي عرض جديد',
                             style: GoogleFonts.cairo(fontSize: 11),
                           ),
                           value: _saveAsDefault,
-                          onChanged: (val) => setState(() => _saveAsDefault = val),
+                          onChanged: (val) =>
+                              setState(() => _saveAsDefault = val),
                           activeColor: AppColors.accent,
                         ),
                       ),
@@ -1510,13 +1891,18 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
                     icon: const Icon(Icons.check_circle_outline, size: 20),
                     label: Text(
                       'حفظ وتطبيق التعديلات',
-                      style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: GoogleFonts.cairo(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: _save,
                   ),
@@ -1529,10 +1915,18 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
                       foregroundColor: Colors.grey.shade700,
                       side: BorderSide(color: Colors.grey.shade300),
                       padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: Text('إلغاء', style: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 13)),
+                    child: Text(
+                      'إلغاء',
+                      style: GoogleFonts.cairo(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1543,11 +1937,19 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller, {bool isNumber = false, String? hint}) {
+  Widget _buildField(
+    String label,
+    TextEditingController controller, {
+    bool isNumber = false,
+    String? hint,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12)),
+        Text(
+          label,
+          style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12),
+        ),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -1556,8 +1958,14 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet> with SingleT
           style: GoogleFonts.cairo(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.cairo(fontSize: 11, color: Colors.grey.shade400),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            hintStyle: GoogleFonts.cairo(
+              fontSize: 11,
+              color: Colors.grey.shade400,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 11,
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),

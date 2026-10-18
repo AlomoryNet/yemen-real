@@ -8,6 +8,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/property.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
+import 'auth_prompt_dialog.dart';
 import 'status_badge.dart';
 
 class PropertyCard extends ConsumerWidget {
@@ -120,17 +121,11 @@ class PropertyCard extends ConsumerWidget {
                       onPressed: () {
                         final auth = ref.read(authProvider);
                         if (!auth.isAuthenticated) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'يرجى تسجيل الدخول لحفظ العقار في المفضلة',
-                                style: GoogleFonts.cairo(),
-                              ),
-                              action: SnackBarAction(
-                                label: 'دخول',
-                                onPressed: () => context.push('/login'),
-                              ),
-                            ),
+                          AuthPromptDialog.show(
+                            context,
+                            message:
+                                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+                            redirectTo: '/property/${property.id}',
                           );
                           return;
                         }

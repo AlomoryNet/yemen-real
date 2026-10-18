@@ -10,8 +10,10 @@ class AppConstants {
   // Developer & Copyright Branding
   static const String developerNameAr = 'شركة هيبه سوفت';
   static const String developerNameEn = 'Hiba Soft';
-  static const String copyrightNoticeAr = 'تم التطوير بواسطة شركة هيبه سوفت (Hiba Soft) — جميع الحقوق محفوظة © 2026';
-  static const String copyrightNoticeEn = 'Developed by Hiba Soft — All rights reserved © 2026';
+  static const String copyrightNoticeAr =
+      'تم التطوير بواسطة شركة هيبه سوفت (Hiba Soft) — جميع الحقوق محفوظة © 2026';
+  static const String copyrightNoticeEn =
+      'Developed by Hiba Soft — All rights reserved © 2026';
 
   // Supported Currencies
   static const String currencyYer = 'YER';
@@ -54,6 +56,7 @@ class AppConstants {
 
   // Property Status
   static const String statusDraft = 'draft';
+  static const String statusPending = 'pending';
   static const String statusPublished = 'published';
   static const String statusHidden = 'hidden';
   static const String statusArchived = 'archived';
@@ -63,6 +66,8 @@ class AppConstants {
     switch (status) {
       case statusDraft:
         return 'مسودة';
+      case statusPending:
+        return 'قيد المراجعة';
       case statusPublished:
         return 'منشور';
       case statusHidden:
@@ -250,49 +255,13 @@ class AppConstants {
       'باجل',
       'زبيد',
     ],
-    'مأرب': [
-      'المدينة',
-      'الوادي',
-      'المجمع',
-      'حي الروضة',
-      'حي الزراعة',
-    ],
-    'ذمار': [
-      'المدينة',
-      'الدائري الغربي',
-      'حي الجامعة',
-      'معبر',
-      'عنس',
-    ],
-    'شبوة': [
-      'عتق',
-      'بيحان',
-      'حبان',
-      'نصاب',
-    ],
-    'لحج': [
-      'الحوطة',
-      'تبن',
-      'صبر',
-      'يافع',
-    ],
-    'أبين': [
-      'زنجبار',
-      'خنفر',
-      'جعار',
-      'لودر',
-    ],
-    'صعدة': [
-      'المدينة',
-      'سحار',
-      'الطلح',
-    ],
-    'المهرة': [
-      'الغيضة',
-      'حوف',
-      'شحن',
-      'سيحوت',
-    ],
+    'مأرب': ['المدينة', 'الوادي', 'المجمع', 'حي الروضة', 'حي الزراعة'],
+    'ذمار': ['المدينة', 'الدائري الغربي', 'حي الجامعة', 'معبر', 'عنس'],
+    'شبوة': ['عتق', 'بيحان', 'حبان', 'نصاب'],
+    'لحج': ['الحوطة', 'تبن', 'صبر', 'يافع'],
+    'أبين': ['زنجبار', 'خنفر', 'جعار', 'لودر'],
+    'صعدة': ['المدينة', 'سحار', 'الطلح'],
+    'المهرة': ['الغيضة', 'حوف', 'شحن', 'سيحوت'],
   };
 
   static List<String> getDistrictsForGovernorate(String? gov) {
@@ -306,4 +275,3 @@ class AppConstants {
     return const [];
   }
 }
-

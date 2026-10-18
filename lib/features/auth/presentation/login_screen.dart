@@ -39,12 +39,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('يرجى كتابة البريد الإلكتروني أولاً', style: GoogleFonts.cairo())),
+        SnackBar(
+          content: Text(
+            'يرجى كتابة البريد الإلكتروني أولاً',
+            style: GoogleFonts.cairo(),
+          ),
+        ),
       );
       return;
     }
     setState(() => _isResending = true);
-    final sent = await ref.read(authProvider.notifier).resendConfirmationEmail(email);
+    final sent = await ref
+        .read(authProvider.notifier)
+        .resendConfirmationEmail(email);
     setState(() => _isResending = false);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -52,7 +59,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           content: Text(
             sent
                 ? 'تم إرسال رابط تأكيد جديد إلى بريدك بنجاح. يرجى مراجعة صندوق الوارد.'
-                : (ref.read(authProvider).errorMessage ?? 'تعذر إعادة الإرسال حالياً'),
+                : (ref.read(authProvider).errorMessage ??
+                      'تعذر إعادة الإرسال حالياً'),
             style: GoogleFonts.cairo(),
           ),
           backgroundColor: sent ? AppColors.success : AppColors.error,
@@ -69,7 +77,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         .signIn(_emailController.text.trim(), _passwordController.text);
 
     if (success && mounted) {
-      context.go('/');
+      final redirectTo = GoRouterState.of(
+        context,
+      ).uri.queryParameters['redirectTo'];
+      if (redirectTo != null && redirectTo.isNotEmpty) {
+        context.go(redirectTo);
+      } else {
+        context.go('/');
+      }
     }
   }
 
@@ -145,70 +160,159 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      if (authState.errorMessage != null) ...[
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.errorMuted,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.error.withOpacity(0.3)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    color: AppColors.error,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      authState.errorMessage!,
-                                      style: GoogleFonts.cairo(
-                                        color: AppColors.error,
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                      Builder(
+                        builder: (context) {
+                          final reason = GoRouterState.of(
+                            context,
+                          ).uri.queryParameters['reason'];
+                          if (reason == null || reason.isEmpty)
+                            return const SizedBox.shrink();
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryMuted,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.primary.withOpacity(0.3),
                               ),
-                              if (authState.errorMessage!.contains('تأكيد') ||
-                                  authState.errorMessage!.contains('تفعيل') ||
-                                  authState.errorMessage!.contains('البريد')) ...[
-                                const SizedBox(height: 8),
-                                const Divider(height: 1),
-                                const SizedBox(height: 6),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: TextButton.icon(
-                                    onPressed: _isResending ? null : _resendVerification,
-                                    icon: _isResending
-                                        ? const SizedBox(
-                                            width: 14,
-                                            height: 14,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          )
-                                        : const Icon(Icons.mark_email_unread_outlined, size: 18),
-                                    label: Text(
-                                      _isResending
-                                          ? 'جارٍ الإرسال...'
-                                          : 'إعادة إرسال رابط التفعيل الآن إلى البريد',
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.primary,
-                                      ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.info_outline,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    reason,
+                                    style: GoogleFonts.cairo(
+                                      color: AppColors.primaryDark,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
                               ],
-                            ],
-                          ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      if (authState.errorMessage != null) ...[
+                        Builder(
+                          builder: (context) {
+                            final isUnconfirmed =
+                                authState.errorCode == 'email_not_confirmed';
+                            final isExpired =
+                                authState.errorCode == 'link_expired';
+                            final isRateLimited =
+                                authState.errorCode == 'rate_limit';
+                            final isNetwork =
+                                authState.errorCode == 'network_error';
+                            final isCreds =
+                                authState.errorCode == 'invalid_credentials';
+
+                            Color boxBg = AppColors.errorMuted;
+                            Color borderColor = AppColors.error.withOpacity(
+                              0.3,
+                            );
+                            Color textColor = AppColors.error;
+                            IconData iconData = Icons.error_outline;
+
+                            if (isUnconfirmed) {
+                              boxBg = const Color(0xFFFFF8E1);
+                              borderColor = const Color(0xFFFFB300);
+                              textColor = const Color(0xFFB78103);
+                              iconData = Icons.mark_email_unread_outlined;
+                            } else if (isExpired || isRateLimited) {
+                              boxBg = const Color(0xFFFFF3E0);
+                              borderColor = const Color(0xFFFF9800);
+                              textColor = const Color(0xFFE65100);
+                              iconData = isRateLimited
+                                  ? Icons.timer_outlined
+                                  : Icons.schedule_outlined;
+                            } else if (isCreds) {
+                              iconData = Icons.lock_outline;
+                            } else if (isNetwork) {
+                              iconData = Icons.wifi_off_outlined;
+                            }
+
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: boxBg,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: borderColor),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        iconData,
+                                        color: textColor,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          authState.errorMessage!,
+                                          style: GoogleFonts.cairo(
+                                            color: textColor,
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (isUnconfirmed || isExpired) ...[
+                                    const SizedBox(height: 8),
+                                    Divider(height: 1, color: borderColor),
+                                    const SizedBox(height: 6),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: TextButton.icon(
+                                        onPressed: _isResending
+                                            ? null
+                                            : _resendVerification,
+                                        icon: _isResending
+                                            ? const SizedBox(
+                                                width: 14,
+                                                height: 14,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                              )
+                                            : const Icon(
+                                                Icons.send_rounded,
+                                                size: 16,
+                                              ),
+                                        label: Text(
+                                          _isResending
+                                              ? 'جارٍ الإرسال...'
+                                              : 'إعادة إرسال رابط التفعيل الآن إلى البريد',
+                                          style: GoogleFonts.cairo(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primaryDark,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 16),
                       ],
@@ -320,7 +424,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () => context.push('/register'),
+                            onPressed: () {
+                              final redirectTo = GoRouterState.of(
+                                context,
+                              ).uri.queryParameters['redirectTo'];
+                              final reason = GoRouterState.of(
+                                context,
+                              ).uri.queryParameters['reason'];
+                              final uri = Uri(
+                                path: '/register',
+                                queryParameters: {
+                                  if (redirectTo != null)
+                                    'redirectTo': redirectTo,
+                                  if (reason != null) 'reason': reason,
+                                },
+                              );
+                              context.push(uri.toString());
+                            },
                             child: Text(
                               'إنشاء حساب جديد',
                               style: GoogleFonts.cairo(
@@ -331,6 +451,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                         ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _isResending ? null : _resendVerification,
+                          icon: const Icon(
+                            Icons.mark_email_unread_outlined,
+                            size: 16,
+                          ),
+                          label: Text(
+                            'لم يصلك رابط التفعيل؟ إعادة الإرسال إلى البريد',
+                            style: GoogleFonts.cairo(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
                       ),
 
                       const Divider(height: 28),
@@ -356,7 +495,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onPressed: _fillDemoAdmin,
                               child: Text(
                                 'المدير العام (إيميل فقط)',
-                                style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.bold),
+                                style: GoogleFonts.cairo(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),

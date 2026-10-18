@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../features/admin/presentation/admin_dashboard_screen.dart';
+import '../features/auth/presentation/auth_callback_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
@@ -113,6 +114,22 @@ final GoRouter appRouter = GoRouter(
       path: '/admin',
       name: 'admin',
       builder: (context, state) => const AdminDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/login-callback',
+      name: 'login-callback',
+      builder: (context, state) => AuthCallbackScreen(
+        queryParams: state.uri.queryParameters,
+        fragment: state.uri.fragment,
+      ),
+    ),
+    GoRoute(
+      path: '/auth-callback',
+      name: 'auth-callback',
+      builder: (context, state) => AuthCallbackScreen(
+        queryParams: state.uri.queryParameters,
+        fragment: state.uri.fragment,
+      ),
     ),
   ],
 );

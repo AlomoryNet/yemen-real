@@ -1,0 +1,32 @@
+[
+  {
+    "id": "fc1c34b0-156a-4abb-98e8-95e5c0bdf2c7",
+    "full_name": "عيبده مصلح ناجي السقاف",
+    "phone": "779986145",
+    "avatar_url": null,
+    "role": "user",
+    "is_verified": false,
+    "created_at": "2026-10-17T19:41:06.133335+00:00",
+    "updated_at": "2026-10-17T19:41:06.133335+00:00"
+  },
+  {
+    "id": "5356d901-f84f-4be0-80d4-60e19771ad08",
+    "full_name": "محمد علي محمد علي",
+    "phone": "777796853",
+    "avatar_url": null,
+    "role": "user",
+    "is_verified": false,
+    "created_at": "2026-10-17T23:34:07.513387+00:00",
+    "updated_at": "2026-10-17T23:34:07.513387+00:00"
+  },
+  {
+    "id": "daa0d684-f82b-4878-9d86-ce2810be9786",
+    "full_name": "محمد السقاف",
+    "phone": "772606709",
+    "avatar_url": null,
+    "role": "user",
+    "is_verified": false,
+    "created_at": "2026-10-18T01:27:02.188347+00:00",
+    "updated_at": "2026-10-18T01:27:02.188347+00:00"
+  }
+]

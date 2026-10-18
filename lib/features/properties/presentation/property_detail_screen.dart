@@ -17,6 +17,7 @@ import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/external_contact_buttons.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/status_badge.dart';
+import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../property_requests/presentation/rental_request_modal.dart';
 
 class PropertyDetailScreen extends ConsumerStatefulWidget {
@@ -400,7 +401,12 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   onPressed: () {
                     final auth = ref.read(authProvider);
                     if (!auth.isAuthenticated) {
-                      context.push('/login');
+                      AuthPromptDialog.show(
+                        context,
+                        message:
+                            'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+                        redirectTo: '/property/${property.id}',
+                      );
                       return;
                     }
                     favNotifier.toggleFavorite(property.id);
@@ -486,19 +492,12 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   onPressed: () {
                     final auth = ref.read(authProvider);
                     if (!auth.isAuthenticated) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'يرجى تسجيل الدخول أولاً لإرسال طلب الاستئجار',
-                            style: GoogleFonts.cairo(),
-                          ),
-                          action: SnackBarAction(
-                            label: 'دخول',
-                            onPressed: () => context.push('/login'),
-                          ),
-                        ),
+                      AuthPromptDialog.show(
+                        context,
+                        message:
+                            'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+                        redirectTo: '/property/${property.id}',
                       );
-                      context.push('/login');
                       return;
                     }
                     RentalRequestModal.show(context, property);

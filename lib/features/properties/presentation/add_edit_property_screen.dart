@@ -14,6 +14,7 @@ import '../../../providers/property_provider.dart';
 import '../../../services/storage_service.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 
 class AddEditPropertyScreen extends ConsumerStatefulWidget {
@@ -196,7 +197,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                 _buildReviewItem('هاتف المعلن', _phoneController.text.trim()),
                 _buildReviewItem(
                   'حالة النشر',
-                  isDraft ? 'مسودة خاصة' : 'نشر فوري للعامة',
+                  isDraft
+                      ? 'مسودة خاصة'
+                      : (ref.read(authProvider).isAdmin
+                            ? 'نشر فوري (حساب الإدارة)'
+                            : 'طلب نشر قيد المراجعة'),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -206,7 +211,9 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'وفق آلية "المراجعة الذاتية" (self_review)، سيظهر إعلانك مباشرة في نتائج البحث مع مراقبة ومراجعة الإدارة للتقارير والبلاغات.',
+                    ref.read(authProvider).isAdmin
+                        ? 'بصفتك المدير العام، سيتم نشر هذا العقار مباشرة في المنصة.'
+                        : 'وفق سياسة النشر المعتمدة، يتم إرسال إعلانك إلى الإدارة (المسؤول العام: محمد السقاف) للمراجعة والاعتماد قبل ظهوره للعامة.',
                     style: GoogleFonts.cairo(
                       fontSize: 12,
                       color: AppColors.primaryDark,
@@ -225,13 +232,22 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogCtx);
+              final isAdmin = ref.read(authProvider).isAdmin;
               _saveProperty(
                 status: isDraft
                     ? AppConstants.statusDraft
-                    : AppConstants.statusPublished,
+                    : (isAdmin
+                          ? AppConstants.statusPublished
+                          : AppConstants.statusPending),
               );
             },
-            child: Text(isDraft ? 'حفظ كمسودة' : 'تأكيد ونشر الإعلان'),
+            child: Text(
+              isDraft
+                  ? 'حفظ كمسودة'
+                  : (ref.read(authProvider).isAdmin
+                        ? 'تأكيد ونشر الإعلان'
+                        : 'إرسال طلب النشر'),
+            ),
           ),
         ],
       ),
@@ -381,7 +397,9 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
             content: Text(
               status == AppConstants.statusPublished
                   ? 'تم نشر الإعلان بنجاح في بوابة اليمن العقارية'
-                  : 'تم حفظ مسودة الإعلان بنجاح',
+                  : (status == AppConstants.statusPending
+                        ? 'تم إرسال طلب نشر الإعلان بنجاح، وهو قيد مراجعة الإدارة للموافقة والاعتماد'
+                        : 'تم حفظ مسودة الإعلان بنجاح'),
               style: GoogleFonts.cairo(),
             ),
             backgroundColor: AppColors.success,
@@ -415,11 +433,16 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         body: Center(
           child: EmptyStateView(
             icon: Icons.add_business_outlined,
-            title: 'يرجى تسجيل الدخول أولاً',
+            title: 'تسجيل الدخول مطلوب',
             description:
-                'يجب أن يكون لديك حساب مسجل في بوابة اليمن العقارية لإضافة إعلان عقاري جديد.',
-            actionText: 'تسجيل الدخول',
-            onAction: () => context.push('/login'),
+                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            onAction: () => AuthPromptDialog.show(
+              context,
+              message:
+                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              redirectTo: '/add-property',
+            ),
           ),
         ),
       );
@@ -772,8 +795,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       const SizedBox(height: 6),
                                       DropdownButtonFormField<String>(
                                         isExpanded: true,
-                                        value: AppConstants.yemeniGovernorates
-                                                .contains(_cityController.text.trim())
+                                        value:
+                                            AppConstants.yemeniGovernorates
+                                                .contains(
+                                                  _cityController.text.trim(),
+                                                )
                                             ? _cityController.text.trim()
                                             : 'صنعاء',
                                         items: AppConstants.yemeniGovernorates
@@ -818,7 +844,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                               'الحي أو المنطقة',
                                             ),
                                         decoration: const InputDecoration(
-                                          hintText: 'مثال: حدة، بيت بوس، المعلا...',
+                                          hintText:
+                                              'مثال: حدة، بيت بوس، المعلا...',
                                         ),
                                       ),
                                     ],
@@ -829,16 +856,21 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                             // Quick district chips for the selected governorate
                             Builder(
                               builder: (context) {
-                                final currentGov = _cityController.text.trim().isNotEmpty
+                                final currentGov =
+                                    _cityController.text.trim().isNotEmpty
                                     ? _cityController.text.trim()
                                     : 'صنعاء';
                                 final districts =
-                                    AppConstants.getDistrictsForGovernorate(currentGov);
-                                if (districts.isEmpty) return const SizedBox.shrink();
+                                    AppConstants.getDistrictsForGovernorate(
+                                      currentGov,
+                                    );
+                                if (districts.isEmpty)
+                                  return const SizedBox.shrink();
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 10),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'أحياء ومناطق شائعة في $currentGov (انقر للاختيار السريع):',
@@ -854,7 +886,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         runSpacing: 6,
                                         children: districts.take(8).map((d) {
                                           final isChosen =
-                                              _districtController.text.trim() == d;
+                                              _districtController.text.trim() ==
+                                              d;
                                           return ChoiceChip(
                                             label: Text(
                                               d,
@@ -869,8 +902,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                               ),
                                             ),
                                             selected: isChosen,
-                                            selectedColor: AppColors.primaryMuted,
-                                            backgroundColor: AppColors.surfaceVariant,
+                                            selectedColor:
+                                                AppColors.primaryMuted,
+                                            backgroundColor:
+                                                AppColors.surfaceVariant,
                                             onSelected: (_) {
                                               setState(() {
                                                 _districtController.text = d;
@@ -1117,30 +1152,35 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               ),
                               onPressed: () {
                                 final tempProp = Property(
-                                  id: widget.propertyToEdit?.id ??
+                                  id:
+                                      widget.propertyToEdit?.id ??
                                       'temp-${DateTime.now().millisecondsSinceEpoch}',
                                   ownerId:
                                       ref.read(authProvider).user?.id ??
                                       'owner',
-                                  title:
-                                      _titleController.text.trim().isNotEmpty
+                                  title: _titleController.text.trim().isNotEmpty
                                       ? _titleController.text.trim()
                                       : 'عقار معلن',
-                                  description: _descriptionController.text.trim(),
+                                  description: _descriptionController.text
+                                      .trim(),
                                   dealType: _dealType,
                                   propertyTypeId: _propertyTypeId,
                                   city: _cityController.text.trim().isNotEmpty
                                       ? _cityController.text.trim()
                                       : 'صنعاء',
                                   district: _districtController.text.trim(),
-                                  addressDetails: _addressController.text.trim(),
+                                  addressDetails: _addressController.text
+                                      .trim(),
                                   price:
-                                      double.tryParse(_priceController.text) ?? 0,
+                                      double.tryParse(_priceController.text) ??
+                                      0,
                                   currency: _currency,
                                   areaSqm:
-                                      double.tryParse(_areaController.text) ?? 100,
+                                      double.tryParse(_areaController.text) ??
+                                      100,
                                   contactPhone: _phoneController.text.trim(),
-                                  contactWhatsapp: _whatsappController.text.trim(),
+                                  contactWhatsapp: _whatsappController.text
+                                      .trim(),
                                   createdAt: DateTime.now(),
                                 );
                                 context.push('/contract', extra: tempProp);

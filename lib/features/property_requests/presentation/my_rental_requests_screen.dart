@@ -8,6 +8,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/rental_request_provider.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
@@ -25,12 +26,17 @@ class MyRentalRequestsScreen extends ConsumerWidget {
         appBar: const AppHeader(),
         body: Center(
           child: EmptyStateView(
-            icon: Icons.lock_outline,
-            title: 'يرجى تسجيل الدخول',
+            icon: Icons.assignment_outlined,
+            title: 'تسجيل الدخول مطلوب',
             description:
-                'سجّل الدخول إلى حسابك لتتمكن من استعراض ومتابعة طلبات الاستئجار الخاصة بك',
-            actionText: 'تسجيل الدخول',
-            onAction: () => context.push('/login'),
+                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            onAction: () => AuthPromptDialog.show(
+              context,
+              message:
+                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              redirectTo: '/my-requests',
+            ),
           ),
         ),
       );

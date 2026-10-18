@@ -45,5 +45,19 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>yemenreal</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>yemenreal</string>
+				<string>io.supabase.yemenreal</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

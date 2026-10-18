@@ -39,7 +39,8 @@ class PropertyContract {
   // البنود والشروط المحددة من المؤجر
   final bool isRenewableOnlyByOwner; // غير قابلة للتجديد إلا برغبة الطرف الأول
   final bool forbidSubleasing; // منع التقبيل أو التأجير من الباطن نهائياً
-  final String utilitiesPayableBy; // فواتير الكهرباء والماء والنظافة (المستأجر / المؤجر)
+  final String
+  utilitiesPayableBy; // فواتير الكهرباء والماء والنظافة (المستأجر / المؤجر)
   final String maintenanceLiability; // التزامات الصيانة والمحافظة على العين
   final String latePaymentPolicy; // مهلة التأخير (أسبوعين قبل إلغاء العقد)
   final List<String> customClauses; // شروط إضافية مخصصة يحددها المؤجر
@@ -74,8 +75,10 @@ class PropertyContract {
     this.isRenewableOnlyByOwner = true,
     this.forbidSubleasing = true,
     this.utilitiesPayableBy = 'المستأجر بالكامل (كهرباء، ماء، خدمات نظافة)',
-    this.maintenanceLiability = 'استلم المستأجر العين بحالة ممتازة وتعهد بتسليمها سليمة',
-    this.latePaymentPolicy = 'مهلة أسبوعين كحد أقصى وإلا يعتبر العقد مفسوخاً تلقائياً',
+    this.maintenanceLiability =
+        'استلم المستأجر العين بحالة ممتازة وتعهد بتسليمها سليمة',
+    this.latePaymentPolicy =
+        'مهلة أسبوعين كحد أقصى وإلا يعتبر العقد مفسوخاً تلقائياً',
     this.customClauses = const [],
     this.isSavedAsDefaultTemplate = false,
     required this.createdAt,
@@ -109,7 +112,9 @@ class PropertyContract {
       paymentFrequency: isRent ? 'شهرياً مقدماً' : 'دفعة كاملة عند التوثيق',
       durationText: isRent ? 'سنة واحدة' : 'تمليك نهائي',
       startDate: '${now.year}/${now.month}/${now.day}',
-      endDate: isRent ? '${nextYear.year}/${nextYear.month}/${nextYear.day}' : 'دائم',
+      endDate: isRent
+          ? '${nextYear.year}/${nextYear.month}/${nextYear.day}'
+          : 'دائم',
       securityDeposit: isRent ? price : 0.0,
       customClauses: isRent
           ? [
@@ -174,7 +179,8 @@ class PropertyContract {
       tenantAddress: tenantAddress ?? this.tenantAddress,
       propertyCity: propertyCity ?? this.propertyCity,
       propertyDistrict: propertyDistrict ?? this.propertyDistrict,
-      propertyAddressDetails: propertyAddressDetails ?? this.propertyAddressDetails,
+      propertyAddressDetails:
+          propertyAddressDetails ?? this.propertyAddressDetails,
       propertyDescription: propertyDescription ?? this.propertyDescription,
       amount: amount ?? this.amount,
       currency: currency ?? this.currency,
@@ -183,13 +189,15 @@ class PropertyContract {
       durationText: durationText ?? this.durationText,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
-      isRenewableOnlyByOwner: isRenewableOnlyByOwner ?? this.isRenewableOnlyByOwner,
+      isRenewableOnlyByOwner:
+          isRenewableOnlyByOwner ?? this.isRenewableOnlyByOwner,
       forbidSubleasing: forbidSubleasing ?? this.forbidSubleasing,
       utilitiesPayableBy: utilitiesPayableBy ?? this.utilitiesPayableBy,
       maintenanceLiability: maintenanceLiability ?? this.maintenanceLiability,
       latePaymentPolicy: latePaymentPolicy ?? this.latePaymentPolicy,
       customClauses: customClauses ?? this.customClauses,
-      isSavedAsDefaultTemplate: isSavedAsDefaultTemplate ?? this.isSavedAsDefaultTemplate,
+      isSavedAsDefaultTemplate:
+          isSavedAsDefaultTemplate ?? this.isSavedAsDefaultTemplate,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -255,16 +263,19 @@ class PropertyContract {
       durationText: json['duration_text'] as String? ?? 'سنة كاملة',
       startDate: json['start_date'] as String? ?? '',
       endDate: json['end_date'] as String? ?? '',
-      isRenewableOnlyByOwner: json['is_renewable_only_by_owner'] as bool? ?? true,
+      isRenewableOnlyByOwner:
+          json['is_renewable_only_by_owner'] as bool? ?? true,
       forbidSubleasing: json['forbid_subleasing'] as bool? ?? true,
       utilitiesPayableBy: json['utilities_payable_by'] as String? ?? '',
       maintenanceLiability: json['maintenance_liability'] as String? ?? '',
       latePaymentPolicy: json['late_payment_policy'] as String? ?? '',
-      customClauses: (json['custom_clauses'] as List<dynamic>?)
+      customClauses:
+          (json['custom_clauses'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
-      isSavedAsDefaultTemplate: json['is_saved_as_default_template'] as bool? ?? false,
+      isSavedAsDefaultTemplate:
+          json['is_saved_as_default_template'] as bool? ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
