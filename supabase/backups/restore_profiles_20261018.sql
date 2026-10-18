@@ -3,6 +3,23 @@
 -- Target: Yemen Real Estate Portal (بوابة اليمن العقارية)
 -- ==============================================================================
 
+BEGIN;
+
+-- Ensure auth users exist before profile restore to satisfy foreign key constraint
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'auth' AND table_name = 'users'
+    ) THEN
+        INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at)
+        VALUES 
+            ('fc1c34b0-156a-4abb-98e8-95e5c0bdf2c7', 'user_fc1c@backup.local', '{"full_name": "عيبده مصلح ناجي السقاف"}'::jsonb, '2026-10-17T19:41:06.133335+00:00'::timestamptz, '2026-10-17T19:41:06.133335+00:00'::timestamptz),
+            ('5356d901-f84f-4be0-80d4-60e19771ad08', 'user_5356@backup.local', '{"full_name": "محمد علي محمد علي"}'::jsonb, '2026-10-17T23:34:07.513387+00:00'::timestamptz, '2026-10-17T23:34:07.513387+00:00'::timestamptz)
+        ON CONFLICT (id) DO NOTHING;
+    END IF;
+END $$;
+
 INSERT INTO public.profiles (id, full_name, phone, avatar_url, role, is_verified, created_at, updated_at)
 VALUES 
     ('fc1c34b0-156a-4abb-98e8-95e5c0bdf2c7', 'عيبده مصلح ناجي السقاف', '779986145', NULL, 'user', FALSE, '2026-10-17T19:41:06.133335+00:00'::timestamptz, '2026-10-17T19:41:06.133335+00:00'::timestamptz),
@@ -15,3 +32,5 @@ ON CONFLICT (id) DO UPDATE SET
     role = EXCLUDED.role,
     is_verified = EXCLUDED.is_verified,
     updated_at = EXCLUDED.updated_at;
+
+COMMIT;

@@ -8,6 +8,9 @@
 
 BEGIN;
 
+-- 1. Ensure profiles table has email column before block execution
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+
 DO $$
 DECLARE
     v_admin_id CONSTANT UUID := 'daa0d684-f82b-4878-9d86-ce2810be9786'::UUID;
@@ -52,9 +55,6 @@ BEGIN
     )
     SELECT COUNT(*) INTO v_deleted_profiles FROM deleted_p;
     RAISE NOTICE 'Deleted % non-admin profiles from public.profiles.', v_deleted_profiles;
-
-    -- 4. Ensure profiles table has email column
-    ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
 
     -- 5. Promote Sole Administrator profile to super_admin and verified
     UPDATE public.profiles
