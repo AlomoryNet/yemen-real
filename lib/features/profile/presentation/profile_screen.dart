@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
@@ -77,6 +78,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (!authState.isAuthenticated) {
       return Scaffold(
         appBar: const AppHeader(),
+        bottomNavigationBar: const AppBottomNavBar(currentRoute: '/profile'),
         body: Center(
           child: EmptyStateView(
             icon: Icons.person_off_outlined,
@@ -99,6 +101,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       appBar: const AppHeader(),
+      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/profile'),
       body: SingleChildScrollView(
         child: Column(
           children: [

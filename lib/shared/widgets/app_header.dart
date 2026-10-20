@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
+import 'app_drawer.dart';
 import 'app_logo.dart';
 import 'auth_prompt_dialog.dart';
 
@@ -34,18 +35,83 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
           ),
           child: Row(
             children: [
+              // Drawer menu button on mobile
+              if (!isDesktop)
+                Builder(
+                  builder: (scaffoldContext) => IconButton(
+                    icon: const Icon(
+                      Icons.menu_rounded,
+                      color: AppColors.primary,
+                      size: 26,
+                    ),
+                    tooltip: 'القائمة الجانبية',
+                    onPressed: () {
+                      final scaffoldState = Scaffold.maybeOf(scaffoldContext);
+                      if (scaffoldState != null && scaffoldState.hasDrawer) {
+                        scaffoldState.openDrawer();
+                      } else {
+                        showModalBottomSheet(
+                          context: scaffoldContext,
+                          isScrollControlled: true,
+                          builder: (ctx) => const AppDrawer(),
+                        );
+                      }
+                    },
+                  ),
+                ),
+
               // Logo
               InkWell(
                 onTap: () => context.go('/'),
                 borderRadius: BorderRadius.circular(8),
-                child: AppLogo(size: isMobile ? 32 : 38, showText: !isMobile),
+                child: AppLogo(size: isMobile ? 30 : 38, showText: !isMobile),
               ),
 
               const Spacer(),
 
+              // Quick Map Button on Mobile
+              if (isMobile)
+                InkWell(
+                  onTap: () => context.push('/map'),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F766E).withAlpha(20),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF0D9488)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.map_rounded,
+                          color: Color(0xFF0D9488),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'الخريطة',
+                          style: GoogleFonts.cairo(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF0D9488),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
               // Desktop Navigation Links
               if (isDesktop) ...[
                 _buildNavLink(context, 'الرئيسية', '/'),
+                _buildNavLink(
+                  context,
+                  'الخريطة العقارية',
+                  '/map',
+                  isHighlight: true,
+                ),
                 _buildNavLink(context, 'بحث العقارات', '/search'),
                 _buildNavLink(context, 'المفضلة', '/favorites'),
                 if (authState.isAuthenticated) ...[

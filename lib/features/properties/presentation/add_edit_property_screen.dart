@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
@@ -41,6 +43,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
   late final TextEditingController _whatsappController;
   late final TextEditingController _bedroomsController;
   late final TextEditingController _bathroomsController;
+
+  double? _selectedLatitude;
+  double? _selectedLongitude;
+  late final MapController _mapController;
 
   String _dealType = AppConstants.dealSale;
   String _propertyTypeId = 'apartment';
@@ -87,11 +93,15 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
       _currency = p.currency;
       _hasOwnershipPledge = p.hasOwnershipPledge;
       _imageUrls.addAll(p.images.map((img) => img.imageUrl));
+      _selectedLatitude = p.latitude;
+      _selectedLongitude = p.longitude;
     }
+    _mapController = MapController();
   }
 
   @override
   void dispose() {
+    _mapController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
     _priceController.dispose();
@@ -329,6 +339,12 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
       if (widget.propertyToEdit == null) {
         // Create new
+        final defaultCoords = AppConstants.getCoordinatesForGovernorate(
+          _cityController.text.trim(),
+        );
+        final finalLat = _selectedLatitude ?? defaultCoords.$1;
+        final finalLng = _selectedLongitude ?? defaultCoords.$2;
+
         final newProp = Property(
           id: '',
           ownerId: authUser.id,
@@ -341,6 +357,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           addressDetails: _addressController.text.trim().isNotEmpty
               ? _addressController.text.trim()
               : null,
+          latitude: finalLat,
+          longitude: finalLng,
           price: double.parse(_priceController.text.trim()),
           currency: _currency,
           areaSqm: double.parse(_areaController.text.trim()),
@@ -359,6 +377,9 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         await repo.createProperty(property: newProp, imageUrls: uploadedUrls);
       } else {
         // Update existing
+        final defaultCoords = AppConstants.getCoordinatesForGovernorate(
+          _cityController.text.trim(),
+        );
         final updated = widget.propertyToEdit!.copyWith(
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim(),
@@ -369,6 +390,12 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           addressDetails: _addressController.text.trim().isNotEmpty
               ? _addressController.text.trim()
               : null,
+          latitude: _selectedLatitude ??
+              widget.propertyToEdit!.latitude ??
+              defaultCoords.$1,
+          longitude: _selectedLongitude ??
+              widget.propertyToEdit!.longitude ??
+              defaultCoords.$2,
           price: double.parse(_priceController.text.trim()),
           currency: _currency,
           areaSqm: double.parse(_areaController.text.trim()),
@@ -814,7 +841,20 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                           if (val != null) {
                                             setState(() {
                                               _cityController.text = val;
+                                              final coords =
+                                                  AppConstants.getCoordinatesForGovernorate(
+                                                    val,
+                                                  );
+                                              _selectedLatitude = coords.$1;
+                                              _selectedLongitude = coords.$2;
                                             });
+                                            _mapController.move(
+                                              LatLng(
+                                                _selectedLatitude!,
+                                                _selectedLongitude!,
+                                              ),
+                                              12.5,
+                                            );
                                           }
                                         },
                                       ),
@@ -894,11 +934,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                               style: GoogleFonts.cairo(
                                                 fontSize: 11,
                                                 fontWeight: isChosen
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
                                                 color: isChosen
-                                                    ? AppColors.primaryDark
-                                                    : AppColors.textPrimary,
+                                                  ? AppColors.primaryDark
+                                                  : AppColors.textPrimary,
                                               ),
                                             ),
                                             selected: isChosen,
@@ -933,6 +973,132 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               decoration: const InputDecoration(
                                 hintText:
                                     'مثال: بالقرب من جولة الرويشان - شارع 14',
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            // Interactive Location Map Picker
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.pin_drop_rounded,
+                                  color: Color(0xFF0F766E),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'تحديد الموقع الدقيق على الخريطة (انقر على الخريطة لتثبيت المكان):',
+                                  style: GoogleFonts.cairo(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              height: 220,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.divider),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                children: [
+                                  FlutterMap(
+                                    mapController: _mapController,
+                                    options: MapOptions(
+                                      initialCenter: LatLng(
+                                        _selectedLatitude ??
+                                            AppConstants.getCoordinatesForGovernorate(
+                                              _cityController.text.trim(),
+                                            ).$1,
+                                        _selectedLongitude ??
+                                            AppConstants.getCoordinatesForGovernorate(
+                                              _cityController.text.trim(),
+                                            ).$2,
+                                      ),
+                                      initialZoom: 12.5,
+                                      onTap: (tapPosition, point) {
+                                        setState(() {
+                                          _selectedLatitude = point.latitude;
+                                          _selectedLongitude = point.longitude;
+                                        });
+                                      },
+                                    ),
+                                    children: [
+                                      TileLayer(
+                                        urlTemplate:
+                                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                        userAgentPackageName:
+                                            'com.yemenreal.portal',
+                                        maxZoom: 19,
+                                      ),
+                                      if (_selectedLatitude != null &&
+                                          _selectedLongitude != null)
+                                        MarkerLayer(
+                                          markers: [
+                                            Marker(
+                                              point: LatLng(
+                                                _selectedLatitude!,
+                                                _selectedLongitude!,
+                                              ),
+                                              width: 44,
+                                              height: 44,
+                                              child: const Icon(
+                                                Icons.location_on,
+                                                color: Colors.red,
+                                                size: 44,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 8,
+                                    right: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withAlpha(235),
+                                        borderRadius: BorderRadius.circular(8),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withAlpha(30),
+                                            blurRadius: 4,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.touch_app,
+                                            size: 16,
+                                            color: Color(0xFF0F766E),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              _selectedLatitude != null
+                                                  ? 'تم تثبيت الموقع: ${_selectedLatitude!.toStringAsFixed(4)}, ${_selectedLongitude!.toStringAsFixed(4)}'
+                                                  : 'انقر على أي نقطة في الخريطة لتثبيت موقع العقار بدقة',
+                                              style: GoogleFonts.cairo(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF0F766E),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],

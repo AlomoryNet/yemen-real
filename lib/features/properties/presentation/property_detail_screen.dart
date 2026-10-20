@@ -1,8 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart' hide Path;
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/responsive.dart';
@@ -11,6 +15,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../repositories/report_repository.dart';
+import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/error_view.dart';
@@ -148,6 +153,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
 
     return Scaffold(
       appBar: const AppHeader(),
+      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/property'),
       body: propertyAsync.when(
         data: (property) => _buildDetailContent(context, property),
         loading: () =>
@@ -534,6 +540,30 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               ),
             ),
 
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F766E),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(Icons.map_rounded, size: 20),
+                label: Text(
+                  'عرض موقع العقار على الخريطة',
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onPressed: () => context.push('/map'),
+              ),
+            ),
+
             const SizedBox(height: 16),
 
             // Secondary Actions (Share & Report)
@@ -685,6 +715,220 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             fontSize: 14,
             height: 1.8,
             color: AppColors.textSecondary,
+          ),
+        ),
+
+        // Embedded Interactive Map Section
+        _buildLocationMapSection(context, property),
+      ],
+    );
+  }
+
+  Widget _buildLocationMapSection(BuildContext context, Property property) {
+    final coords = (property.latitude != null && property.longitude != null)
+        ? (property.latitude!, property.longitude!)
+        : AppConstants.getCoordinatesForGovernorate(property.city);
+
+    final latLng = LatLng(coords.$1, coords.$2);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 32),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F766E).withAlpha(25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.map_rounded,
+                color: Color(0xFF0F766E),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'موقع العقار على الخريطة',
+              style: GoogleFonts.cairo(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${property.city} — ${property.district} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
+          style: GoogleFonts.cairo(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          height: 300,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(20),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              FlutterMap(
+                options: MapOptions(
+                  initialCenter: latLng,
+                  initialZoom: 14.5,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all,
+                  ),
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.yemenreal.portal',
+                    maxZoom: 19,
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: latLng,
+                        width: 140,
+                        height: 52,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F766E),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(60),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  Formatters.formatCurrency(
+                                    property.price,
+                                    property.currency,
+                                  ),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // Floating Buttons on Map
+              Positioned(
+                bottom: 12,
+                left: 12,
+                right: 12,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F766E),
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: const Icon(Icons.map_rounded, size: 16),
+                      label: Text(
+                        'فتح الخريطة التفاعلية الشاملة',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: () => context.push('/map'),
+                    ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.textPrimary,
+                        elevation: 4,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.directions_outlined,
+                        color: Color(0xFF0F766E),
+                        size: 16,
+                      ),
+                      label: Text(
+                        'الاتجاهات (خرائط جوجل)',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: () async {
+                        final gmapsUri = Uri.parse(
+                          'https://www.google.com/maps/search/?api=1&query=${coords.$1},${coords.$2}',
+                        );
+                        if (await canLaunchUrl(gmapsUri)) {
+                          await launchUrl(
+                            gmapsUri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ],

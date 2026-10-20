@@ -25,6 +25,7 @@ import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/status_badge.dart';
+import '../../../models/property.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -158,7 +159,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
+
+                      // Dedicated Section: Properties Awaiting Approval
+                      _buildPendingPropertiesSection(context),
+
+                      const SizedBox(height: 28),
 
                       // Tabs for Admin Sections & Print PDF Button
                       Wrap(
@@ -291,16 +297,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               AppColors.success,
             ),
             _buildStatCard(
-              'طلبات استئجار جديدة',
-              '${stats.pendingRentalRequests}',
-              Icons.assignment_outlined,
-              AppColors.info,
-            ),
-            _buildStatCard(
-              'بلاغات قيد الفحص',
-              '${stats.openReports}',
-              Icons.flag_outlined,
-              AppColors.error,
+              'معلقة للمراجعة',
+              '${stats.pendingProperties}',
+              Icons.rate_review_outlined,
+              Colors.amber.shade800,
             ),
             _buildStatCard(
               'إجمالي المستخدمين',
@@ -343,7 +343,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               ),
               child: Icon(icon, color: color, size: 24),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -374,6 +374,600 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       ),
     );
   }
+
+  // ===========================================================================
+  // Dedicated Section: Properties Awaiting Approval
+  // ===========================================================================
+  Widget _buildPendingPropertiesSection(BuildContext context) {
+    final pendingAsync = ref.watch(pendingPropertiesProvider);
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.amber.shade300, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.rate_review_rounded,
+                    color: Colors.amber.shade900,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'طلبات العقارات بانتظار الموافقة',
+                            style: GoogleFonts.cairo(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          pendingAsync.maybeWhen(
+                            data: (list) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: list.isNotEmpty
+                                    ? Colors.amber.shade800
+                                    : AppColors.success,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                list.isNotEmpty
+                                    ? '${list.length} بانتظار المراجعة'
+                                    : 'مكتمل ومراجع',
+                                style: GoogleFonts.cairo(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            orElse: () => const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'مراجعة العقارات المضافة من قبل المستخدمين واعتماد نشرها للعامة على الخريطة وقائمة البحث.',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'تحديث قائمة الطلبات',
+                  icon: const Icon(Icons.refresh, color: AppColors.primary),
+                  onPressed: () {
+                    ref.refresh(pendingPropertiesProvider);
+                    ref.refresh(adminStatsProvider);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+
+            // Section Body
+            pendingAsync.when(
+              data: (pendingList) {
+                if (pendingList.isEmpty) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 24,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceVariant.withAlpha(120),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline,
+                          color: AppColors.success,
+                          size: 26,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'لا توجد عقارات بانتظار الموافقة حالياً — كافة طلبات النشر تم مراجعتها واعتمادها.',
+                          style: GoogleFonts.cairo(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: pendingList.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    final p = pendingList[index];
+                    return _buildPendingPropertyCard(context, p);
+                  },
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: LoadingView(
+                    message: 'جاري جلب طلبات النشر المعلقة...',
+                  ),
+                ),
+              ),
+              error: (err, _) => ErrorView(
+                message: err.toString(),
+                onRetry: () => ref.refresh(pendingPropertiesProvider),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPendingPropertyCard(BuildContext context, Property p) {
+    final isRent = p.dealType == AppConstants.dealRent;
+    final primaryImg = p.primaryImageUrl ??
+        'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.amber.shade200, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Image Thumbnail + Main Info
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 90,
+                  height: 90,
+                  child: Image.network(
+                    primaryImg,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: AppColors.surfaceVariant,
+                      child: const Icon(
+                        Icons.apartment,
+                        size: 32,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isRent
+                                ? const Color(0xFF0D9488)
+                                : AppColors.primary,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isRent ? 'للإيجار' : 'للبيع',
+                            style: GoogleFonts.cairo(
+                              color: Colors.white,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceVariant,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            p.propertyType?.nameAr ?? p.propertyTypeId,
+                            style: GoogleFonts.cairo(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          Formatters.formatCurrency(p.price, p.currency),
+                          style: GoogleFonts.cairo(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      p.title,
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 15,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${p.city} - ${p.district}',
+                          style: GoogleFonts.cairo(
+                            fontSize: 12.5,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(
+                          Icons.square_foot,
+                          size: 15,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${p.areaSqm} م²',
+                          style: GoogleFonts.cairo(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        if (p.bedrooms > 0) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '• ${p.bedrooms} غرف',
+                            style: GoogleFonts.cairo(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Owner & Submission Info Panel
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant.withAlpha(100),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.person,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'صاحب الإعلان: ${p.owner?.fullName ?? 'مستخدم المنصة'}',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.phone,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        p.contactPhone.isNotEmpty
+                            ? p.contactPhone
+                            : (p.owner?.phone ?? '-'),
+                        style: GoogleFonts.cairo(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 15,
+                        color: AppColors.textMuted,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        Formatters.formatDate(p.createdAt),
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Action Buttons: Approve & Publish vs Reject vs View Details
+          Row(
+            children: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: const Icon(Icons.check_circle, size: 18),
+                label: Text(
+                  'موافقة ونشر الإعلان',
+                  style: GoogleFonts.cairo(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                  ),
+                ),
+                onPressed: () => _handleApproveProperty(p),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFDC2626),
+                  side: const BorderSide(color: Color(0xFFDC2626)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: const Icon(Icons.cancel_outlined, size: 18),
+                label: Text(
+                  'رفض الطلب',
+                  style: GoogleFonts.cairo(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                  ),
+                ),
+                onPressed: () => _handleRejectPropertyDialog(p),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                icon: const Icon(Icons.visibility_outlined, size: 18),
+                label: Text(
+                  'عرض التفاصيل الكاملة',
+                  style: GoogleFonts.cairo(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                  ),
+                ),
+                onPressed: () => context.push('/property/${p.id}'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleApproveProperty(Property prop) async {
+    try {
+      final repo = ref.read(propertyRepositoryProvider);
+      await repo.approvePropertyPublishing(prop.id);
+      ref.refresh(pendingPropertiesProvider);
+      ref.refresh(adminStatsProvider);
+      ref.refresh(searchPropertiesProvider);
+      ref.refresh(allMapPropertiesProvider);
+      ref.refresh(propertiesForSaleProvider);
+      ref.refresh(propertiesForRentProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'تمت الموافقة على نشر عقار "${prop.title}" بنجاح، وأصبح ظاهراً للعامة في البحث والخريطة.',
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: const Color(0xFF059669),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'فشل اعتماد نشر العقار: ${e.toString()}',
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleRejectPropertyDialog(Property prop) async {
+    final reasonController = TextEditingController(
+      text: 'المعلومات غير مكتملة أو غير مطابقة لسياسة النشر في المنصة.',
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.cancel, color: Color(0xFFDC2626)),
+            const SizedBox(width: 8),
+            Text(
+              'رفض طلب نشر العقار',
+              style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'يرجى كتابة سبب رفض الإعلان ليتم إبلاغ صاحب العقار به:',
+              style: GoogleFonts.cairo(fontSize: 13),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              style: GoogleFonts.cairo(fontSize: 13),
+              decoration: const InputDecoration(
+                hintText: 'اكتب سبب الرفض هنا...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('تأكيد الرفض'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final repo = ref.read(propertyRepositoryProvider);
+        await repo.rejectPropertyPublishing(
+          prop.id,
+          reasonController.text.trim(),
+        );
+        ref.refresh(pendingPropertiesProvider);
+        ref.refresh(adminStatsProvider);
+        ref.refresh(searchPropertiesProvider);
+        ref.refresh(allMapPropertiesProvider);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'تم تسجيل رفض الإعلان وحفظ السبب بنجاح.',
+                style: GoogleFonts.cairo(),
+              ),
+              backgroundColor: const Color(0xFFDC2626),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('فشل تسجيل الرفض: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
 
   // ===========================================================================
   // 1. Properties Management Tab
@@ -1170,7 +1764,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final bool isSuperAdmin =
         authUser?.role == AppConstants.roleSuperAdmin ||
         authUser?.email == 'mo772522233@gmail.com' ||
-        authUser?.email == 'mohammed.f.saqqaf@gmail.com' ||
         authUser?.id == 'admin-mohammed-saqqaf';
 
     if (!isSuperAdmin) {

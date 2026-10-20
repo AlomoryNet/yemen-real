@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/user_profile.dart';
 import '../repositories/auth_repository.dart';
@@ -140,6 +141,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     state = state.copyWith(isLoading: true);
     await _repository.signOut();
+    // Clear any saved login credentials so previous account data
+    // does not appear when a different user logs in afterwards
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('saved_login_email');
+      await prefs.setBool('remember_me', false);
+    } catch (_) {}
     state = AuthState(user: null, isLoading: false);
   }
 

@@ -154,7 +154,7 @@ class PropertyRepository {
     if (EnvConfig.isDemoMode || _client == null) {
       final prop = SupabaseService.demoProperties.firstWhere(
         (p) => p.id == id,
-        orElse: () => throw AppException('العقار المطلوب غير موجود'),
+        orElse: () => throw AppException('العقار غير موجود'),
       );
       return prop;
     }
@@ -243,6 +243,10 @@ class PropertyRepository {
     try {
       final propertyData = property.toJson();
       propertyData.remove('id'); // let PostgreSQL generate UUID
+      // Remove nested objects that don't belong in the properties table
+      propertyData.remove('property_images');
+      propertyData.remove('property_types');
+      propertyData.remove('profiles');
 
       final inserted = await _client
           .from('properties')
@@ -285,9 +289,35 @@ class PropertyRepository {
     }
 
     try {
+      // Build update payload — exclude id (PK), nested relations, and read-only audit fields
+      final payload = {
+        'owner_id': property.ownerId,
+        'title': property.title,
+        'description': property.description,
+        'deal_type': property.dealType,
+        'property_type_id': property.propertyTypeId,
+        'location_id': property.locationId,
+        'city': property.city,
+        'district': property.district,
+        'address_details': property.addressDetails,
+        'latitude': property.latitude,
+        'longitude': property.longitude,
+        'price': property.price,
+        'currency': property.currency,
+        'area_sqm': property.areaSqm,
+        'bedrooms': property.bedrooms,
+        'bathrooms': property.bathrooms,
+        'contact_phone': property.contactPhone,
+        'contact_whatsapp': property.contactWhatsapp,
+        'status': property.status,
+        'publishing_mode': property.publishingMode,
+        'is_featured': property.isFeatured,
+        'has_ownership_pledge': property.hasOwnershipPledge,
+      };
+
       await _client
           .from('properties')
-          .update(property.toJson())
+          .update(payload)
           .eq('id', property.id);
 
       return await getPropertyById(property.id);
@@ -296,7 +326,7 @@ class PropertyRepository {
     }
   }
 
-  /// Update status (published, hidden, archived)
+  /// Update status only (published, hidden, archived, pending, rejected)
   Future<void> updatePropertyStatus(String id, String newStatus) async {
     if (EnvConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoProperties.indexWhere((p) => p.id == id);
@@ -314,6 +344,34 @@ class PropertyRepository {
           .from('properties')
           .update({'status': newStatus})
           .eq('id', id);
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Get all properties awaiting admin approval (status = 'pending')
+  Future<List<Property>> getPendingProperties() async {
+    if (EnvConfig.isDemoMode || _client == null) {
+      return SupabaseService.demoProperties
+          .where((p) => p.status == AppConstants.statusPending)
+          .toList();
+    }
+
+    try {
+      final data = await _client
+          .from('properties')
+          .select('''
+            *,
+            property_images (*),
+            property_types (*),
+            profiles (*)
+          ''')
+          .eq('status', AppConstants.statusPending)
+          .order('created_at', ascending: false);
+
+      return (data as List)
+          .map((item) => Property.fromJson(item as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw AppException.fromSupabase(e);
     }

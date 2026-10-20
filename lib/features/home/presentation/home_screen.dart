@@ -9,6 +9,8 @@ import '../../../models/property.dart';
 import '../../../models/property_type.dart';
 import '../../../providers/location_provider.dart';
 import '../../../providers/property_provider.dart';
+import '../../../shared/widgets/app_bottom_nav_bar.dart';
+import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/empty_state_view.dart';
@@ -260,11 +262,118 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: const AppHeader(),
+      drawer: const AppDrawer(),
+      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/'),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'home_map_fab',
+        backgroundColor: const Color(0xFF0F766E),
+        foregroundColor: Colors.white,
+        elevation: 6,
+        icon: const Icon(Icons.map_rounded),
+        label: Text(
+          'الخريطة العقارية',
+          style: GoogleFonts.cairo(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+        onPressed: () => context.push('/map'),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Hero Search Section
             _buildHeroSection(typesAsync),
+
+            // Prominent Real Estate Map Callout Banner
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0F766E), Color(0xFF134E4A)],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F766E).withAlpha(60),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(35),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.map_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'الخريطة العقارية التفاعلية لليمن 🇾🇪',
+                              style: GoogleFonts.cairo(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'تصفح كافة عقارات اليمن على الخريطة مباشرة مع علامات الأسعار والفلاتر الدقيقة',
+                              style: GoogleFonts.cairo(
+                                color: Colors.white.withAlpha(225),
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0F766E),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 3,
+                        ),
+                        onPressed: () => context.push('/map'),
+                        icon: const Icon(Icons.explore_outlined, size: 18),
+                        label: Text(
+                          'تصفح الخريطة',
+                          style: GoogleFonts.cairo(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
             // Content Container
             Center(
@@ -599,7 +708,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
+                              horizontal: 18,
                               vertical: 16,
                             ),
                             shape: RoundedRectangleBorder(
@@ -609,10 +718,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           onPressed: _onSearchSubmit,
                           child: Row(
                             children: [
-                              const Icon(Icons.tune, size: 18),
-                              const SizedBox(width: 6),
+                              const Icon(Icons.search, size: 18),
+                              const SizedBox(width: 4),
                               Text(
                                 'بحث',
+                                style: GoogleFonts.cairo(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Direct Zillow-Style Map Button
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () => context.go('/map'),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.map_rounded, size: 18),
+                              const SizedBox(width: 4),
+                              Text(
+                                'الخريطة',
                                 style: GoogleFonts.cairo(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -688,7 +825,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              // Zillow-Style Yemen Map Banner
+              InkWell(
+                onTap: () => context.go('/map'),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  margin: const EdgeInsets.only(top: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(20),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withAlpha(50)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.map_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'استكشف عقارات اليمن على الخريطة التفاعلية 🇾🇪',
+                              style: GoogleFonts.cairo(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              'تصفح الأسعار والمواقع مباشرة في صنعاء، إب، تعز، وكافة المحافظات',
+                              style: GoogleFonts.cairo(
+                                color: AppColors.textLight.withAlpha(210),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
 
               // Property Type Filter Chips
               typesAsync.when(

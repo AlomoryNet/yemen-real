@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,6 +9,8 @@ import '../../../models/property.dart';
 import '../../../models/property_type.dart';
 import '../../../providers/location_provider.dart';
 import '../../../providers/property_provider.dart';
+import '../../../shared/widgets/app_bottom_nav_bar.dart';
+import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/empty_state_view.dart';
@@ -85,6 +88,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: const AppHeader(),
+      drawer: const AppDrawer(),
+      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/search'),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'search_map_toggle',
+        backgroundColor: const Color(0xFF0F766E),
+        foregroundColor: Colors.white,
+        elevation: 6,
+        icon: const Icon(Icons.map_rounded, size: 20),
+        label: Text(
+          'الخريطة العقارية',
+          style: GoogleFonts.cairo(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+        onPressed: () => context.push('/map'),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -125,8 +146,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
+                            horizontal: 16,
                             vertical: 15,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         icon: const Icon(Icons.search, size: 18),
@@ -135,6 +159,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                         ),
                         onPressed: _applyFilters,
+                      ),
+                      const SizedBox(width: 8),
+                      // Zillow-Style Map Button in Top Bar
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary, width: 1.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 15,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: const Icon(Icons.map_rounded, size: 18),
+                        label: Text(
+                          'الخريطة',
+                          style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () => context.go('/map'),
                       ),
                       if (!isDesktop) ...[
                         const SizedBox(width: 8),

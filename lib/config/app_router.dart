@@ -12,6 +12,7 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../features/properties/presentation/add_edit_property_screen.dart';
 import '../features/properties/presentation/property_detail_screen.dart';
 import '../features/property_requests/presentation/my_rental_requests_screen.dart';
+import '../features/map/presentation/yemen_map_screen.dart';
 import '../features/search/presentation/search_screen.dart';
 import '../features/contracts/presentation/contract_preview_screen.dart';
 import '../models/property.dart';
@@ -44,6 +45,11 @@ final GoRouter appRouter = GoRouter(
       path: '/search',
       name: 'search',
       builder: (context, state) => const SearchScreen(),
+    ),
+    GoRoute(
+      path: '/map',
+      name: 'map',
+      builder: (context, state) => const YemenMapScreen(),
     ),
     GoRoute(
       path: '/property/:id',

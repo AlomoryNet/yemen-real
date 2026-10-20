@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
@@ -19,13 +20,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _rememberMe = false;
   bool _isResending = false;
 
   @override
   void initState() {
     super.initState();
-    _emailController.text = 'mohammed.f.saqqaf@gmail.com';
-    _passwordController.text = '772522233';
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Purge any legacy email
+      final legacy = prefs.getString('saved_login_email');
+      if (legacy != null && legacy.contains('mohammed.f.saqqaf')) {
+        await prefs.remove('saved_login_email');
+      }
+      final remember = prefs.getBool('remember_me') ?? false;
+      final savedEmail = prefs.getString('saved_login_email');
+      if (remember && savedEmail != null && savedEmail.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _rememberMe = true;
+            _emailController.text = savedEmail;
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -77,6 +99,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         .signIn(_emailController.text.trim(), _passwordController.text);
 
     if (success && mounted) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (_rememberMe) {
+          await prefs.setBool('remember_me', true);
+          await prefs.setString(
+            'saved_login_email',
+            _emailController.text.trim(),
+          );
+        } else {
+          await prefs.setBool('remember_me', false);
+          await prefs.remove('saved_login_email');
+        }
+      } catch (_) {}
+
+      if (!mounted) return;
+
       final redirectTo = GoRouterState.of(
         context,
       ).uri.queryParameters['redirectTo'];
@@ -368,21 +406,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 8),
 
-                      // Forgot password
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: () => context.push('/forgot-password'),
-                          child: Text(
-                            'نسيت كلمة المرور؟',
+                      // Remember Me & Forgot Password Row
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            activeColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            onChanged: (val) =>
+                                setState(() => _rememberMe = val ?? false),
+                          ),
+                          Text(
+                            'تذكر البريد',
                             style: GoogleFonts.cairo(
                               fontSize: 12,
-                              color: AppColors.primary,
+                              color: AppColors.textSecondary,
                             ),
                           ),
-                        ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () => context.push('/forgot-password'),
+                            child: Text(
+                              'نسيت كلمة المرور؟',
+                              style: GoogleFonts.cairo(
+                                fontSize: 12,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       // Login Button
                       SizedBox(

@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/property_provider.dart';
+import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
@@ -25,6 +26,7 @@ class MyPropertiesScreen extends ConsumerWidget {
     if (!authState.isAuthenticated) {
       return Scaffold(
         appBar: const AppHeader(),
+        bottomNavigationBar: const AppBottomNavBar(currentRoute: '/my-properties'),
         body: Center(
           child: EmptyStateView(
             icon: Icons.apartment,
@@ -48,6 +50,7 @@ class MyPropertiesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: const AppHeader(),
+      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/my-properties'),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,

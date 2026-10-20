@@ -77,9 +77,7 @@ class AuthRepository {
 
     if (EnvConfig.isDemoMode || _client == null) {
       if (cleanEmail == 'mo772522233@gmail.com' ||
-          cleanEmail == 'mohammed.f.saqqaf@gmail.com' ||
-          cleanEmail.contains('admin') ||
-          cleanEmail.contains('saqqaf')) {
+          cleanEmail.contains('admin')) {
         SupabaseService.demoCurrentUser = UserProfile(
           id: 'admin-mohammed-saqqaf',
           fullName: 'م/محمد السقاف',
@@ -113,7 +111,7 @@ class AuthRepository {
             id: 'user-${DateTime.now().millisecondsSinceEpoch}',
             fullName: cleanEmail.split('@').first,
             email: cleanEmail,
-            phone: '+967771234567',
+            phone: '+967770000000',
             role: AppConstants.roleUser,
             isVerified: true,
             createdAt: DateTime.now(),
@@ -142,16 +140,19 @@ class AuthRepository {
       }
 
       final profile = await getCurrentUser();
-      return profile ??
-          UserProfile(
-            id: user.id,
-            fullName: user.userMetadata?['full_name'] as String? ?? 'مستخدم',
-            email: user.email ?? cleanEmail,
-            phone: user.userMetadata?['phone'] as String?,
-            role: AppConstants.roleUser,
-            isVerified: true,
-            createdAt: DateTime.now(),
-          );
+      if (profile != null) {
+        return profile;
+      }
+
+      return UserProfile(
+        id: user.id,
+        fullName: user.userMetadata?['full_name'] as String? ?? 'مستخدم',
+        email: user.email ?? cleanEmail,
+        phone: user.userMetadata?['phone'] as String?,
+        role: AppConstants.roleUser,
+        isVerified: true,
+        createdAt: DateTime.now(),
+      );
     } catch (e) {
       throw AppException.fromSupabase(e);
     }

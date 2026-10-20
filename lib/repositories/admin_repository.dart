@@ -12,6 +12,7 @@ import '../services/supabase_service.dart';
 class AdminDashboardStats {
   final int totalProperties;
   final int publishedProperties;
+  final int pendingProperties;
   final int totalUsers;
   final int pendingRentalRequests;
   final int openReports;
@@ -21,6 +22,7 @@ class AdminDashboardStats {
   AdminDashboardStats({
     required this.totalProperties,
     required this.publishedProperties,
+    this.pendingProperties = 0,
     required this.totalUsers,
     required this.pendingRentalRequests,
     required this.openReports,
@@ -39,6 +41,9 @@ class AdminRepository {
       final pubProps = SupabaseService.demoProperties
           .where((p) => p.status == AppConstants.statusPublished)
           .length;
+      final pendingProps = SupabaseService.demoProperties
+          .where((p) => p.status == AppConstants.statusPending)
+          .length;
       final pendingReqs = SupabaseService.demoRentalRequests
           .where((r) => r.status == AppConstants.reqStatusNew)
           .length;
@@ -54,6 +59,7 @@ class AdminRepository {
       return AdminDashboardStats(
         totalProperties: totalProps,
         publishedProperties: pubProps,
+        pendingProperties: pendingProps,
         totalUsers: 14,
         pendingRentalRequests: pendingReqs,
         openReports: openReps,
@@ -68,6 +74,10 @@ class AdminRepository {
           .from('properties')
           .count()
           .eq('status', AppConstants.statusPublished);
+      final pendingPropsCount = await _client
+          .from('properties')
+          .count()
+          .eq('status', AppConstants.statusPending);
       final usersCount = await _client.from('profiles').count();
       final reqsCount = await _client
           .from('rental_requests')
@@ -89,6 +99,7 @@ class AdminRepository {
       return AdminDashboardStats(
         totalProperties: propsCount,
         publishedProperties: pubPropsCount,
+        pendingProperties: pendingPropsCount,
         totalUsers: usersCount,
         pendingRentalRequests: reqsCount,
         openReports: repsCount,

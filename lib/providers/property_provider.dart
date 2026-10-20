@@ -136,6 +136,18 @@ final propertiesForRentProvider = FutureProvider<List<Property>>((ref) async {
   return await repo.getProperties(dealType: AppConstants.dealRent, limit: 10);
 });
 
+// Pending Properties Awaiting Admin Review Provider
+final pendingPropertiesProvider = FutureProvider<List<Property>>((ref) async {
+  final repo = ref.watch(propertyRepositoryProvider);
+  return await repo.getPendingProperties();
+});
+
+// All Properties for Yemen Map View
+final allMapPropertiesProvider = FutureProvider<List<Property>>((ref) async {
+  final repo = ref.watch(propertyRepositoryProvider);
+  return await repo.getProperties(limit: 1000);
+});
+
 // Filtered Search Results Provider
 final searchPropertiesProvider = FutureProvider<List<Property>>((ref) async {
   final repo = ref.watch(propertyRepositoryProvider);
