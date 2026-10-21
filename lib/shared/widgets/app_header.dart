@@ -72,12 +72,6 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
               // Desktop Navigation Links
               if (isDesktop) ...[
                 _buildNavLink(context, 'الرئيسية', '/'),
-                _buildNavLink(
-                  context,
-                  'الخريطة العقارية',
-                  '/map',
-                  isHighlight: true,
-                ),
                 _buildNavLink(context, 'بحث العقارات', '/search'),
                 _buildNavLink(context, 'المفضلة', '/favorites'),
                 if (authState.isAuthenticated) ...[
@@ -94,15 +88,24 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 const SizedBox(width: 16),
               ],
 
-              // Yemen Map Button (Directly next to Add button)
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Yemen Map Button (Directly next to Add button)
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0D6EFD),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
                     horizontal: isMobile ? 8 : 14,
-                    vertical: isMobile ? 8 : 10,
+                    vertical: isMobile ? 6 : 10,
                   ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -116,7 +119,12 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                     fontSize: isMobile ? 12 : 13,
                   ),
                 ),
-                onPressed: () => context.push('/map'),
+                onPressed: () {
+                  final currentUri = GoRouterState.of(context).uri.toString();
+                  if (currentUri != '/map') {
+                    context.push('/map');
+                  }
+                },
               ),
               const SizedBox(width: 6),
 
@@ -126,9 +134,11 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                   backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 10 : 16,
-                    vertical: isMobile ? 8 : 10,
+                    horizontal: isMobile ? 8 : 16,
+                    vertical: isMobile ? 6 : 10,
                   ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -155,45 +165,48 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 },
               ),
 
-              // Language Switcher Button (عربي / EN)
-              InkWell(
-                onTap: () {
-                  ref.read(localeProvider.notifier).toggleLocale();
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 8 : 10,
-                    vertical: isMobile ? 6 : 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.language,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        ref.watch(localeProvider).languageCode == 'ar'
-                            ? 'EN'
-                            : 'عربي',
-                        style: GoogleFonts.cairo(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+              // Language Switcher Button (Desktop & Tablet only; mobile switches in Drawer)
+              if (!isMobile) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: () {
+                    ref.read(localeProvider.notifier).toggleLocale();
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.language,
+                          size: 16,
                           color: AppColors.primary,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Text(
+                          ref.watch(localeProvider).languageCode == 'ar'
+                              ? 'EN'
+                              : 'عربي',
+                          style: GoogleFonts.cairo(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
 
               SizedBox(width: isMobile ? 6 : 10),
 
@@ -346,6 +359,10 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                   ),
                   onPressed: () => context.push('/login'),
                 ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

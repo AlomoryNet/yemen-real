@@ -465,10 +465,20 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   }
 
   (double, double) _getPropertyCoords(Property prop) {
-    if (prop.latitude != null && prop.longitude != null) {
+    if (prop.latitude != null &&
+        prop.longitude != null &&
+        prop.latitude != 0.0 &&
+        prop.longitude != 0.0) {
       return (prop.latitude!, prop.longitude!);
     }
-    return AppConstants.getCoordinatesForGovernorate(prop.city);
+    // Graceful fallback for properties without exact coordinates:
+    // Place them around the governorate center with deterministic micro-offsets
+    // based on property ID so pins do not overlap exactly and remain clickable.
+    final base = AppConstants.getCoordinatesForGovernorate(prop.city);
+    final hash = prop.id.hashCode.abs();
+    final latOffset = ((hash % 100) - 50) * 0.00035;
+    final lngOffset = (((hash ~/ 100) % 100) - 50) * 0.00035;
+    return (base.$1 + latOffset, base.$2 + lngOffset);
   }
 
   // Point in polygon ray-casting test for freehand drawing filter
@@ -2268,6 +2278,43 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+
+                    // Location accuracy indicator badge
+                    Builder(
+                      builder: (context) {
+                        final hasExactGps = prop.latitude != null &&
+                            prop.longitude != null &&
+                            prop.latitude != 0.0 &&
+                            prop.longitude != 0.0;
+                        return Row(
+                          children: [
+                            Icon(
+                              hasExactGps
+                                  ? Icons.location_on
+                                  : Icons.near_me_outlined,
+                              size: 13,
+                              color: hasExactGps
+                                  ? const Color(0xFF0F766E)
+                                  : Colors.orange.shade800,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              hasExactGps
+                                  ? 'موقع محدد بدقة على الخريطة'
+                                  : 'موقع تقديري بناءً على مركز ${prop.city}',
+                              style: GoogleFonts.cairo(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: hasExactGps
+                                    ? const Color(0xFF0F766E)
+                                    : Colors.orange.shade800,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 8),
 
