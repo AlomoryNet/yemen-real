@@ -99,18 +99,37 @@ class MyPropertiesScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                            ),
-                            icon: const Icon(Icons.add_home_outlined, size: 18),
-                            label: Text(
-                              'أضف عقاراً',
-                              style: GoogleFonts.cairo(
-                                fontWeight: FontWeight.bold,
+                          Row(
+                            children: [
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0D6EFD),
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.map_rounded, size: 18),
+                                label: Text(
+                                  'خريطة اليمن',
+                                  style: GoogleFonts.cairo(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                onPressed: () => context.push('/map'),
                               ),
-                            ),
-                            onPressed: () => context.push('/add-property'),
+                              const SizedBox(width: 8),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                ),
+                                icon: const Icon(Icons.add_home_outlined, size: 18),
+                                label: Text(
+                                  'أضف عقاراً',
+                                  style: GoogleFonts.cairo(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                onPressed: () => context.push('/add-property'),
+                              ),
+                            ],
                           ),
                         ],
                       ),

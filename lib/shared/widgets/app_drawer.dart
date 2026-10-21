@@ -167,6 +167,13 @@ class AppDrawer extends ConsumerWidget {
                     route: '/add-property',
                     color: AppColors.accent,
                   ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.map_rounded,
+                    title: 'خريطة اليمن العقارية',
+                    route: '/map',
+                    color: const Color(0xFF0D6EFD),
+                  ),
 
                   if (authState.isAuthenticated) ...[
                     const Divider(height: 16),

@@ -1162,9 +1162,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => context.push('/add-property'),
-              child: const Text('أضف إعلانك الآن'),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D6EFD),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.map_rounded, size: 18),
+                  label: Text(
+                    'خريطة اليمن',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () => context.push('/map'),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add_home_outlined, size: 18),
+                  label: Text(
+                    'أضف إعلانك الآن',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () => context.push('/add-property'),
+                ),
+              ],
             ),
           ],
         ),
@@ -1195,20 +1230,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             const SizedBox(width: 24),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 18,
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D6EFD),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 18,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.map_rounded),
+                  label: Text(
+                    'خريطة اليمن',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () => context.push('/map'),
                 ),
-              ),
-              icon: const Icon(Icons.add_home_outlined),
-              label: Text(
-                'أضف إعلانك الآن',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-              ),
-              onPressed: () => context.push('/add-property'),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 26,
+                      vertical: 18,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add_home_outlined),
+                  label: Text(
+                    'أضف إعلانك الآن',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () => context.push('/add-property'),
+                ),
+              ],
             ),
           ],
         ),

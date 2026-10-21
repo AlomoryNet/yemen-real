@@ -67,11 +67,16 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 child: AppLogo(size: isMobile ? 30 : 38, showText: !isMobile),
               ),
 
-              const Spacer(),
-
               // Desktop Navigation Links
               if (isDesktop) ...[
+                const SizedBox(width: 18),
                 _buildNavLink(context, 'الرئيسية', '/'),
+                _buildNavLink(
+                  context,
+                  'خريطة اليمن',
+                  '/map',
+                  isHighlight: true,
+                ),
                 _buildNavLink(context, 'بحث العقارات', '/search'),
                 _buildNavLink(context, 'المفضلة', '/favorites'),
                 if (authState.isAuthenticated) ...[
@@ -85,24 +90,22 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                     '/admin',
                     isHighlight: true,
                   ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 8),
               ],
 
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Yemen Map Button (Directly next to Add button)
+              // Clean Spacer that pushes actions to the left in RTL
+              const Spacer(),
+
+              // Action Buttons Row: Yemen Map Button & Add Property Button side-by-side
+              // 1. Yemen Map Button (Blue with Map Icon)
               ElevatedButton.icon(
+                key: const ValueKey('header_map_button'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D6EFD),
+                  backgroundColor: const Color(0xFF0D6EFD), // Zillow vibrant blue
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 8 : 14,
-                    vertical: isMobile ? 6 : 10,
+                    horizontal: isMobile ? 8 : 16,
+                    vertical: isMobile ? 6 : 11,
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -111,7 +114,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                   ),
                   elevation: 2,
                 ),
-                icon: const Icon(Icons.map_rounded, size: 18),
+                icon: const Icon(Icons.map_rounded, size: 17),
                 label: Text(
                   isMobile ? 'الخريطة' : 'خريطة اليمن',
                   style: GoogleFonts.cairo(
@@ -126,24 +129,26 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                   }
                 },
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: isMobile ? 6 : 8),
 
-              // Add Property Button
+              // 2. Add Property Button (Accent Orange with Home/Add Icon)
               ElevatedButton.icon(
+                key: const ValueKey('header_add_property_button'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
+                  backgroundColor: AppColors.accent, // Vibrant Orange
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
                     horizontal: isMobile ? 8 : 16,
-                    vertical: isMobile ? 6 : 10,
+                    vertical: isMobile ? 6 : 11,
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
+                  elevation: 2,
                 ),
-                icon: const Icon(Icons.add_home_outlined, size: 18),
+                icon: const Icon(Icons.add_home_outlined, size: 17),
                 label: Text(
                   isMobile ? 'إضافة' : 'أضف عقارك',
                   style: GoogleFonts.cairo(
@@ -339,30 +344,38 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                     }
                   },
                 )
+              else if (isMobile)
+                IconButton(
+                  tooltip: 'تسجيل الدخول',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  icon: const Icon(
+                    Icons.person_outline_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                  onPressed: () => context.push('/login'),
+                )
               else
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 10 : 16,
-                      vertical: isMobile ? 8 : 10,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: Text(
-                    isMobile ? 'دخول' : 'دخول / تسجيل',
+                    'دخول / تسجيل',
                     style: GoogleFonts.cairo(
-                      fontSize: isMobile ? 12 : 13,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   onPressed: () => context.push('/login'),
                 ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ),
