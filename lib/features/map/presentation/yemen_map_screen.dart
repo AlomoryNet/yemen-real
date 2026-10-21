@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +20,18 @@ import '../../../providers/property_provider.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../data/demo_properties_generator.dart';
+
+class GovernorateBoundary {
+  final String englishName;
+  final String arabicName;
+  final List<List<LatLng>> polygonRings;
+
+  const GovernorateBoundary({
+    required this.englishName,
+    required this.arabicName,
+    required this.polygonRings,
+  });
+}
 
 class YemenGovernorateCoord {
   final String name;
@@ -64,6 +78,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   // Freehand Map Drawing Mode (Zillow "يرسم" feature)
   bool _isDrawingMode = false;
   List<LatLng> _drawnPolygon = [];
+
+  // Official Yemen GeoJSON Boundaries (Loaded from downloaded asset)
+  List<GovernorateBoundary> _governorateBoundaries = [];
+  bool _isLoadingGeoJson = false;
 
   static const List<YemenGovernorateCoord> _governorates = [
     YemenGovernorateCoord(
@@ -203,12 +221,173 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   static const LatLng _yemenCenter = LatLng(15.3547, 44.2075);
   static const double _initialZoom = 7.5;
 
+  static const Map<String, String> _shapeNameToArabic = {
+    'Sanʿaʾ': 'أمانة العاصمة',
+    'Sanʿaʾ Governorate': 'صنعاء',
+    'Lahij Governorate': 'لحج',
+    '‘Adan Governorate': 'عدن',
+    'Al Hudaydah Governorate': 'الحديدة',
+    'Ta\'izz Governorate': 'تعز',
+    'Shabwah Governorate': 'شبوة',
+    'Hadhramaut': 'حضرموت',
+    'Abyan Governorate': 'أبين',
+    'Al Jawf Governorate': 'الجوف',
+    'Ibb Governorate': 'إب',
+    'Al Bayda\' Governorate': 'البيضاء',
+    'Ad Dali\' Governorate': 'الضالع',
+    'Al Mahwit Governorate': 'المحويت',
+    'Sa\'dah Governorate': 'صعدة',
+    'Hajjah Governorate': 'حجة',
+    'Dhamar Governorate': 'ذمار',
+    '\'Amran Governorate': 'عمران',
+    'Al Mahrah Governorate': 'المهرة',
+    'Ma\'rib Governorate': 'مأرب',
+    'Raymah Governorate': 'ريمة',
+    'Socotra': 'سقطرى',
+  };
+
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
     _lastSearchCenter = _yemenCenter;
     _currentZoom = _initialZoom;
+    _loadYemenGeoJsonBoundaries();
+  }
+
+  Future<void> _loadYemenGeoJsonBoundaries() async {
+    if (_isLoadingGeoJson || _governorateBoundaries.isNotEmpty) return;
+    _isLoadingGeoJson = true;
+    try {
+      final jsonStr = await rootBundle.loadString('assets/map/yemen_adm1_simplified.geojson');
+      final data = json.decode(jsonStr) as Map<String, dynamic>;
+      final features = data['features'] as List<dynamic>;
+      final List<GovernorateBoundary> loaded = [];
+
+      for (final f in features) {
+        final props = f['properties'] as Map<String, dynamic>;
+        final shapeName = props['shapeName']?.toString() ?? '';
+        final arabicName = _shapeNameToArabic[shapeName] ?? shapeName;
+        final geom = f['geometry'] as Map<String, dynamic>;
+        final type = geom['type']?.toString();
+        final coords = geom['coordinates'] as List<dynamic>;
+
+        final List<List<LatLng>> rings = [];
+        if (type == 'Polygon') {
+          for (final ring in coords) {
+            final points = (ring as List<dynamic>).map((pt) {
+              final lon = (pt[0] as num).toDouble();
+              final lat = (pt[1] as num).toDouble();
+              return LatLng(lat, lon);
+            }).toList();
+            if (points.isNotEmpty) rings.add(points);
+          }
+        } else if (type == 'MultiPolygon') {
+          for (final poly in coords) {
+            for (final ring in poly as List<dynamic>) {
+              final points = (ring as List<dynamic>).map((pt) {
+                final lon = (pt[0] as num).toDouble();
+                final lat = (pt[1] as num).toDouble();
+                return LatLng(lat, lon);
+              }).toList();
+              if (points.isNotEmpty) rings.add(points);
+            }
+          }
+        }
+
+        if (rings.isNotEmpty) {
+          loaded.add(GovernorateBoundary(
+            englishName: shapeName,
+            arabicName: arabicName,
+            polygonRings: rings,
+          ));
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _governorateBoundaries = loaded;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading Yemen GeoJSON: $e');
+    } finally {
+      _isLoadingGeoJson = false;
+    }
+  }
+
+  void _showOfflineMapDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F766E),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.map_rounded, color: Colors.white, size: 22),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'خريطة الجمهورية اليمنية المعتمدة (أوفلاين)',
+                        style: GoogleFonts.cairo(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.pinch_outlined, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(
+                      'يمكنك تكبير وتصغير الخريطة باللمس أو الماوس',
+                      style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey.shade700),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                  child: InteractiveViewer(
+                    minScale: 0.8,
+                    maxScale: 5.0,
+                    child: Image.asset(
+                      'assets/images/yemen_map_hd.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/images/yemen_map.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -751,6 +930,29 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         maxZoom: 19,
                       ),
 
+                      // Official Yemen Governorate Boundaries from downloaded GeoJSON
+                      if (_governorateBoundaries.isNotEmpty)
+                        PolygonLayer(
+                          polygons: _governorateBoundaries.expand((gov) {
+                            final isSelected = _selectedGovName != null &&
+                                (gov.arabicName == _selectedGovName ||
+                                    gov.arabicName.contains(_selectedGovName!) ||
+                                    _selectedGovName!.contains(gov.arabicName));
+                            return gov.polygonRings.map((ring) {
+                              return Polygon(
+                                points: ring,
+                                color: isSelected
+                                    ? const Color(0xFF0D6EFD).withAlpha(45)
+                                    : Colors.transparent,
+                                borderColor: isSelected
+                                    ? const Color(0xFF0D6EFD)
+                                    : const Color(0xFF4A5568).withAlpha(120),
+                                borderStrokeWidth: isSelected ? 2.8 : 1.2,
+                              );
+                            });
+                          }).toList(),
+                        ),
+
                       // Drawn Polygon Layer (Zillow Draw Area)
                       if (_drawnPolygon.isNotEmpty)
                         PolygonLayer(
@@ -1125,6 +1327,22 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       },
                     ),
 
+                    // Floating Yemen Official Map Button
+                    FloatingActionButton.small(
+                      heroTag: 'map_offline_atlas',
+                      backgroundColor: const Color(0xFF0F766E),
+                      foregroundColor: Colors.white,
+                      elevation: 4,
+                      tooltip: 'خريطة اليمن الرسمية المعتمدة (أوفلاين)',
+                      onPressed: _showOfflineMapDialog,
+                      child: const Icon(
+                        Icons.map_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
                     // Bottom-Right: Floating Layers / Satellite Toggle
                     FloatingActionButton.small(
                       heroTag: 'map_layers_toggle',
@@ -1491,6 +1709,30 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 });
               }
             },
+          ),
+          const SizedBox(width: 6),
+
+          // "خريطة اليمن 🇾🇪" (Offline Official Map) Button
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              backgroundColor: const Color(0xFF0F766E).withAlpha(20),
+              foregroundColor: const Color(0xFF0F766E),
+              elevation: 2,
+              side: const BorderSide(color: Color(0xFF0D9488), width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            ),
+            icon: const Icon(Icons.map_rounded, size: 14),
+            label: Text(
+              'خريطة اليمن 🇾🇪',
+              style: GoogleFonts.cairo(
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: _showOfflineMapDialog,
           ),
           const SizedBox(width: 6),
 

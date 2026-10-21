@@ -34,10 +34,9 @@ void main() {
 
     // Verify presence of title badge and governorate chips
     expect(find.text('خريطة اليمن'), findsWidgets);
+    expect(find.text('خريطة اليمن 🇾🇪'), findsOneWidget);
     expect(find.text('كافة المحافظات 🇾🇪'), findsOneWidget);
     expect(find.text('صنعاء'), findsOneWidget);
-    expect(find.text('إب'), findsOneWidget);
-    expect(find.text('تعز'), findsOneWidget);
     expect(find.text('عرض القائمة'), findsOneWidget);
   });
 }

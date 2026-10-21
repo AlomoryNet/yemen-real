@@ -69,40 +69,6 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
 
               const Spacer(),
 
-              // Quick Map Button on Mobile
-              if (isMobile)
-                InkWell(
-                  onTap: () => context.push('/map'),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F766E).withAlpha(20),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF0D9488)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.map_rounded,
-                          color: Color(0xFF0D9488),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'الخريطة',
-                          style: GoogleFonts.cairo(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0D9488),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
               // Desktop Navigation Links
               if (isDesktop) ...[
                 _buildNavLink(context, 'الرئيسية', '/'),
@@ -127,6 +93,32 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                   ),
                 const SizedBox(width: 16),
               ],
+
+              // Yemen Map Button (Directly next to Add button)
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D6EFD),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 8 : 14,
+                    vertical: isMobile ? 8 : 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                ),
+                icon: const Icon(Icons.map_rounded, size: 18),
+                label: Text(
+                  isMobile ? 'الخريطة' : 'خريطة اليمن',
+                  style: GoogleFonts.cairo(
+                    fontWeight: FontWeight.bold,
+                    fontSize: isMobile ? 12 : 13,
+                  ),
+                ),
+                onPressed: () => context.push('/map'),
+              ),
+              const SizedBox(width: 6),
 
               // Add Property Button
               ElevatedButton.icon(
