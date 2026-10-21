@@ -61,6 +61,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   int _activeCardImageIndex = 0;
   bool _isSatellite = false;
 
+  // Freehand Map Drawing Mode (Zillow "يرسم" feature)
+  bool _isDrawingMode = false;
+  List<LatLng> _drawnPolygon = [];
+
   static const List<YemenGovernorateCoord> _governorates = [
     YemenGovernorateCoord(
       name: 'أمانة العاصمة',
@@ -260,6 +264,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       _selectedGovName = gov?.name;
       _selectedProperty = null;
       _showSearchThisAreaBtn = false;
+      _drawnPolygon.clear();
+      _isDrawingMode = false;
       if (gov != null) {
         _searchController.text = gov.name;
       } else {
@@ -284,6 +290,25 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       return (prop.latitude!, prop.longitude!);
     }
     return AppConstants.getCoordinatesForGovernorate(prop.city);
+  }
+
+  // Point in polygon ray-casting test for freehand drawing filter
+  bool _isPointInPolygon(LatLng point, List<LatLng> polygon) {
+    if (polygon.length < 3) return true;
+    bool inside = false;
+    int j = polygon.length - 1;
+    for (int i = 0; i < polygon.length; i++) {
+      final xi = polygon[i].latitude;
+      final yi = polygon[i].longitude;
+      final xj = polygon[j].latitude;
+      final yj = polygon[j].longitude;
+
+      final intersect = ((yi > point.longitude) != (yj > point.longitude)) &&
+          (point.latitude < (xj - xi) * (point.longitude - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+      j = i;
+    }
+    return inside;
   }
 
   List<Property> _filterProperties(List<Property> all) {
@@ -326,6 +351,14 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
       // Filter bedrooms
       if (_minBedrooms != null && p.bedrooms < _minBedrooms!) return false;
+
+      // Filter by custom drawn polygon if active
+      if (_drawnPolygon.length > 2) {
+        final coords = _getPropertyCoords(p);
+        if (!_isPointInPolygon(LatLng(coords.$1, coords.$2), _drawnPolygon)) {
+          return false;
+        }
+      }
 
       return true;
     }).toList();
@@ -631,131 +664,181 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             children: [
               // 1. Full Screen Interactive Map or List View
               if (!_isListView)
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: _yemenCenter,
-                    initialZoom: _initialZoom,
-                    minZoom: 5.0,
-                    maxZoom: 18.0,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.all,
-                    ),
-                    onPositionChanged: (pos, hasGesture) {
-                      if (pos.zoom != _currentZoom) {
-                        setState(() {
-                          _currentZoom = pos.zoom;
-                        });
-                      }
-                      if (hasGesture) {
-                        _debounceTimer?.cancel();
-                        _debounceTimer =
-                            Timer(const Duration(milliseconds: 350), () {
-                          if (mounted) {
-                            final dist = _lastSearchCenter != null
-                                ? const Distance().as(
-                                    LengthUnit.Kilometer,
-                                    _lastSearchCenter!,
-                                    pos.center,
-                                  )
-                                : 0;
-                            if (dist > 3.0) {
-                              setState(() {
-                                _showSearchThisAreaBtn = true;
-                              });
-                            }
+                GestureDetector(
+                  // Handlers for freehand drawing feature (Zillow "يرسم")
+                  onPanStart: _isDrawingMode
+                      ? (details) {
+                          final latLng = _mapController.camera
+                              .offsetToCrs(details.localPosition);
+                          setState(() {
+                            _drawnPolygon = [latLng];
+                          });
+                        }
+                      : null,
+                  onPanUpdate: _isDrawingMode
+                      ? (details) {
+                          final latLng = _mapController.camera
+                              .offsetToCrs(details.localPosition);
+                          setState(() {
+                            _drawnPolygon.add(latLng);
+                          });
+                        }
+                      : null,
+                  onPanEnd: _isDrawingMode
+                      ? (details) {
+                          if (_drawnPolygon.length > 2) {
+                            setState(() {
+                              _isDrawingMode = false;
+                            });
                           }
-                        });
-                      }
-                    },
-                    onTap: (tapPosition, point) {
-                      if (_selectedProperty != null) {
-                        setState(() {
-                          _selectedProperty = null;
-                        });
-                      }
-                    },
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: _isSatellite
-                          ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                          : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.yemenreal.portal',
-                      maxZoom: 19,
-                    ),
-
-                    // When zoomed out (< 10.5): render Purple Zillow Cluster Badges: [🏢 28 وحدة]
-                    if (_currentZoom < 10.5 && _selectedGovName == null)
-                      MarkerLayer(
-                        markers: govClusters.entries.map((entry) {
-                          final govName = entry.key;
-                          final props = entry.value;
-                          final coords =
-                              AppConstants.getCoordinatesForGovernorate(govName);
-
-                          return Marker(
-                            point: LatLng(coords.$1, coords.$2),
-                            width: 110,
-                            height: 40,
-                            child: GestureDetector(
-                              onTap: () {
-                                final govMatch = _governorates.firstWhere(
-                                  (g) =>
-                                      g.name == govName ||
-                                      govName.contains(g.name) ||
-                                      g.name.contains(govName),
-                                  orElse: () => YemenGovernorateCoord(
-                                    name: govName,
-                                    latitude: coords.$1,
-                                    longitude: coords.$2,
-                                    defaultZoom: 13.0,
-                                  ),
-                                );
-                                _selectGovernorate(govMatch);
-                              },
-                              child: _buildZillowPurpleClusterBadge(
-                                count: props.length,
-                                govName: govName,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      )
-                    else
-                      // When zoomed in (>= 10.5) or a governorate is selected: render individual property pins
-                      MarkerLayer(
-                        markers: filteredProperties.map((prop) {
-                          final isSelected = _selectedProperty?.id == prop.id;
-                          final priceText = _formatPriceTag(prop);
-                          final isRent = prop.dealType == AppConstants.dealRent;
-                          final coords = _getPropertyCoords(prop);
-
-                          return Marker(
-                            point: LatLng(coords.$1, coords.$2),
-                            width: isSelected ? 150 : 130,
-                            height: 52,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedProperty = prop;
-                                  _activeCardImageIndex = 0;
-                                });
-                                _animatedMapMove(
-                                  LatLng(coords.$1, coords.$2),
-                                  14.5,
-                                );
-                              },
-                              child: _buildZillowMarker(
-                                priceText: priceText,
-                                isSelected: isSelected,
-                                isRent: isRent,
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                        }
+                      : null,
+                  child: FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: _yemenCenter,
+                      initialZoom: _initialZoom,
+                      minZoom: 5.0,
+                      maxZoom: 18.0,
+                      interactionOptions: InteractionOptions(
+                        flags: _isDrawingMode
+                            ? InteractiveFlag.none
+                            : InteractiveFlag.all,
                       ),
-                  ],
+                      onPositionChanged: (pos, hasGesture) {
+                        if (pos.zoom != _currentZoom) {
+                          setState(() {
+                            _currentZoom = pos.zoom;
+                          });
+                        }
+                        if (hasGesture && !_isDrawingMode) {
+                          _debounceTimer?.cancel();
+                          _debounceTimer =
+                              Timer(const Duration(milliseconds: 350), () {
+                            if (mounted) {
+                              final dist = _lastSearchCenter != null
+                                  ? const Distance().as(
+                                      LengthUnit.Kilometer,
+                                      _lastSearchCenter!,
+                                      pos.center,
+                                    )
+                                  : 0;
+                              if (dist > 3.0) {
+                                setState(() {
+                                  _showSearchThisAreaBtn = true;
+                                });
+                              }
+                            }
+                          });
+                        }
+                      },
+                      onTap: (tapPosition, point) {
+                        if (_selectedProperty != null) {
+                          setState(() {
+                            _selectedProperty = null;
+                          });
+                        }
+                      },
+                    ),
+                    children: [
+                      // CartoDB Voyager: World-standard clean pastel map matching Zillow / Google Maps exactly
+                      TileLayer(
+                        urlTemplate: _isSatellite
+                            ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                        subdomains: const ['a', 'b', 'c', 'd'],
+                        userAgentPackageName: 'com.yemenreal.portal',
+                        maxZoom: 19,
+                      ),
+
+                      // Drawn Polygon Layer (Zillow Draw Area)
+                      if (_drawnPolygon.isNotEmpty)
+                        PolygonLayer(
+                          polygons: [
+                            Polygon(
+                              points: _drawnPolygon,
+                              color: const Color(0xFF0D6EFD).withAlpha(45),
+                              borderColor: const Color(0xFF0D6EFD),
+                              borderStrokeWidth: 3.0,
+                            ),
+                          ],
+                        ),
+
+                      // When zoomed out (< 10.5): render Purple Zillow Cluster Badges: [🏢 28 وحدة]
+                      if (_currentZoom < 10.5 &&
+                          _selectedGovName == null &&
+                          _drawnPolygon.isEmpty)
+                        MarkerLayer(
+                          markers: govClusters.entries.map((entry) {
+                            final govName = entry.key;
+                            final props = entry.value;
+                            final coords =
+                                AppConstants.getCoordinatesForGovernorate(
+                                    govName);
+
+                            return Marker(
+                              point: LatLng(coords.$1, coords.$2),
+                              width: 110,
+                              height: 40,
+                              child: GestureDetector(
+                                onTap: () {
+                                  final govMatch = _governorates.firstWhere(
+                                    (g) =>
+                                        g.name == govName ||
+                                        govName.contains(g.name) ||
+                                        g.name.contains(govName),
+                                    orElse: () => YemenGovernorateCoord(
+                                      name: govName,
+                                      latitude: coords.$1,
+                                      longitude: coords.$2,
+                                      defaultZoom: 13.0,
+                                    ),
+                                  );
+                                  _selectGovernorate(govMatch);
+                                },
+                                child: _buildZillowPurpleClusterBadge(
+                                  count: props.length,
+                                  govName: govName,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        )
+                      else
+                        // When zoomed in (>= 10.5), governorate selected, or area drawn: render individual property pins
+                        MarkerLayer(
+                          markers: filteredProperties.map((prop) {
+                            final isSelected = _selectedProperty?.id == prop.id;
+                            final priceText = _formatPriceTag(prop);
+                            final isRent = prop.dealType == AppConstants.dealRent;
+                            final coords = _getPropertyCoords(prop);
+
+                            return Marker(
+                              point: LatLng(coords.$1, coords.$2),
+                              width: isSelected ? 150 : 130,
+                              height: 52,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedProperty = prop;
+                                    _activeCardImageIndex = 0;
+                                  });
+                                  _animatedMapMove(
+                                    LatLng(coords.$1, coords.$2),
+                                    14.5,
+                                  );
+                                },
+                                child: _buildZillowMarker(
+                                  priceText: priceText,
+                                  isSelected: isSelected,
+                                  isRent: isRent,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                    ],
+                  ),
                 )
               else
                 // Synced List View
@@ -810,8 +893,137 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 child: _buildZillowSubControlBar(),
               ),
 
-              // 4. "Search this area" Button (Zillow floating refresh pill)
-              if (_showSearchThisAreaBtn && !_isListView)
+              // 4. Drawing Mode Instruction Banner
+              if (_isDrawingMode)
+                Positioned(
+                  top: 165,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D6EFD),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(50),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.draw_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'المس واسحب بإصبعك على الخريطة لرسم حدود المنطقة المطلوبة',
+                            style: GoogleFonts.cairo(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isDrawingMode = false;
+                              _drawnPolygon.clear();
+                            });
+                          },
+                          child: Text(
+                            'إلغاء',
+                            style: GoogleFonts.cairo(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // 5. Active Drawn Polygon Filter Badge: "تم تحديد المنطقة بالرسم [مسح]"
+              if (_drawnPolygon.isNotEmpty && !_isDrawingMode)
+                Positioned(
+                  top: 165,
+                  left: 20,
+                  right: 20,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF0D6EFD),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(40),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.check_circle,
+                            color: Color(0xFF0D6EFD),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'تم حصر البحث بالرسم (${filteredProperties.length} عقار)',
+                            style: GoogleFonts.cairo(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0D6EFD),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _drawnPolygon.clear();
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+              // 6. "Search this area" Button (Zillow floating refresh pill)
+              if (_showSearchThisAreaBtn && !_isListView && !_isDrawingMode)
                 Positioned(
                   top: 175,
                   left: 0,
@@ -852,7 +1064,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                   ),
                 ),
 
-              // 5. Floating Bottom Map Controls (Zillow Count Pill, List Toggle, and Layers)
+              // 7. Floating Bottom Map Controls (Zillow Count Pill, List Toggle, and Layers)
               Positioned(
                 bottom: _selectedProperty != null ? 360 : 16,
                 left: 14,
@@ -919,7 +1131,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF1E293B),
                       elevation: 4,
-                      tooltip: 'تغيير نمط الخريطة',
+                      tooltip: 'تغيير نمط الخريطة (قمر صناعي / شوارع)',
                       onPressed: () {
                         setState(() {
                           _isSatellite = !_isSatellite;
@@ -935,7 +1147,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 ),
               ),
 
-              // 6. Exact Zillow Selected Property Card (Screenshot 4)
+              // 8. Exact Zillow Selected Property Card (Screenshot 4)
               if (_selectedProperty != null && !_isListView)
                 Positioned(
                   bottom: 10,
@@ -1025,6 +1237,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             ],
           ),
           const SizedBox(height: 4),
+
           // Row 1: Hamburger Menu + Search Box + Avatar
           Row(
             children: [
@@ -1234,35 +1447,50 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
         children: [
-          // "يرسم" (Draw Area) Button
-          OutlinedButton(
+          // "يرسم" (Draw Area) Button (Zillow Feature)
+          OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
-              backgroundColor: Colors.white.withAlpha(245),
-              foregroundColor: Colors.black87,
+              backgroundColor: _isDrawingMode || _drawnPolygon.isNotEmpty
+                  ? const Color(0xFF0D6EFD)
+                  : Colors.white.withAlpha(245),
+              foregroundColor: _isDrawingMode || _drawnPolygon.isNotEmpty
+                  ? Colors.white
+                  : Colors.black87,
               elevation: 2,
-              side: BorderSide(color: Colors.grey.shade400),
+              side: BorderSide(
+                color: _isDrawingMode || _drawnPolygon.isNotEmpty
+                    ? const Color(0xFF0D6EFD)
+                    : Colors.grey.shade400,
+                width: 1.3,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'يمكنك تصفح الخريطة وتحديد نطاق بحثك مباشرة بالسحب والتحريك',
-                    style: GoogleFonts.cairo(),
-                  ),
-                ),
-              );
-            },
-            child: Text(
-              'يرسم',
+            icon: Icon(
+              _drawnPolygon.isNotEmpty ? Icons.close : Icons.draw_outlined,
+              size: 14,
+            ),
+            label: Text(
+              _drawnPolygon.isNotEmpty ? 'مسح الرسم' : 'يرسم',
               style: GoogleFonts.cairo(
                 fontSize: 11.5,
                 fontWeight: FontWeight.bold,
               ),
             ),
+            onPressed: () {
+              if (_drawnPolygon.isNotEmpty) {
+                setState(() {
+                  _drawnPolygon.clear();
+                  _isDrawingMode = false;
+                });
+              } else {
+                setState(() {
+                  _isDrawingMode = !_isDrawingMode;
+                });
+              }
+            },
           ),
           const SizedBox(width: 6),
 
