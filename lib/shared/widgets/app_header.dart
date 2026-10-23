@@ -96,27 +96,27 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
               // Clean Spacer that pushes actions to the left in RTL
               const Spacer(),
 
-              // Action Buttons Row: Yemen Map Button & Add Property Button side-by-side
-              // 1. Yemen Map Button (Blue with Map Icon)
+              // Action Buttons: Yemen Map Button & Add Property Button side-by-side
+              // 1. Yemen Map Button (Zillow / Portal Blue)
               ElevatedButton.icon(
                 key: const ValueKey('header_map_button'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D6EFD), // Zillow vibrant blue
+                  backgroundColor: const Color(0xFF0D6EFD), // Harmonious Royal Blue
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 8 : 16,
-                    vertical: isMobile ? 6 : 11,
+                    horizontal: isMobile ? 8 : 14,
+                    vertical: isMobile ? 6 : 10,
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  elevation: 2,
+                  elevation: 1,
                 ),
-                icon: const Icon(Icons.map_rounded, size: 17),
+                icon: const Icon(Icons.map_rounded, size: 16),
                 label: Text(
-                  isMobile ? 'الخريطة' : 'خريطة اليمن',
+                  isMobile ? 'الخريطة' : 'الخريطة العقارية',
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: isMobile ? 12 : 13,
@@ -131,24 +131,24 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
               ),
               SizedBox(width: isMobile ? 6 : 8),
 
-              // 2. Add Property Button (Accent Orange with Home/Add Icon)
+              // 2. Add Property Button (Accent Orange)
               ElevatedButton.icon(
                 key: const ValueKey('header_add_property_button'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent, // Vibrant Orange
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 8 : 16,
-                    vertical: isMobile ? 6 : 11,
+                    horizontal: isMobile ? 8 : 14,
+                    vertical: isMobile ? 6 : 10,
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  elevation: 2,
+                  elevation: 1,
                 ),
-                icon: const Icon(Icons.add_home_outlined, size: 17),
+                icon: const Icon(Icons.add_home_outlined, size: 16),
                 label: Text(
                   isMobile ? 'إضافة' : 'أضف عقارك',
                   style: GoogleFonts.cairo(
@@ -170,9 +170,9 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 },
               ),
 
-              // Language Switcher Button (Desktop & Tablet only; mobile switches in Drawer)
+              // Language Switcher (Desktop & Tablet only; mobile switches in Drawer to prevent header overflow)
               if (!isMobile) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 InkWell(
                   onTap: () {
                     ref.read(localeProvider.notifier).toggleLocale();
@@ -180,8 +180,8 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
+                      horizontal: 8,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceVariant,
@@ -193,16 +193,16 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                       children: [
                         const Icon(
                           Icons.language,
-                          size: 16,
+                          size: 15,
                           color: AppColors.primary,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 3),
                         Text(
                           ref.watch(localeProvider).languageCode == 'ar'
                               ? 'EN'
                               : 'عربي',
                           style: GoogleFonts.cairo(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary,
                           ),

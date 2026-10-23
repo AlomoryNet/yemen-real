@@ -1,3 +1,21 @@
+# Environment and Secrets (Strictly Excluded)
+.env
+*.env
+*.keystore
+*.jks
+key.properties
+*.p12
+*.p8
+*.key
+credentials.json
+google-services.json
+GoogleService-Info.plist
+
+# Build artifacts & releases
+*.apk
+releases/
+build/
+
 # Miscellaneous
 *.class
 *.log
@@ -11,11 +29,13 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-.env
-*.env
-*.apk
-*.png
 supabase/.temp/
+
+# Exclude root screenshots, but allow assets and documentation images
+/*.png
+!assets/**
+!docs/screenshots/**
+
 
 # IntelliJ related
 *.iml

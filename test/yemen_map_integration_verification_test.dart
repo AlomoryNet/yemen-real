@@ -10,6 +10,7 @@ import 'package:yemen_real_estate_portal/data/demo_properties_generator.dart';
 import 'package:yemen_real_estate_portal/features/map/presentation/yemen_map_screen.dart';
 import 'package:yemen_real_estate_portal/models/property.dart';
 import 'package:yemen_real_estate_portal/services/supabase_service.dart';
+import 'package:yemen_real_estate_portal/shared/widgets/app_bottom_nav_bar.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/app_header.dart';
 
 void main() {
@@ -177,6 +178,52 @@ void main() {
       expect(find.text('خريطة اليمن 🇾🇪'), findsOneWidget);
       expect(find.text('عرض القائمة'), findsOneWidget);
       expect(find.byIcon(Icons.tune), findsOneWidget);
+    });
+
+    testWidgets(
+        '6. AppBottomNavBar displays "الخريطة" center button and navigates to "/map"',
+        (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      bool navigatedToMap = false;
+
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => const Scaffold(
+              body: Center(child: Text('Home Screen')),
+              bottomNavigationBar: AppBottomNavBar(currentRoute: '/'),
+            ),
+          ),
+          GoRoute(
+            path: '/map',
+            builder: (context, state) {
+              navigatedToMap = true;
+              return const Scaffold(body: Text('Yemen Map Route'));
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp.router(
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('الخريطة'), findsOneWidget);
+      await tester.tap(find.text('الخريطة'));
+      await tester.pumpAndSettle();
+
+      expect(navigatedToMap, isTrue);
+      expect(find.text('Yemen Map Route'), findsOneWidget);
     });
   });
 }

@@ -264,116 +264,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: const AppHeader(),
       drawer: const AppDrawer(),
       bottomNavigationBar: const AppBottomNavBar(currentRoute: '/'),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'home_map_fab',
-        backgroundColor: const Color(0xFF0F766E),
-        foregroundColor: Colors.white,
-        elevation: 6,
-        icon: const Icon(Icons.map_rounded),
-        label: Text(
-          'الخريطة العقارية',
-          style: GoogleFonts.cairo(
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
-        ),
-        onPressed: () => context.push('/map'),
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Hero Search Section
             _buildHeroSection(typesAsync),
 
-            // Prominent Real Estate Map Callout Banner
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0F766E), Color(0xFF134E4A)],
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0F766E).withAlpha(60),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(35),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.map_rounded,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'الخريطة العقارية التفاعلية لليمن 🇾🇪',
-                              style: GoogleFonts.cairo(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'تصفح كافة عقارات اليمن على الخريطة مباشرة مع علامات الأسعار والفلاتر الدقيقة',
-                              style: GoogleFonts.cairo(
-                                color: Colors.white.withAlpha(225),
-                                fontSize: 12.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF0F766E),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 3,
-                        ),
-                        onPressed: () => context.push('/map'),
-                        icon: const Icon(Icons.explore_outlined, size: 18),
-                        label: Text(
-                          'تصفح الخريطة',
-                          style: GoogleFonts.cairo(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
 
             // Content Container
             Center(

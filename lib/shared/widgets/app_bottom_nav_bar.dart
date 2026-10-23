@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import 'auth_prompt_dialog.dart';
@@ -11,14 +12,12 @@ class AppBottomNavBar extends ConsumerWidget {
   const AppBottomNavBar({super.key, required this.currentRoute});
 
   int _getIndex() {
-    if (currentRoute == '/') return 0;
-    if (currentRoute.startsWith('/search')) return 1;
-    if (currentRoute.startsWith('/map')) return 2;
-    if (currentRoute.startsWith('/my-properties')) return 3;
-    if (currentRoute.startsWith('/profile') || currentRoute.startsWith('/login')) {
-      return 4;
-    }
-    return 0;
+    if (currentRoute == '/') return 0;                                           // الرئيسية
+    if (currentRoute.startsWith('/search')) return 1;                           // البحث
+    if (currentRoute.startsWith('/map')) return 2;                              // الخريطة
+    if (currentRoute.startsWith('/my-properties')) return 3;                    // عقاراتي
+    if (currentRoute.startsWith('/profile') || currentRoute.startsWith('/login')) return 4; // الدخول / حسابي
+    return -1;
   }
 
   @override
@@ -31,98 +30,199 @@ class AppBottomNavBar extends ConsumerWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(20),
+            color: Colors.black.withAlpha(14),
             blurRadius: 10,
-            offset: const Offset(0, -3),
+            offset: const Offset(0, -2),
           ),
         ],
-        border: const Border(
-          top: BorderSide(color: AppColors.divider, width: 0.8),
-        ),
       ),
       child: SafeArea(
         top: false,
-        child: NavigationBar(
-          height: 64,
-          elevation: 0,
-          backgroundColor: Colors.white,
-          selectedIndex: currentIndex,
-          indicatorColor: const Color(0xFF0F766E).withAlpha(25),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          onDestinationSelected: (index) {
-            if (index == currentIndex) return;
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              // 0 — الرئيسية (أقصى اليمين في RTL)
+              _NavItem(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home_rounded,
+                label: 'الرئيسية',
+                isSelected: currentIndex == 0,
+                onTap: () {
+                  if (currentIndex == 0) return;
+                  context.go('/');
+                },
+              ),
+              // 1 — البحث
+              _NavItem(
+                icon: Icons.search_rounded,
+                selectedIcon: Icons.search_rounded,
+                label: 'البحث',
+                isSelected: currentIndex == 1,
+                onTap: () {
+                  if (currentIndex == 1) return;
+                  context.go('/search');
+                },
+              ),
+              // 2 — الخريطة (زر تفاعلي مميز في الوسط)
+              _NavItemCenter(
+                icon: Icons.map_rounded,
+                label: 'الخريطة',
+                isSelected: currentIndex == 2,
+                onTap: () {
+                  if (currentIndex == 2) return;
+                  context.go('/map');
+                },
+              ),
+              // 3 — عقاراتي
+              _NavItem(
+                icon: Icons.apartment_outlined,
+                selectedIcon: Icons.apartment_rounded,
+                label: 'عقاراتي',
+                isSelected: currentIndex == 3,
+                onTap: () {
+                  if (currentIndex == 3) return;
+                  if (!authState.isAuthenticated) {
+                    AuthPromptDialog.show(
+                      context,
+                      message: 'لإدارة عقاراتك، يرجى تسجيل الدخول أولاً.',
+                      redirectTo: '/my-properties',
+                    );
+                  } else {
+                    context.go('/my-properties');
+                  }
+                },
+              ),
+              // 4 — الدخول / حسابي (أقصى اليسار في RTL)
+              _NavItem(
+                icon: Icons.person_outline_rounded,
+                selectedIcon: Icons.person_rounded,
+                label: authState.isAuthenticated ? 'حسابي' : 'الدخول',
+                isSelected: currentIndex == 4,
+                onTap: () {
+                  if (currentIndex == 4) return;
+                  if (!authState.isAuthenticated) {
+                    context.go('/login');
+                  } else {
+                    context.go('/profile');
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            switch (index) {
-              case 0:
-                context.go('/');
-                break;
-              case 1:
-                context.go('/search');
-                break;
-              case 2:
-                context.go('/map');
-                break;
-              case 3:
-                if (!authState.isAuthenticated) {
-                  AuthPromptDialog.show(
-                    context,
-                    message:
-                        'لإدارة وتصفح عقاراتك، يرجى تسجيل الدخول أو إنشاء حساب جديد أولاً.',
-                    redirectTo: '/my-properties',
-                  );
-                } else {
-                  context.go('/my-properties');
-                }
-                break;
-              case 4:
-                if (!authState.isAuthenticated) {
-                  context.go('/login');
-                } else {
-                  context.go('/profile');
-                }
-                break;
-            }
-          },
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.home_outlined),
-              selectedIcon: const Icon(
-                Icons.home_rounded,
-                color: Color(0xFF0F766E),
+// ─── زر تنقل عادي ─────────────────────────────────────────────────────────────
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isSelected ? AppColors.primary : const Color(0xFF94A3B8);
+
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        splashColor: AppColors.primaryMuted,
+        highlightColor: Colors.transparent,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isSelected ? selectedIcon : icon,
+                key: ValueKey(isSelected),
+                size: 22,
+                color: color,
               ),
-              label: 'الرئيسية',
             ),
-            NavigationDestination(
-              icon: const Icon(Icons.search_rounded),
-              selectedIcon: const Icon(
-                Icons.search_rounded,
-                color: Color(0xFF0F766E),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: GoogleFonts.cairo(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: color,
               ),
-              label: 'البحث',
             ),
-            NavigationDestination(
-              icon: const Icon(Icons.map_outlined),
-              selectedIcon: const Icon(
-                Icons.map_rounded,
-                color: Color(0xFF0F766E),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── زر الخريطة المميز في الوسط ───────────────────────────────────────────────
+class _NavItemCenter extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItemCenter({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : AppColors.primaryMuted,
+                shape: BoxShape.circle,
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary.withAlpha(80),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : [],
               ),
-              label: 'الخريطة',
+              child: Icon(
+                icon,
+                size: 20,
+                color: isSelected ? Colors.white : AppColors.primary,
+              ),
             ),
-            NavigationDestination(
-              icon: const Icon(Icons.apartment_outlined),
-              selectedIcon: const Icon(
-                Icons.apartment_rounded,
-                color: Color(0xFF0F766E),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: GoogleFonts.cairo(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppColors.primary : const Color(0xFF94A3B8),
               ),
-              label: 'عقاراتي',
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.person_outline),
-              selectedIcon: const Icon(
-                Icons.person_rounded,
-                color: Color(0xFF0F766E),
-              ),
-              label: authState.isAuthenticated ? 'حسابي' : 'الدخول',
             ),
           ],
         ),

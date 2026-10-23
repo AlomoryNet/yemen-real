@@ -20,6 +20,9 @@ import '../shared/widgets/empty_state_view.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Last back-press time — used for double-back-to-exit on home
+DateTime? _lastBackPress;
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: '/',
@@ -39,7 +42,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/',
       name: 'home',
-      builder: (context, state) => const HomeScreen(),
+      builder: (context, state) => const _BackHandlerWrapper(child: HomeScreen()),
     ),
     GoRoute(
       path: '/search',
@@ -139,3 +142,53 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
 );
+
+/// يلتف حول الصفحة الرئيسية لمنع الخروج عند ضغطة رجوع واحدة.
+/// الضغطة الأولى: snackbar "اضغط مرة أخرى للخروج"
+/// الضغطة الثانية خلال ثانيتين: خروج فعلي
+class _BackHandlerWrapper extends StatelessWidget {
+  final Widget child;
+  const _BackHandlerWrapper({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final now = DateTime.now();
+        final isDouble = _lastBackPress != null &&
+            now.difference(_lastBackPress!) < const Duration(seconds: 2);
+        if (isDouble) {
+          // خروج فعلي
+          // ignore: deprecated_member_use
+          await Future.delayed(Duration.zero);
+          if (context.mounted) {
+            Navigator.of(rootNavigatorKey.currentContext!).pop();
+          }
+        } else {
+          _lastBackPress = now;
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'اضغط مرة أخرى للخروج من التطبيق',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontFamily: 'Cairo'),
+                ),
+                duration: const Duration(seconds: 2),
+                backgroundColor: const Color(0xFF134E4A),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                margin: const EdgeInsets.all(16),
+              ),
+            );
+          }
+        }
+      },
+      child: child,
+    );
+  }
+}
