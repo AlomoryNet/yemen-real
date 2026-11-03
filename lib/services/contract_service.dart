@@ -24,6 +24,8 @@ class ContractService {
       if (savedJsonStr != null && savedJsonStr.isNotEmpty) {
         final Map<String, dynamic> data = jsonDecode(savedJsonStr);
         final savedContract = PropertyContract.fromJson(data);
+        // مهم: نُعيد استخدام بنود العقد فقط، وليس اسم المستأجر
+        // اسم المستأجر يجب أن يكون فارغاً في كل عقد جديد
         return savedContract.copyWith(
           propertyId: property.id,
           propertyCity: property.city,
@@ -32,6 +34,10 @@ class ContractService {
           amount: property.price,
           currency: property.currency,
           contractType: property.dealType,
+          tenantName: '', // لا نُعيد استخدام اسم مستأجر من عقد سابق
+          tenantPhone: '', // لا نُعيد استخدام هاتف مستأجر من عقد سابق
+          tenantIdCard: '', // لا نُعيد استخدام هوية مستأجر من عقد سابق
+          tenantAddress: '', // لا نُعيد استخدام عنوان مستأجر من عقد سابق
         );
       }
     } catch (_) {}

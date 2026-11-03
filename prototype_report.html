@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تقرير تصميم النموذج الأولي ومخطط الشاشات — بوابة اليمن العقارية</title>
+  <!-- Google Fonts: Amiri & Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700;800;900&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      background: #F1F5F9;
+      color: #0F172A;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-amiri {
+      font-family: 'Amiri', serif;
+    }
+    .font-cinzel {
+      font-family: 'Cinzel', serif;
+    }
+
+    /* Academic Report Paper Container */
+    .report-paper {
+      max-width: 900px;
+      margin: 30px auto;
+      background: #FFFFFF;
+      padding: 60px 70px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.05);
+      border-radius: 8px;
+      border: 1px solid #E2E8F0;
+      position: relative;
+    }
+
+    /* Wireframe Phone Box in Diagram */
+    .wireframe-phone {
+      width: 175px;
+      height: 330px;
+      border: 2px solid #1E293B;
+      border-radius: 24px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      font-size: 8px;
+      position: relative;
+    }
+    .wireframe-phone .notch {
+      width: 50px;
+      height: 10px;
+      background: #0F172A;
+      border-radius: 6px;
+      margin: 3px auto;
+    }
+    .wireframe-phone .home-bar {
+      width: 50px;
+      height: 2.5px;
+      background: #64748B;
+      border-radius: 2px;
+      margin: 4px auto;
+    }
+
+    /* Screen Breakdown Card */
+    .screen-spec-card {
+      border: 1px solid #CBD5E1;
+      border-radius: 14px;
+      background: #FFFFFF;
+      overflow: hidden;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .screen-spec-header {
+      background: #F8FAFC;
+      border-bottom: 1px solid #E2E8F0;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media print {
+      body {
+        background: #FFFFFF !important;
+      }
+      .report-paper {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body class="py-6 px-3">
+
+  <!-- TOP ACTIONS TOOLBAR (NO-PRINT) -->
+  <div class="no-print max-w-[900px] mx-auto mb-4 bg-slate-900 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+    <div class="flex items-center gap-3">
+      <span class="text-xl">📄</span>
+      <div>
+        <h1 class="font-bold text-sm">تقرير التصميم التفصيلي ومخطط الشاشات (Prototype Specification)</h1>
+        <p class="text-[11px] text-slate-400">بوابة اليمن العقارية — النسخة الأكاديمية والمهنية للتوثيق</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="window.print()" class="px-4 py-2 bg-[#134E4A] hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5 transition">
+        <span>🖨️</span> <span>طباعة التقرير كـ PDF</span>
+      </button>
+      <a href="prototype.html" target="_blank" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-xs rounded-xl shadow transition">
+        <span>📱 فتح النموذج التفاعلي</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ACADEMIC / FORMAL REPORT PAPER CONTAINER -->
+  <article class="report-paper text-slate-900">
+
+    <!-- REPORT COVER HEADER -->
+    <header class="border-b-2 border-slate-900 pb-5 mb-8 text-center">
+      <div class="flex justify-between items-center text-xs font-bold text-slate-500 mb-2 font-mono">
+        <span>YEMEN REAL ESTATE PORTAL</span>
+        <span>UI/UX DESIGN SPECIFICATION</span>
+        <span>FINAL v2.3.0</span>
+      </div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight mt-3">وثيقة التصميم الهندسي للنموذج الأولي ومخطط الشاشات</h1>
+      <h2 class="text-sm font-bold text-teal-900 mt-1">Prototype Design & User Flow Architecture</h2>
+      <p class="text-xs text-slate-500 mt-2 font-sans">دراسة وتوصيف كافة الشاشات الـ 18 ومسارات التنقل لمشروع بوابة اليمن العقارية</p>
+    </header>
+
+    <!-- SECTION 2: PROTOTYPE DESIGN (PURE YEMEN REAL ESTATE PORTAL SPECIFICATION) -->
+    <section class="mb-10 page-break">
+      <h3 class="font-black text-lg text-slate-900 border-b border-slate-200 pb-2 mb-4 font-cinzel">
+        2) PROTOTYPE DESIGN — YEMEN REAL ESTATE PORTAL
+      </h3>
+
+      <!-- EMBEDDED HIGH-FIDELITY FIGURE 2.1 -->
+      <div class="bg-white border border-slate-300 rounded-2xl p-2 mb-4 shadow-sm text-center">
+        <img src="Figure_2_1_Yemen_Prototype_Design.png" alt="Figure 2.1: Yemen Real Estate Portal prototype" class="w-full h-auto rounded-xl mx-auto shadow-xs border border-slate-100">
+      </div>
+
+      <!-- DETAILED SPECIFIC ARABIC & ENGLISH EXPLANATION OF THE YEMEN REAL ESTATE PORTAL APPLICATION ITSELF -->
+      <div class="text-xs text-slate-800 leading-relaxed text-justify bg-slate-50 p-5 rounded-xl border border-slate-200 mb-6 space-y-3">
+        <h4 class="font-bold text-sm text-teal-900 border-b border-teal-200 pb-1">
+          📌 الشرح التفصيلي لمخطط وتجربة مستخدم تطبيق بوابة اليمن العقارية (Figure 2.1 Analysis):
+        </h4>
+        <p>
+          يوضح هذا المخطط الهيكلي التفاعلي (Figure 2.1) المسار الوظيفي المترابط لتطبيق <strong>بوابة اليمن العقارية (Yemen Real Estate Portal)</strong>، وكيفية تنقل البيانات والعمليات بين مختلف شاشات النظام بما يلائم خصوصية البيئة العقارية اليمنية:
+        </p>
+        <ul class="list-disc pr-5 space-y-1.5 text-slate-700">
+          <li><strong>مسار المصادقة والتسجيل (Signup & Login)</strong>: يتيح تسجيل الباحثين والملاك والوسطاء العقاريين المعتمدين باستخدام أرقام الهواتف اليمنية (مفتاح الدولي +967 لشبكات يمن موبايل، يو، سبأفون) مع التحقق الفوري برمز OTP عبر واتساب لتسريع الدخول.</li>
+          <li><strong>الشاشة المركزية (Home Hub)</strong>: مركز استعراض عقارات الجمهورية اليمنية مع محدد المحافظة (صنعاء، عدن، تعز، حضرموت، إب...)، التبديل الفوري بين عقارات الإيجار والبيع، وفرز العقارات المعمدة ذات البصائر الشرعية الموثقة.</li>
+          <li><strong>مسار الباحث عن عقار (User Path - تفاصيل العقار)</strong>: يستعرض كرت العقار المفصل متضمناً صور الواجهات الحجرية (حجر هيلاني/مشذب)، الأسعار بالعملات المعتمدة (USD/YER/SAR)، والمساحة باللبن الصنعانية والقصب والمتر المربع، مع أزرار اتصال هاتفي مباشر ومحادثة واتساب سريعة للتفاوض.</li>
+          <li><strong>مسار المالك والمكتب (Owner Path - إدارة وصياغة العقود)</strong>: يمنح مالك العقار صلاحية توليد العقود الشرعية المؤتمتة لعقاراته، ومراجعة التراخيص العقارية وتقييمات العملاء.</li>
+          <li><strong>مسار إضافة العقار وتحديد الموقع (Add Property & GPS)</strong>: معالج إلكتروني متكامل يتيح للمالك إدخال مواصفات العقار، ورفع وثائق الملكية (صك البصيرة الشرعية)، وتحديد الموقع الجغرافي الدقيق على خريطة اليمن عبر الـ GPS قبل إرسال الطلب للاعتماد الإداري.</li>
+        </ul>
+        <div class="border-t border-slate-200 pt-2 font-serif text-[11px] text-slate-600 direction-ltr text-left">
+          <strong>English Technical Summary:</strong> This prototype of Yemen Real Estate Portal provides a clear understanding of the navigation flow, the process, and how the app travels from a screen to another. It delivers an accurate, production-ready blueprint of the user interface before implementation, specifically reflecting Yemen's dual-currency transactions, tribal and municipal land measurements (Lebnah & Kasaba), verified judicial deed records (Basirah), and official digital contract generation.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2.1: SMART CONTRACTS & VERIFICATION FLOW -->
+    <section class="mb-10 page-break">
+      <h3 class="font-black text-lg text-slate-900 border-b border-slate-200 pb-2 mb-4 font-cinzel">
+        2.1) SMART CONTRACTS & VERIFICATION FLOW
+      </h3>
+      <div class="bg-white border border-slate-300 rounded-2xl p-2 mb-4 shadow-sm text-center">
+        <img src="Figure_2_2_Contracts_Flow.png" alt="Figure 2.2: Smart Contracts and Legal Verification Flow" class="w-full h-auto rounded-xl mx-auto shadow-xs border border-slate-100">
+      </div>
+      <div class="text-xs text-slate-800 leading-relaxed text-justify bg-slate-50 p-5 rounded-xl border border-slate-200 mb-6 space-y-2">
+        <h4 class="font-bold text-sm text-amber-900 border-b border-amber-200 pb-1">
+          📑 شرح منظومة صياغة وتوثيق العقود الإلكترونية اليمنية (Figure 2.2 Analysis):
+        </h4>
+        <p>
+          تنفرد بوابة اليمن العقارية بمنظومة عقود إلكترونية ذكية تربط مباشرة بين تفاصيل العقار وصك التعاقد الشرعي والقانوني:
+        </p>
+        <ul class="list-disc pr-5 space-y-1.5 text-slate-700">
+          <li><strong>عقود الإيجار السكنية والتجارية (Rental Contracts)</strong>: صياغة البنود وفق قانون تنظيم العلاقة بين المؤجر والمستأجر والقانون المدني اليمني، مع تحديد الأجرة الشهرية بالدولار أو الريال، مبلغ التأمين/الضمان، وشروط الخدمات والصيانة.</li>
+          <li><strong>عقود البيع والتمليك (Sale & Deed Contracts)</strong>: توثيق إسقاط ملكية البائع ونقلها للمشتري، مع تدوين مساحة الأرض باللبن الصنعانية، وأرقام البصائر وسجلات المحاكم وتعميد الأمين الشرعي.</li>
+          <li><strong>المعاينة والطباعة الرسمية (PDF & Seal Verification)</strong>: توليد ورقة العقد الرسمية A4 مع الختم الرقمي وكود الاستجابة السريعة (QR Code) لتسهيل الطباعة الورقية المباشرة أو الحفظ والمشاركة بصيغة PDF عالية الدقة.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SECTION 3: DETAILED SPECIFICATIONS FOR ALL 18 SCREENS -->
+    <section>
+      <h3 class="font-black text-lg text-slate-900 border-b border-slate-200 pb-2 mb-6 font-cinzel">
+        3) DETAILED SPECIFICATIONS FOR ALL 18 SYSTEM SCREENS
+      </h3>
+
+      <!-- STAGE 1: ONBOARDING & AUTH -->
+      <div class="mb-8">
+        <h4 class="font-bold text-sm text-sky-800 bg-sky-50 border-r-4 border-sky-600 px-3 py-1.5 rounded mb-4">
+          المرحلة الأولى: الدخول والتوثيق (Onboarding & Authentication)
+        </h4>
+
+        <!-- Screen 1: Splash -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[1] شاشة البداية (Splash Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-splash</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> تهيئة التطبيق، فحص جلسة المستخدم المحلية (Session Token)، والترحيب بالهوية البصرية الرسمية لمنصة اليمن العقارية.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>العناصر البصرية:</strong> شعار اليمن، العنوان الرئيسي، الزر الترويجي "ابدأ الاستكشاف"، وشارة الإصدار (v2.3.0).</div>
+              <div><strong>مسار التنقل:</strong> النقر على الزر ➔ الشاشة الرئيسية [4] أو تسجيل الحساب [2].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 2: Sign Up -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[2] تسجيل حساب جديد (Sign Up Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-signup</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> إنشاء حساب مستخدم جديد مع تحديد نوع العضوية (باحث عن عقار / مالك ومكتب عقاري) وربطه برقم الهاتف اليمني.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المدخلات:</strong> نوع الحساب، الاسم الكامل، رقم الهاتف (+967 7xx)، البريد الإلكتروني، كلمة المرور.</div>
+              <div><strong>مسار التنقل:</strong> بعد تأكيد الحساب ➔ الشاشة الرئيسية [4].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 3: Login -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[3] تسجيل الدخول (Login Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-login</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> مصادقة المستخدمين وإتاحة الدخول السريع عبر رمز التحقق المباشر (OTP) للواتساب أو البريد.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> حقل الهاتف/البريد، حقل كلمة المرور، زر تذكرني، زر OTP الواتساب.</div>
+              <div><strong>مسار التنقل:</strong> الدخول الناجح ➔ الشاشة الرئيسية [4].</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STAGE 2: DISCOVERY & MAP -->
+      <div class="mb-8">
+        <h4 class="font-bold text-sm text-teal-800 bg-teal-50 border-r-4 border-teal-600 px-3 py-1.5 rounded mb-4">
+          المرحلة الثانية: الاستكشاف، البحث، والخريطة (Discovery, Search & Map)
+        </h4>
+
+        <!-- Screen 4: Home -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[4] الشاشة الرئيسية (Home Screen)</span>
+            <span class="text-[10px] bg-teal-50 text-teal-800 px-2 py-0.5 rounded font-mono">Core Hub</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> الشاشة المركزية في التطبيق؛ تتيح البحث الفوري، فرز الصفقات (إيجار/بيع)، تصفح المحافظات، واستعراض أحدث العقارات المعمدة.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> حقل البحث، شرائح المحافظات الـ22، كروت العقارات الغنية بالأسعار والمواصفات، وشريط التنقل السفلي.</div>
+              <div><strong>مسار التنقل:</strong> البحث [5]، تفاصيل العقار [6]، الخريطة [10]، إضافة عقار [7].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 5: Search Results -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[5] نتائج البحث والتصفية (Search Results Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-search</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> إظهار العقارات المطابقة لشروط البحث والفرز وفق نوع العقار (شقة، فيلا، أرض، عمارة)، السعر، والمديريات.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> حقل البحث الفوري، زر الفلاتر المتقدمة، عداد العقارات المطابقة، قائمة الفرز.</div>
+              <div><strong>مسار التنقل:</strong> النقر على الكرت ➔ تفاصيل العقار [6].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 6: Property Details -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[6] تفاصيل العقار (Property Details Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-details</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> استعراض الملف الفني الكامل للعقار: الصور، السعر بالعملة، المساحة باللبنة والمتر، شارة التعميد، والتواصل المباشر مع المالك أو صياغة العقد.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> معرض الصور، شبكة المواصفات (غرف، حمامات، مساحة، لبن)، زر توليد العقد، زر اتصال، وزر واتساب.</div>
+              <div><strong>مسار التنقل:</strong> توليد العقد [12, 13]، ملف المالك [11]، المحادثة [15].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 10: Yemen Map -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[10] خريطة اليمن العقارية والتجميع (Map Clusters Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-map</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> تصفح العقارات جغرافياً عبر محرك التجميع العنقودي (Spatial Clustering) لكافة المحافظات مع نافذة سفلية منبثقة لمعاينة العقار المختار.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> خريطة متجهة لليمن، دوائر التجميع (صنعاء 14، عدن 8، المكلا 9)، أزرار التكبير ونمط القمر الصناعي، كرت منبثق سفلي.</div>
+              <div><strong>مسار التنقل:</strong> النقر على الكرت المنبثق ➔ تفاصيل العقار [6].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 9: Favorites -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[9] المفضلة وقائمة الحفظ (Favorites Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-favorites</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> حفظ وتتبع العقارات التي يفضلها المستخدم للرجوع إليها سريعاً أو مقارنة أسعارها ومواقعها.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> قائمة العقارات المفضلة، عداد الحفظ، وزر الإزالة الفورية (❤️).</div>
+              <div><strong>مسار التنقل:</strong> النقر على أي عقار ➔ تفاصيل العقار [6].</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STAGE 3: CONTRACTS & COMMUNICATIONS -->
+      <div class="mb-8">
+        <h4 class="font-bold text-sm text-amber-800 bg-amber-50 border-r-4 border-amber-600 px-3 py-1.5 rounded mb-4">
+          المرحلة الثالثة: التواصل ومنظومة العقود الذكية (Contracts & Communications)
+        </h4>
+
+        <!-- Screen 11: Owner Profile -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[11] ملف صاحب العقار والمكتب (Owner Profile Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-owner</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> التحقق من ترخيص المكتب العقاري وتقييمات العملاء واستعراض كافة العقارات الأخرى المعلنة من قبله.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> بطاقة المكتب، رقم الترخيص العقاري (4108)، تقييم 4.9/5، أزرار الاتصال والواتساب، وقائمة العقارات.</div>
+              <div><strong>مسار التنقل:</strong> المحادثة المباشرة [15]، تفاصيل العقارات [6].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 12: Rental Contract -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[12] إنشاء عقد إيجار شرعي (Rental Contract Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-contract-rent</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> إدخال وتعديل بيانات وبنود عقد الإيجار الرسمي: بيانات المؤجر والمستأجر، الأجرة، الضمان، والالتزامات وفق القانون اليمني.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المدخلات:</strong> اسم وهوية المؤجر والمستأجر، الأجرة، العملة (USD/YER/SAR)، مدة العقد، وشروط الصيانة.</div>
+              <div><strong>مسار التنقل:</strong> معاينة صك العقد والطباعة [14].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 13: Sale Contract -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[13] إنشاء عقد بيع وتمليك (Sale & Deed Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-contract-sale</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> توثيق نقل ملكية العقار والبصيرة الشرعية وتدوين المساحة باللبنة الصنعانية والقصبة وإجمالي الثمن وشروط الإبراء.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المدخلات:</strong> بيانات البائع والمشتري، مساحة الأرض باللبن الصنعانية، أرقام البصائر، وإجمالي الثمن.</div>
+              <div><strong>مسار التنقل:</strong> معاينة صك البيع والطباعة [14].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 14: Contract Preview PDF -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[14] معاينة العقد والطباعة PDF (Contract Preview Screen)</span>
+            <span class="text-[10px] bg-amber-50 text-amber-900 px-2 py-0.5 rounded font-mono">A4 Ready</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> محاكاة ومعاينة ورقة العقد الرسمية المجهزة للطباعة بصيغة A4 مع ترويسة الجمهورية اليمنية، البنود القانونية، الختم الرقمي، وكود التحقق QR.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> ورقة الصك الرسمية بخط أميري أصيل، ختم التحقق الإلكتروني، زر طباعة A4، وزر إرسال للواتساب.</div>
+              <div><strong>مسار التنقل:</strong> أمر الطباعة الفوري أو الرجوع لمحرر العقد.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 15: Chat -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[15] المحادثات والتواصل الفوري (Chat & Inquiries Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-chat</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> محادثة كتابية مباشرة بين الباحث ومالك العقار للتفاوض حول السعر أو حجز موعد للمعاينة الميدانية مع اقتباس كرت العقار المعني.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> شريط هوية المالك، كرت اقتباس العقار العلوي، فقاعات الرسائل، وحقل الكتابة والإرسال.</div>
+              <div><strong>مسار التنقل:</strong> النقر على كرت العقار ➔ تفاصيل العقار [6].</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STAGE 4: PUBLISHING & ADMINISTRATION -->
+      <div class="mb-8">
+        <h4 class="font-bold text-sm text-pink-800 bg-pink-50 border-r-4 border-pink-600 px-3 py-1.5 rounded mb-4">
+          المرحلة الرابعة: إضافة العقارات، المراجعة، والإدارة (Publishing & Administration)
+        </h4>
+
+        <!-- Screen 7: Add Property -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[7] إضافة عقار جديد (Add Property Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-add-prop</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> نموذج شامل لإدخال تفاصيل الإعلان العقاري ورفع صور العقار وبصائر الملكية وتحديد الموقع على الخريطة قبل إرساله للمراجعة.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المدخلات:</strong> العنوان، نوع الصفقة، المحافظة والحي، السعر والعملة، المواصفات، وزر تحديد الموقع GPS.</div>
+              <div><strong>مسار التنقل:</strong> تحديد الموقع على الخريطة [8]، إرسال الطلب للاعتماد [18].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 8: Pick Location -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[8] تحديد الموقع على الخريطة (Pick Location GPS Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-pick-map</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> ضبط الموقع الجغرافي الدقيق للعقار عبر علامة التنشين (GPS Crosshair) وتسجيل إحداثيات خطوط الطول والعرض بالأرقام.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> خريطة تفاعلية كاملة، علامة التنشين الحمراء، بطاقة الإحداثيات الرقمية، وزر تأكيد الموقع.</div>
+              <div><strong>مسار التنقل:</strong> تأكيد الإحداثيات ➔ العودة لشاشة إضافة العقار [7].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 16: Profile -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[16] الملف الشخصي والإعدادات (Profile & Settings Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-profile</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> استعراض عقارات المستخدم المنشورة، العقود المبرمة، تبديل اللغة (العربية/الإنجليزية)، والدخول للوحة الإدارة للمصرح لهم.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> بطاقة المستخدم، شارة التوثيق، قائمة الخيارات (عقاراتي، عقودي، اللغات، الإدارة).</div>
+              <div><strong>مسار التنقل:</strong> لوحة تحكم المدير [17]، أو تسجيل الخروج [3].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 17: Admin Dashboard -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[17] لوحة تحكم المدير العام (Admin Dashboard Screen)</span>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">ID: screen-admin-dashboard</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> مركز القيادة والتحكم العام؛ يعرض مؤشرات الأداء الحية، العقارات النشطة، الطلبات المعلقة، وإحصائيات التوثيق العقاري.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> 4 بطاقات إحصائية (إجمالي العقارات 3450، المعلق 3، العقود 1280، المستخدمين)، زر فحص المعلقات.</div>
+              <div><strong>مسار التنقل:</strong> مراجعة طلبات النشر [18].</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen 18: Admin Approvals -->
+        <div class="screen-spec-card">
+          <div class="screen-spec-header">
+            <span class="font-black text-xs text-slate-800">[18] مراجعة طلبات النشر والاعتماد (Approvals Review Screen)</span>
+            <span class="text-[10px] bg-pink-50 text-pink-800 px-2 py-0.5 rounded font-mono">Decision Gate</span>
+          </div>
+          <div class="p-4 text-xs space-y-2">
+            <p><strong>الغرض الوظيفي:</strong> فحص الإعلانات المقدمة من الملاك والوسطاء قبل ظهورها للعامة، واتخاذ قرار فوري بالاعتماد والنشر أو الرفض مع ذكر السبب.</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border">
+              <div><strong>المكونات:</strong> كروت الطلبات المعلقة، تفاصيل العقار والمالك والسعر، زر "اعتماد ونشر ✓"، وزر "رفض ✕".</div>
+              <div><strong>مسار التنقل:</strong> الاعتماد ➔ نشر العقار فوراً وظهوره في الشاشة الرئيسية [4] والخريطة [10].</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: NAVIGATION TRACEABILITY MATRIX TABLE -->
+    <section class="mb-10 page-break">
+      <h3 class="font-black text-lg text-slate-900 border-b border-slate-200 pb-2 mb-4 font-cinzel">
+        4) NAVIGATION TRACEABILITY MATRIX
+      </h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-xs border border-slate-300">
+          <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+            <tr>
+              <th class="p-2 border-l border-slate-300">#</th>
+              <th class="p-2 border-l border-slate-300">الشاشة (Screen Name)</th>
+              <th class="p-2 border-l border-slate-300">مصدر الانتقال (From)</th>
+              <th class="p-2">الوجهة المستهدفة (To Destination)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 font-sans text-[11px]">
+            <tr>
+              <td class="p-2 border-l font-bold">1</td>
+              <td class="p-2 border-l font-bold">البداية (Splash)</td>
+              <td class="p-2 border-l">تشغيل التطبيق</td>
+              <td class="p-2">الرئيسية [4] أو تسجيل الحساب [2] أو الدخول [3]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">2</td>
+              <td class="p-2 border-l font-bold">إنشاء حساب (Signup)</td>
+              <td class="p-2 border-l">البداية [1] أو الدخول [3]</td>
+              <td class="p-2">الشاشة الرئيسية [4]</td>
+            </tr>
+            <tr>
+              <td class="p-2 border-l font-bold">3</td>
+              <td class="p-2 border-l font-bold">تسجيل الدخول (Login)</td>
+              <td class="p-2 border-l">البداية [1] أو إنشاء الحساب [2]</td>
+              <td class="p-2">الشاشة الرئيسية [4]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">4</td>
+              <td class="p-2 border-l font-bold text-teal-800">الرئيسية (Home)</td>
+              <td class="p-2 border-l">المصادقة أو شريط التنقل السفلي</td>
+              <td class="p-2">البحث [5]، التفاصيل [6]، الخريطة [10]، الإضافة [7]</td>
+            </tr>
+            <tr>
+              <td class="p-2 border-l font-bold">5</td>
+              <td class="p-2 border-l font-bold">نتائج البحث (Search)</td>
+              <td class="p-2 border-l">الرئيسية [4] عبر حقل البحث</td>
+              <td class="p-2">تفاصيل العقار [6]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">6</td>
+              <td class="p-2 border-l font-bold">تفاصيل العقار (Details)</td>
+              <td class="p-2 border-l">الرئيسية [4]، البحث [5]، الخريطة [10]</td>
+              <td class="p-2">ملف المالك [11]، عقد الإيجار [12]، عقد البيع [13]</td>
+            </tr>
+            <tr>
+              <td class="p-2 border-l font-bold">7</td>
+              <td class="p-2 border-l font-bold">إضافة عقار (Add Property)</td>
+              <td class="p-2 border-l">زر "+" في شريط التنقل السفلي</td>
+              <td class="p-2">تحديد الموقع GPS [8]، إرسال للاعتماد [18]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">8</td>
+              <td class="p-2 border-l font-bold">تحديد الموقع (Pick Map)</td>
+              <td class="p-2 border-l">شاشة إضافة عقار [7]</td>
+              <td class="p-2">تأكيد الإحداثيات والرجوع لشاشة الإضافة [7]</td>
+            </tr>
+            <tr>
+              <td class="p-2 border-l font-bold">9</td>
+              <td class="p-2 border-l font-bold">المفضلة (Favorites)</td>
+              <td class="p-2 border-l">شريط التنقل في أي شاشة</td>
+              <td class="p-2">تفاصيل العقار [6]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">10</td>
+              <td class="p-2 border-l font-bold">خريطة اليمن (Map)</td>
+              <td class="p-2 border-l">شريط التنقل السفلي في أي شاشة</td>
+              <td class="p-2">تفاصيل العقار المختار في الكرت السفلي [6]</td>
+            </tr>
+            <tr>
+              <td class="p-2 border-l font-bold">11</td>
+              <td class="p-2 border-l font-bold">ملف المالك (Owner)</td>
+              <td class="p-2 border-l">تفاصيل العقار [6]</td>
+              <td class="p-2">المحادثة المباشرة [15]، تفاصيل عقارات المالك [6]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">12</td>
+              <td class="p-2 border-l font-bold">عقد إيجار (Rent)</td>
+              <td class="p-2 border-l">تفاصيل العقار المخصص للإيجار [6]</td>
+              <td class="p-2">معاينة صك العقد والطباعة [14]</td>
+            </tr>
+            <tr>
+              <td class="p-2 border-l font-bold">13</td>
+              <td class="p-2 border-l font-bold">عقد بيع (Sale)</td>
+              <td class="p-2 border-l">تفاصيل العقار المخصص للبيع [6]</td>
+              <td class="p-2">معاينة صك البيع والطباعة [14]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">14</td>
+              <td class="p-2 border-l font-bold text-amber-800">معاينة العقد (Preview)</td>
+              <td class="p-2 border-l">إنشاء عقد الإيجار [12] أو البيع [13]</td>
+              <td class="p-2">نافذة الطباعة A4 وتصدير PDF أو واتساب</td>
+            </tr>
+            <tr>
+              <td class="p-2 border-l font-bold">15</td>
+              <td class="p-2 border-l font-bold">المحادثات (Chat)</td>
+              <td class="p-2 border-l">تفاصيل العقار [6] أو ملف المالك [11]</td>
+              <td class="p-2">تفاصيل العقار المقتبس [6]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">16</td>
+              <td class="p-2 border-l font-bold">الملف الشخصي (Profile)</td>
+              <td class="p-2 border-l">شريط التنقل السفلي في أي شاشة</td>
+              <td class="p-2">لوحة الإدارة [17] أو تسجيل الخروج [3]</td>
+            </tr>
+            <tr>
+              <td class="p-2 border-l font-bold">17</td>
+              <td class="p-2 border-l font-bold">لوحة الإدارة (Dashboard)</td>
+              <td class="p-2 border-l">الملف الشخصي [16] للمشرفين</td>
+              <td class="p-2">مراجعة طلبات النشر [18]</td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="p-2 border-l font-bold">18</td>
+              <td class="p-2 border-l font-bold text-pink-800">مراجعة النشر (Approvals)</td>
+              <td class="p-2 border-l">لوحة المدير [17] أو بعد إضافة عقار [7]</td>
+              <td class="p-2">اعتماد ونشر العقار في الرئيسية [4] والخريطة [10]</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REPORT FOOTER -->
+    <footer class="border-t-2 border-slate-900 pt-4 mt-8 flex justify-between items-center text-xs text-slate-500 font-mono">
+      <span>Yemen Real Estate Portal — Version 2.3.0 FINAL</span>
+      <span>Page 4 (End of Section 2)</span>
+    </footer>
+
+  </article>
+
+</body>
+</html>

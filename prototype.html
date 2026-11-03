@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة اليمن العقارية — مخطط الشاشات والنموذج الأولي التفاعلي (Interactive User Flow & Prototype)</title>
+  <!-- Google Fonts: Cairo for UI & Amiri for Legal Contracts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #134E4A;
+      --primary-dark: #0F3B38;
+      --primary-light: #14B8A6;
+      --accent: #D97706;
+      --accent-light: #FDE68A;
+      --canvas-bg: #0B1320;
+      --phone-border: #1E293B;
+      --phone-rim: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--canvas-bg);
+      color: #F1F5F9;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+
+    .font-amiri {
+      font-family: 'Amiri', serif;
+    }
+
+    /* Infinite Canvas Pattern */
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      cursor: grab;
+      background-image: 
+        radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px),
+        radial-gradient(circle, rgba(20, 184, 166, 0.05) 1.5px, transparent 1.5px);
+      background-size: 32px 32px, 128px 128px;
+    }
+
+    #canvas-container.grabbing {
+      cursor: grabbing;
+    }
+
+    #canvas-world {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+      transition: transform 0.05s ease-out;
+    }
+
+    /* Realistic Phone Frame */
+    .phone-mockup {
+      width: 320px;
+      height: 660px;
+      border-radius: 42px;
+      background: #FFFFFF;
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6), 0 0 0 10px var(--phone-border), 0 0 0 12px var(--phone-rim);
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+      cursor: pointer;
+    }
+
+    .phone-mockup:hover {
+      box-shadow: 0 25px 60px -5px rgba(20, 184, 166, 0.35), 0 0 0 10px #134E4A, 0 0 0 13px #14B8A6;
+      transform: translateY(-4px);
+    }
+
+    .phone-mockup.active-focus {
+      box-shadow: 0 30px 70px 0 rgba(217, 119, 6, 0.5), 0 0 0 10px #D97706, 0 0 0 14px #FDE68A;
+      transform: translateY(-6px) scale(1.02);
+      z-index: 50;
+    }
+
+    /* Screen Hardware Notch */
+    .phone-notch {
+      width: 100px;
+      height: 20px;
+      background: #0F172A;
+      border-radius: 12px;
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      pointer-events: none;
+    }
+    .phone-notch .lens {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #0284C7;
+      opacity: 0.8;
+    }
+    .phone-notch .sensor {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #1E293B;
+    }
+
+    /* Phone Status Bar */
+    .phone-status-bar {
+      height: 32px;
+      padding-top: 6px;
+      padding-left: 16px;
+      padding-right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #FFFFFF;
+      background: #134E4A;
+      z-index: 30;
+    }
+
+    /* Screen Title Tag / Badge */
+    .screen-tag {
+      position: absolute;
+      top: -38px;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      backdrop-filter: blur(8px);
+      padding: 4px 12px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #F8FAFC;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      white-space: nowrap;
+      z-index: 20;
+    }
+    .screen-tag .badge-num {
+      background: #134E4A;
+      color: #2DD4BF;
+      border: 1px solid #14B8A6;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    /* Screen Internal Content */
+    .screen-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: #F8FAFC;
+      color: #0F172A;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .screen-content::-webkit-scrollbar {
+      width: 3px;
+    }
+    .screen-content::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+
+    /* Home Bar Indicator */
+    .phone-home-indicator {
+      height: 14px;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+    }
+    .phone-home-indicator .bar {
+      width: 90px;
+      height: 3.5px;
+      background: #94A3B8;
+      border-radius: 2px;
+    }
+
+    /* Stage Group Titles */
+    .stage-group-box {
+      position: absolute;
+      border: 2px dashed rgba(20, 184, 166, 0.35);
+      background: rgba(19, 78, 74, 0.08);
+      border-radius: 36px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .stage-group-label {
+      position: absolute;
+      top: -18px;
+      right: 28px;
+      background: #0F172A;
+      border: 1px solid #14B8A6;
+      color: #5EEAD4;
+      padding: 4px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    /* Connectors SVG Layer */
+    #flow-connections-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .flow-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 6 6;
+      animation: dashMove 25s linear infinite;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+    }
+
+    @keyframes dashMove {
+      from { stroke-dashoffset: 500; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    .flow-line-auth { stroke: #38BDF8; }
+    .flow-line-nav { stroke: #14B8A6; }
+    .flow-line-contract { stroke: #F59E0B; }
+    .flow-line-admin { stroke: #EC4899; }
+    .flow-line-publish { stroke: #A855F7; }
+
+    /* Interactive Simulator Modal */
+    #simulator-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 19, 32, 0.88);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #simulator-modal.open {
+      display: flex;
+    }
+
+    /* Pulse effect on interactive badges */
+    .pulse-dot {
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP APP BAR / CONTROL PANEL -->
+  <header class="fixed top-0 left-0 right-0 h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 z-50 px-4 flex items-center justify-between">
+    <!-- Brand / Title -->
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-teal-800 border border-teal-500/50 flex items-center justify-center text-xl shadow">
+        🇾🇪
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-extrabold text-sm md:text-base text-white tracking-wide">بوابة اليمن العقارية</h1>
+          <span class="bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">User Flow Prototype</span>
+          <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">18 شاشة مكتملة</span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden sm:block">مخطط الشاشات المترابطة والنموذج التفاعلي الكامل — Yemen Real Estate Portal</p>
+      </div>
+    </div>
+
+    <!-- View & Simulator Controls -->
+    <div class="flex items-center gap-2">
+      <!-- Simulator Trigger Button -->
+      <button onclick="openSimulator('home')" class="flex items-center gap-2 bg-gradient-to-r from-teal-700 to-teal-600 hover:from-teal-600 hover:to-teal-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-lg border border-teal-400/30 transition transform hover:scale-105">
+        <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        <span>تشغيل المحاكي التفاعلي 📱</span>
+      </button>
+
+      <!-- Toggle Flow Lines -->
+      <button onclick="toggleFlowLines()" id="btn-toggle-flow" class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center gap-1.5" title="إظهار/إخفاء خطوط التنقل">
+        <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span class="hidden md:inline">مسارات التدفق</span>
+      </button>
+
+      <!-- Canvas Zoom Controls -->
+      <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl p-1 gap-1">
+        <button onclick="zoomCanvas(1.15)" class="w-7 h-7 rounded-lg hover:bg-slate-700 flex items-center justify-center font-bold text-sm text-slate-200" title="تكبير">+</button>
+        <button onclick="zoomCanvas(0.85)" class="w-7 h-7 rounded-lg hover:bg-slate-700 flex items-center justify-center font-bold text-sm text-slate-200" title="تصغير">-</button>
+        <button onclick="resetCanvasView()" class="w-7 h-7 rounded-lg hover:bg-slate-700 flex items-center justify-center text-xs text-slate-200 font-bold" title="إعادة ضبط العرض">⛶</button>
+      </div>
+
+      <!-- Language Toggle -->
+      <button onclick="toggleLanguage()" id="btn-lang" class="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 hover:text-white">
+        EN
+      </button>
+
+      <!-- Fullscreen Toggle -->
+      <button onclick="toggleBrowserFullscreen()" class="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white" title="ملء الشاشة">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- QUICK NAVIGATION DRAWER / LEGEND (BOTTOM RIGHT) -->
+  <div class="fixed bottom-4 right-4 z-40 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-3 shadow-2xl flex flex-col gap-2 max-w-xs text-xs">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+      <span class="font-bold text-slate-200 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-teal-400"></span> دليل مسارات التدفق (Flows)
+      </span>
+      <span class="text-[10px] text-slate-400">انقر للتركيز</span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+      <button onclick="focusScreen('splash')" class="text-right px-2 py-1 rounded bg-slate-800/60 hover:bg-teal-900/50 text-sky-300 border border-sky-500/20">
+        1-3. الدخول والتوثيق
+      </button>
+      <button onclick="focusScreen('home')" class="text-right px-2 py-1 rounded bg-slate-800/60 hover:bg-teal-900/50 text-teal-300 border border-teal-500/20">
+        4-6. البحث والاستكشاف
+      </button>
+      <button onclick="focusScreen('contracts_rent')" class="text-right px-2 py-1 rounded bg-slate-800/60 hover:bg-teal-900/50 text-amber-300 border border-amber-500/20">
+        12-14. العقود الذكية
+      </button>
+      <button onclick="focusScreen('add_property')" class="text-right px-2 py-1 rounded bg-slate-800/60 hover:bg-teal-900/50 text-purple-300 border border-purple-500/20">
+        7-8. إضافة عقار وموقع
+      </button>
+      <button onclick="focusScreen('admin_dashboard')" class="text-right px-2 py-1 rounded bg-slate-800/60 hover:bg-teal-900/50 text-pink-300 border border-pink-500/20">
+        17-18. إدارة واعتماد
+      </button>
+      <button onclick="focusScreen('map_screen')" class="text-right px-2 py-1 rounded bg-slate-800/60 hover:bg-teal-900/50 text-emerald-300 border border-emerald-500/20">
+        10. الخريطة والتجميع
+      </button>
+    </div>
+  </div>
+
+  <!-- PAN & ZOOM INFINITE CANVAS CONTAINER -->
+  <div id="canvas-container" onmousedown="onCanvasMouseDown(event)" onwheel="onCanvasWheel(event)">
+    <div id="canvas-world">
+
+      <!-- STAGE GROUP BOUNDARY BOXES (Categories) -->
+      <!-- Group 1: Onboarding & Auth -->
+      <div class="stage-group-box" style="left: 60px; top: 120px; width: 1140px; height: 750px;">
+        <div class="stage-group-label">المرحلة الأولى: التسجيل والتوثيق (Onboarding & Authentication)</div>
+      </div>
+
+      <!-- Group 2: Home, Discovery, Map & Property Details -->
+      <div class="stage-group-box" style="left: 1260px; top: 120px; width: 1540px; height: 750px;">
+        <div class="stage-group-label">المرحلة الثانية: الاستكشاف، البحث، والخريطة (Discovery, Search & Map)</div>
+      </div>
+
+      <!-- Group 3: Owner Interaction & Smart Contracts -->
+      <div class="stage-group-box" style="left: 60px; top: 960px; width: 1940px; height: 750px;">
+        <div class="stage-group-label">المرحلة الثالثة: التواصل ومنظومة العقود الذكية (Contracts & Negotiations)</div>
+      </div>
+
+      <!-- Group 4: Property Submission, Admin Approval & Settings -->
+      <div class="stage-group-box" style="left: 2060px; top: 960px; width: 1540px; height: 750px;">
+        <div class="stage-group-label">المرحلة الرابعة: إضافة العقارات، المراجعة، والإدارة (Publishing & Administration)</div>
+      </div>
+
+      <!-- SVG DYNAMIC CONNECTIONS LAYER -->
+      <svg id="flow-connections-svg">
+        <defs>
+          <!-- Arrow Markers for each flow type -->
+          <marker id="arrow-auth" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M 0 0 L 8 4 L 0 8 Z" fill="#38BDF8" />
+          </marker>
+          <marker id="arrow-nav" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M 0 0 L 8 4 L 0 8 Z" fill="#14B8A6" />
+          </marker>
+          <marker id="arrow-contract" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M 0 0 L 8 4 L 0 8 Z" fill="#F59E0B" />
+          </marker>
+          <marker id="arrow-publish" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M 0 0 L 8 4 L 0 8 Z" fill="#A855F7" />
+          </marker>
+          <marker id="arrow-admin" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M 0 0 L 8 4 L 0 8 Z" fill="#EC4899" />
+          </marker>
+        </defs>
+
+        <!-- FLOW PATHS WILL BE COMPUTED DYNAMICALLY OR STATICALLY -->
+        <!-- 1 (Splash) -> 2 (Sign Up) & 3 (Login) -->
+        <path id="path-1-2" class="flow-line flow-line-auth" marker-end="url(#arrow-auth)" d="M 420 450 C 460 450, 460 300, 500 300" />
+        <path id="path-1-3" class="flow-line flow-line-auth" marker-end="url(#arrow-auth)" d="M 420 500 C 460 500, 460 650, 500 650" />
+
+        <!-- 2 (Sign Up) & 3 (Login) -> 4 (Home) -->
+        <path id="path-2-4" class="flow-line flow-line-auth" marker-end="url(#arrow-auth)" d="M 820 300 C 1050 300, 1100 480, 1300 480" />
+        <path id="path-3-4" class="flow-line flow-line-auth" marker-end="url(#arrow-auth)" d="M 820 650 C 1050 650, 1100 520, 1300 520" />
+
+        <!-- 4 (Home) -> 5 (Search) & 10 (Map) & 9 (Favorites) -->
+        <path id="path-4-5" class="flow-line flow-line-nav" marker-end="url(#arrow-nav)" d="M 1620 450 C 1660 450, 1660 450, 1700 450" />
+        <path id="path-4-10" class="flow-line flow-line-nav" marker-end="url(#arrow-nav)" d="M 1460 820 C 1460 880, 2100 700, 2100 450" />
+        <path id="path-4-9" class="flow-line flow-line-nav" marker-end="url(#arrow-nav)" d="M 1520 820 C 1520 900, 2500 700, 2500 450" />
+
+        <!-- 5 (Search) -> 6 (Property Details) -->
+        <path id="path-5-6" class="flow-line flow-line-nav" marker-end="url(#arrow-nav)" d="M 2020 450 C 2060 450, 2060 450, 2100 450" />
+
+        <!-- 6 (Details) -> 11 (Owner Profile) & 12 (Rental Contract) & 13 (Sale Contract) -->
+        <path id="path-6-11" class="flow-line flow-line-contract" marker-end="url(#arrow-contract)" d="M 2260 820 C 2260 950, 200 950, 200 1200" />
+        <path id="path-6-12" class="flow-line flow-line-contract" marker-end="url(#arrow-contract)" d="M 2300 820 C 2300 920, 600 950, 600 1200" />
+        <path id="path-6-13" class="flow-line flow-line-contract" marker-end="url(#arrow-contract)" d="M 2340 820 C 2340 920, 1000 950, 1000 1200" />
+
+        <!-- 11 (Owner) -> 15 (Chat) -->
+        <path id="path-11-15" class="flow-line flow-line-contract" marker-end="url(#arrow-contract)" d="M 420 1300 L 1400 1300" />
+
+        <!-- 12 & 13 -> 14 (Contract Preview PDF) -->
+        <path id="path-12-14" class="flow-line flow-line-contract" marker-end="url(#arrow-contract)" d="M 820 1280 C 900 1280, 950 1280, 1000 1280" />
+        <path id="path-13-14" class="flow-line flow-line-contract" marker-end="url(#arrow-contract)" d="M 1220 1280 C 1260 1280, 1300 1280, 1340 1280" />
+
+        <!-- 4 (Home) -> 7 (Add Property) -> 8 (Pick Location on Map) -->
+        <path id="path-4-7" class="flow-line flow-line-publish" marker-end="url(#arrow-publish)" d="M 1580 820 C 1580 920, 2150 920, 2150 1150" />
+        <path id="path-7-8" class="flow-line flow-line-publish" marker-end="url(#arrow-publish)" d="M 2420 1300 L 2500 1300" />
+
+        <!-- 8 (Map Picked) -> 18 (Admin Review Approval) -->
+        <path id="path-8-18" class="flow-line flow-line-publish" marker-end="url(#arrow-publish)" d="M 2820 1300 L 3250 1300" />
+
+        <!-- 17 (Admin Dashboard) -> 18 (Approvals Review) -->
+        <path id="path-17-18" class="flow-line flow-line-admin" marker-end="url(#arrow-admin)" d="M 3180 1300 L 3250 1300" />
+
+        <!-- 18 (Approved) -> Returns to Home (4) & Map (10) -->
+        <path id="path-18-4" class="flow-line flow-line-admin" marker-end="url(#arrow-admin)" d="M 3410 1150 C 3410 600, 1500 200, 1500 300" />
+      </svg>
+
+      <!-- ============================================================== -->
+      <!-- 18 REALISTIC PHONE SCREENS (ORGANIZED IN LOGICAL FLOW GRID) -->
+      <!-- ============================================================== -->
+
+      <!-- SCREEN 1: SPLASH SCREEN (شاشة البداية) -->
+      <div id="screen-splash" class="phone-mockup" style="left: 100px; top: 160px;" onclick="openSimulator('splash')">
+        <div class="screen-tag"><span class="badge-num">1</span> شاشة البداية (Splash)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar bg-[#0F3B38]"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content bg-gradient-to-b from-[#134E4A] via-[#0F3B38] to-[#0A2624] text-white flex flex-col items-center justify-between p-6 text-center">
+          <div class="pt-16">
+            <div class="w-20 h-20 mx-auto rounded-3xl bg-teal-500/20 border-2 border-teal-400/40 flex items-center justify-center text-4xl shadow-2xl mb-4">
+              🇾🇪
+            </div>
+            <h2 class="text-xl font-extrabold text-white tracking-wider">بوابة اليمن العقارية</h2>
+            <p class="text-xs text-amber-300 font-medium mt-1">Yemen Real Estate Portal</p>
+            <p class="text-[11px] text-teal-200 mt-4 leading-relaxed px-4">المنصة الذكية الأولى للبحث، التوثيق، وإنشاء العقود العقارية المعتمدة في كافة المحافظات اليمنية</p>
+          </div>
+
+          <div class="w-full space-y-2 pb-6">
+            <button class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-900 font-extrabold rounded-2xl text-xs shadow-lg transition">
+              ابدأ الاستكشاف الآن
+            </button>
+            <div class="flex items-center justify-center gap-1.5 text-[10px] text-teal-300">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+              <span>الإصدار المعتمد 2.3.0 FINAL</span>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 2: SIGN UP (تسجيل حساب جديد) -->
+      <div id="screen-signup" class="phone-mockup" style="left: 500px; top: 160px;" onclick="openSimulator('signup')">
+        <div class="screen-tag"><span class="badge-num">2</span> تسجيل حساب جديد (Sign Up)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-4 space-y-3">
+          <div class="pt-2 text-center">
+            <h3 class="font-extrabold text-sm text-slate-900">إنشاء حساب جديد</h3>
+            <p class="text-[11px] text-slate-500">انضم إلى أكبر تجمع عقاري موثق في اليمن</p>
+          </div>
+
+          <!-- Account Type Selector -->
+          <div class="grid grid-cols-2 gap-2 text-[10px]">
+            <div class="p-2 rounded-xl bg-teal-50 border-2 border-teal-600 text-teal-900 font-bold text-center">
+              👤 باحث عن عقار
+            </div>
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 font-medium text-center">
+              🏢 مالك / مكتب عقاري
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">الاسم الكامل</label>
+              <input type="text" value="حمير عبدالله بن سبأ" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" readonly>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">رقم الهاتف (اليمن)</label>
+              <div class="flex">
+                <span class="bg-slate-100 border border-l-0 border-slate-200 rounded-r-xl px-2 py-2 text-[11px] text-slate-600 font-bold">+967</span>
+                <input type="text" value="771 234 567" class="w-full bg-slate-50 border border-slate-200 rounded-l-xl p-2 text-xs" readonly>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">البريد الإلكتروني</label>
+              <input type="email" value="himyar.realestate@gmail.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" readonly>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">كلمة المرور</label>
+              <input type="password" value="••••••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" readonly>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button class="w-full py-2.5 bg-[#134E4A] text-white font-bold rounded-xl text-xs shadow">إنشاء الحساب فوراً</button>
+            <p class="text-center text-[10px] text-slate-500 mt-2">لديك حساب بالفعل؟ <span class="text-teal-700 font-bold">تسجيل الدخول</span></p>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 3: LOGIN (تسجيل الدخول) -->
+      <div id="screen-login" class="phone-mockup" style="left: 500px; top: 510px;" onclick="openSimulator('login')">
+        <div class="screen-tag"><span class="badge-num">3</span> تسجيل الدخول (Login)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-4 space-y-4">
+          <div class="pt-6 text-center">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center text-xl mb-2 font-bold">
+              🔑
+            </div>
+            <h3 class="font-extrabold text-sm text-slate-900">مرحباً بعودتك!</h3>
+            <p class="text-[11px] text-slate-500">سجل الدخول لإدارة عقاراتك وعقودك الموثقة</p>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">رقم الهاتف أو البريد</label>
+              <input type="text" value="770000000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-medium" readonly>
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-[10px] font-bold text-slate-600">كلمة المرور</label>
+                <span class="text-[10px] text-teal-700 font-bold">نسيت الكلمة؟</span>
+              </div>
+              <input type="password" value="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs" readonly>
+            </div>
+          </div>
+
+          <button class="w-full py-2.5 bg-[#134E4A] text-white font-bold rounded-xl text-xs shadow-md">
+            دخول آمن
+          </button>
+
+          <div class="border-t border-slate-200 pt-3 text-center">
+            <span class="text-[10px] text-slate-400">أو الدخول السريع عبر:</span>
+            <div class="flex justify-center gap-2 mt-2">
+              <button class="px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold bg-white text-slate-700">رمز OTP للواتساب</button>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 4: HOME SCREEN (الشاشة الرئيسية) -->
+      <div id="screen-home" class="phone-mockup" style="left: 1300px; top: 160px;" onclick="openSimulator('home')">
+        <div class="screen-tag"><span class="badge-num">4</span> الشاشة الرئيسية (Home)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content">
+          <!-- Header -->
+          <div class="bg-[#134E4A] text-white p-3 pt-1 rounded-b-2xl shadow">
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm">🇾🇪</span>
+                <span class="font-extrabold text-xs">بوابة اليمن العقارية</span>
+              </div>
+              <span class="text-[10px] bg-teal-800 px-2 py-0.5 rounded-full border border-teal-600">صنعاء، اليمن 📍</span>
+            </div>
+            <!-- Search bar -->
+            <div class="bg-white rounded-xl p-2 text-slate-400 text-xs flex items-center justify-between shadow-inner">
+              <span class="text-[11px] text-slate-500">ابحث: فيلا حدة، شقة المعلا...</span>
+              <span>🔍</span>
+            </div>
+          </div>
+
+          <div class="p-3 space-y-3">
+            <!-- Filter Pills -->
+            <div class="flex gap-1.5 text-[10px]">
+              <span class="bg-[#134E4A] text-white font-bold px-3 py-1 rounded-lg">الكل</span>
+              <span class="bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded-lg">للإيجار</span>
+              <span class="bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded-lg">للبيع</span>
+            </div>
+
+            <!-- Governorates Quick List -->
+            <div class="flex gap-1.5 overflow-hidden text-[10px] text-slate-600">
+              <span class="bg-teal-50 text-teal-800 font-bold px-2 py-1 rounded-lg">أمانة العاصمة</span>
+              <span class="bg-slate-100 px-2 py-1 rounded-lg">عدن</span>
+              <span class="bg-slate-100 px-2 py-1 rounded-lg">تعز</span>
+              <span class="bg-slate-100 px-2 py-1 rounded-lg">حضرموت</span>
+            </div>
+
+            <!-- Featured Property Card -->
+            <div class="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+              <div class="h-28 bg-slate-200 relative">
+                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+                <span class="absolute top-2 right-2 bg-teal-800 text-white text-[9px] font-bold px-2 py-0.5 rounded">للإيجار</span>
+                <span class="absolute bottom-2 left-2 bg-amber-500 text-slate-900 text-xs font-black px-2 py-0.5 rounded">$1,200</span>
+              </div>
+              <div class="p-2">
+                <h4 class="font-bold text-xs text-slate-900 truncate">فيلا VIP حجر يمني مشذب</h4>
+                <p class="text-[10px] text-slate-500">📍 صنعاء — حدة الدبلوماسي</p>
+                <div class="flex gap-2 text-[9px] text-slate-400 mt-1">
+                  <span>🛏️ 5 غرف</span>
+                  <span>🚿 4 حمامات</span>
+                  <span>📐 350 م²</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Second Card -->
+            <div class="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+              <div class="h-24 bg-slate-200 relative">
+                <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+                <span class="absolute top-2 right-2 bg-teal-800 text-white text-[9px] font-bold px-2 py-0.5 rounded">للإيجار</span>
+                <span class="absolute bottom-2 left-2 bg-amber-500 text-slate-900 text-xs font-black px-2 py-0.5 rounded">$650</span>
+              </div>
+              <div class="p-2">
+                <h4 class="font-bold text-xs text-slate-900 truncate">شقة مفروشة إطلالة كورنيش خور مكسر</h4>
+                <p class="text-[10px] text-slate-500">📍 عدن — خور مكسر</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Bottom Nav Bar -->
+        <div class="h-12 bg-white border-t border-slate-200 flex items-center justify-around text-[10px] text-slate-500 font-bold z-30">
+          <span class="text-teal-800">🏠 الرئيسية</span>
+          <span>🗺️ الخريطة</span>
+          <span class="bg-[#134E4A] text-amber-300 w-8 h-8 rounded-full flex items-center justify-center -mt-3 shadow">+</span>
+          <span>📑 العقود</span>
+          <span>👤 حسابي</span>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 5: SEARCH & FILTER RESULTS (شاشة نتائج البحث والعقارات) -->
+      <div id="screen-search" class="phone-mockup" style="left: 1700px; top: 160px;" onclick="openSimulator('search')">
+        <div class="screen-tag"><span class="badge-num">5</span> شاشة نتائج البحث (Search Results)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-2.5">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-1.5 flex items-center text-xs">
+              <span>🔍</span>
+              <input type="text" value="فلل للبيع صنعاء حدة" class="w-full pr-2 text-xs font-bold text-slate-800 bg-transparent" readonly>
+            </div>
+            <button class="bg-[#134E4A] text-white p-2 rounded-xl text-xs">⚙️</button>
+          </div>
+
+          <div class="flex justify-between items-center text-[10px] text-slate-500 px-1">
+            <span>تم العثور على 18 عقار مطابق</span>
+            <span class="text-teal-700 font-bold">فرز: الأحدث أولاً ▾</span>
+          </div>
+
+          <!-- Result Items -->
+          <div class="space-y-2">
+            <div class="bg-white p-2 rounded-xl border border-slate-200 flex gap-2">
+              <img src="https://images.unsplash.com/photo-1613977257363-707ba9348227?w=300&auto=format&fit=crop&q=80" class="w-20 h-20 rounded-lg object-cover">
+              <div class="flex-1 text-[10px]">
+                <span class="bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded">للبيع</span>
+                <h5 class="font-bold text-xs text-slate-900 mt-1">فيلا مستقلة حجر هيلاني</h5>
+                <p class="text-slate-500">صنعاء — بيت بوس</p>
+                <div class="flex justify-between items-center mt-1">
+                  <span class="font-extrabold text-teal-800 text-xs">$ 280,000</span>
+                  <span class="text-slate-400">8 لبن</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white p-2 rounded-xl border border-slate-200 flex gap-2">
+              <img src="https://images.unsplash.com/photo-1577495508048-b635879837f1?w=300&auto=format&fit=crop&q=80" class="w-20 h-20 rounded-lg object-cover">
+              <div class="flex-1 text-[10px]">
+                <span class="bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded">للبيع</span>
+                <h5 class="font-bold text-xs text-slate-900 mt-1">عمارة تجارية استثمارية 4 أدوار</h5>
+                <p class="text-slate-500">صنعاء — الأصبحي</p>
+                <div class="flex justify-between items-center mt-1">
+                  <span class="font-extrabold text-teal-800 text-xs">$ 450,000</span>
+                  <span class="text-slate-400">دخل 2800$</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white p-2 rounded-xl border border-slate-200 flex gap-2">
+              <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=300&auto=format&fit=crop&q=80" class="w-20 h-20 rounded-lg object-cover">
+              <div class="flex-1 text-[10px]">
+                <span class="bg-teal-100 text-teal-900 font-bold px-1.5 py-0.5 rounded">للإيجار</span>
+                <h5 class="font-bold text-xs text-slate-900 mt-1">شقة واسعة تشطيب سوبر لوكس</h5>
+                <p class="text-slate-500">تعز — شارع جمال</p>
+                <div class="flex justify-between items-center mt-1">
+                  <span class="font-extrabold text-teal-800 text-xs">250,000 ر.ي</span>
+                  <span class="text-slate-400">4 غرف</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 6: PROPERTY DETAILS (شاشة تفاصيل العقار) -->
+      <div id="screen-details" class="phone-mockup" style="left: 2100px; top: 160px;" onclick="openSimulator('details')">
+        <div class="screen-tag"><span class="badge-num">6</span> تفاصيل العقار (Property Details)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content">
+          <!-- Gallery -->
+          <div class="h-44 bg-slate-300 relative">
+            <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+            <div class="absolute top-2 right-2 flex gap-1">
+              <span class="bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow">بصيرة معمدة ✓</span>
+              <span class="bg-[#134E4A] text-white text-[9px] font-bold px-2 py-0.5 rounded shadow">للإيجار</span>
+            </div>
+            <span class="absolute bottom-2 left-2 bg-amber-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded shadow">1,200 $ / شهرياً</span>
+          </div>
+
+          <div class="p-3 space-y-2.5">
+            <div>
+              <h3 class="font-extrabold text-xs text-slate-900">فيلا VIP حجر يمني مشذب مع حديقة وموقف سيارات</h3>
+              <p class="text-[10px] text-slate-500 mt-0.5">📍 أمانة العاصمة — حدة، الحي الدبلوماسي</p>
+            </div>
+
+            <!-- Specs Grid -->
+            <div class="grid grid-cols-4 gap-1 text-center bg-slate-100 p-2 rounded-xl text-[9px]">
+              <div><span class="block text-slate-400">غرف</span><strong class="text-teal-900 text-[11px]">5</strong></div>
+              <div><span class="block text-slate-400">حمامات</span><strong class="text-teal-900 text-[11px]">4</strong></div>
+              <div><span class="block text-slate-400">المساحة</span><strong class="text-teal-900 text-[11px]">350م²</strong></div>
+              <div><span class="block text-slate-400">اللبن</span><strong class="text-teal-900 text-[11px]">8 لبن</strong></div>
+            </div>
+
+            <!-- Description -->
+            <div>
+              <h5 class="font-bold text-[10px] text-slate-800">وصف العقار:</h5>
+              <p class="text-[10px] text-slate-600 leading-relaxed">
+                فيلا راقية واجهة حجر هيلاني طبيعي، طاقة شمسية مركزية متكاملة، خزان مياه أرضي سعة 4 وايتات، حراسة وموقع هادئ جداً.
+              </p>
+            </div>
+
+            <!-- Actions -->
+            <div class="pt-2 space-y-1.5">
+              <button class="w-full py-2 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs flex items-center justify-center gap-1 shadow">
+                <span>📑</span> توليد ومعاينة العقد الإلكتروني
+              </button>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button class="py-1.5 bg-[#134E4A] text-white rounded-lg text-[10px] font-bold">📞 اتصال بالمالك</button>
+                <button class="py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-bold">💬 واتساب مباشر</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 10: YEMEN REAL ESTATE MAP (شاشة الخريطة والتجميع) -->
+      <div id="screen-map" class="phone-mockup" style="left: 2500px; top: 160px;" onclick="openSimulator('map')">
+        <div class="screen-tag"><span class="badge-num">10</span> خريطة اليمن والتجميع (Map Clusters)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content bg-[#E2E8F0] relative overflow-hidden flex flex-col justify-between">
+          <!-- Top Map Filter -->
+          <div class="p-2 z-20">
+            <div class="bg-white/95 backdrop-blur p-1.5 rounded-xl border border-slate-300 shadow flex justify-between items-center text-[10px]">
+              <span class="font-bold text-slate-800">🇾🇪 كامل محافظات اليمن</span>
+              <span class="bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded">3,450 عقار</span>
+            </div>
+          </div>
+
+          <!-- Simulated Vector Map -->
+          <div class="absolute inset-0 flex items-center justify-center">
+            <svg class="w-full h-full opacity-70" viewBox="0 0 300 400">
+              <path d="M 50 150 C 70 110, 150 90, 240 100 C 270 140, 260 200, 220 230 C 180 250, 110 270, 70 230 Z" fill="#CBD5E1" stroke="#94A3B8" stroke-width="2" />
+              
+              <!-- Map Cluster Pins -->
+              <g>
+                <circle cx="110" cy="180" r="16" fill="#14B8A6" fill-opacity="0.3" class="pulse-dot" />
+                <circle cx="110" cy="180" r="10" fill="#134E4A" />
+                <text x="110" y="183" font-size="8" fill="#FFF" font-weight="bold" text-anchor="middle">14</text>
+                <text x="110" y="198" font-size="8" fill="#0F172A" font-weight="bold" text-anchor="middle">صنعاء</text>
+              </g>
+
+              <g>
+                <circle cx="130" cy="240" r="14" fill="#14B8A6" fill-opacity="0.3" />
+                <circle cx="130" cy="240" r="9" fill="#134E4A" />
+                <text x="130" y="243" font-size="7" fill="#FFF" font-weight="bold" text-anchor="middle">8</text>
+                <text x="130" y="255" font-size="8" fill="#0F172A" font-weight="bold" text-anchor="middle">عدن</text>
+              </g>
+
+              <g>
+                <circle cx="210" cy="200" r="14" fill="#14B8A6" fill-opacity="0.3" />
+                <circle cx="210" cy="200" r="9" fill="#134E4A" />
+                <text x="210" y="203" font-size="7" fill="#FFF" font-weight="bold" text-anchor="middle">9</text>
+                <text x="210" y="215" font-size="8" fill="#0F172A" font-weight="bold" text-anchor="middle">المكلا</text>
+              </g>
+            </svg>
+          </div>
+
+          <!-- Bottom Sheet Preview -->
+          <div class="m-2 bg-white rounded-xl p-2 shadow-xl border border-slate-200 z-20 flex gap-2">
+            <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=150&auto=format&fit=crop&q=80" class="w-14 h-14 rounded-lg object-cover">
+            <div class="flex-1 text-[10px]">
+              <div class="flex justify-between">
+                <span class="text-teal-800 font-bold">حدة — صنعاء</span>
+                <span class="font-black text-amber-600">$1,200</span>
+              </div>
+              <h6 class="font-bold text-slate-800 text-[11px] truncate mt-0.5">فيلا VIP حجر يمني</h6>
+              <button class="mt-1 w-full bg-[#134E4A] text-white py-1 rounded text-[9px] font-bold">معاينة العقار</button>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 9: FAVORITES (شاشة المفضلة) -->
+      <div id="screen-favorites" class="phone-mockup" style="left: 2900px; top: 160px;" onclick="openSimulator('favorites')">
+        <div class="screen-tag"><span class="badge-num">9</span> شاشة المفضلة (Favorites)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-2.5">
+          <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+            <h3 class="font-bold text-xs text-slate-900 flex items-center gap-1">
+              <span class="text-rose-500">❤️</span> العقارات المفضلة (3)
+            </h3>
+            <span class="text-[10px] text-slate-400">حفظ تلقائي</span>
+          </div>
+
+          <div class="space-y-2">
+            <div class="bg-white p-2 rounded-xl border border-slate-200 flex gap-2 relative">
+              <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=200&auto=format&fit=crop&q=80" class="w-16 h-16 rounded-lg object-cover">
+              <div class="flex-1 text-[10px]">
+                <h5 class="font-bold text-xs text-slate-900">شقة مفروشة خور مكسر</h5>
+                <p class="text-slate-500">عدن — كورنيش ساحلي</p>
+                <span class="font-bold text-amber-600">$650 / شهرياً</span>
+              </div>
+              <span class="text-rose-500 text-xs absolute top-2 left-2">♥</span>
+            </div>
+
+            <div class="bg-white p-2 rounded-xl border border-slate-200 flex gap-2 relative">
+              <img src="https://images.unsplash.com/photo-1613977257363-707ba9348227?w=200&auto=format&fit=crop&q=80" class="w-16 h-16 rounded-lg object-cover">
+              <div class="flex-1 text-[10px]">
+                <h5 class="font-bold text-xs text-slate-900">فيلا حضرمية نيو-كلاسيك</h5>
+                <p class="text-slate-500">المكلا — فوه الإنشاءات</p>
+                <span class="font-bold text-amber-600">$220,000</span>
+              </div>
+              <span class="text-rose-500 text-xs absolute top-2 left-2">♥</span>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 11: OWNER PROFILE (تفاصيل صاحب العقار والمكتب) -->
+      <div id="screen-owner" class="phone-mockup" style="left: 100px; top: 1000px;" onclick="openSimulator('owner')">
+        <div class="screen-tag"><span class="badge-num">11</span> ملف صاحب العقار (Owner Profile)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-3">
+          <!-- Profile Card -->
+          <div class="bg-white p-3 rounded-2xl border border-slate-200 text-center shadow-xs">
+            <div class="w-14 h-14 mx-auto rounded-full bg-teal-100 border-2 border-teal-600 flex items-center justify-center text-xl font-bold text-teal-800 mb-1">
+              🏢
+            </div>
+            <h4 class="font-extrabold text-xs text-slate-900">مكتب الأمل العقاري المعتمد</h4>
+            <p class="text-[10px] text-teal-700 font-bold">ترخيص عقاري رسمي رقم: 4108</p>
+            <div class="flex justify-center gap-1 text-[10px] text-amber-500 my-1">
+              ★★★★★ <span class="text-slate-400 font-sans">(4.9/5 • 42 تقييم)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100 text-[10px]">
+              <div><span class="text-slate-400">عقارات معروضة</span><p class="font-bold text-teal-900">12 عقار</p></div>
+              <div><span class="text-slate-400">عقود منجزة</span><p class="font-bold text-teal-900">38 عقد</p></div>
+            </div>
+          </div>
+
+          <!-- Contact Buttons -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button class="py-2 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center gap-1 shadow">
+              <span>💬</span> واتساب
+            </button>
+            <button class="py-2 bg-[#134E4A] text-white font-bold rounded-xl flex items-center justify-center gap-1 shadow">
+              <span>📞</span> اتصال
+            </button>
+          </div>
+
+          <!-- Owner's Active Listings -->
+          <div>
+            <h5 class="font-bold text-[11px] text-slate-800 mb-1.5">عقارات أخرى معلنة للمكتب:</h5>
+            <div class="space-y-1.5 text-[10px]">
+              <div class="p-2 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
+                <span>شقة تمليك — شيراتون</span>
+                <strong class="text-teal-800">$75,000</strong>
+              </div>
+              <div class="p-2 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
+                <span>أرضية تجارية — بيت بوس</span>
+                <strong class="text-teal-800">$190,000</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 12: CREATE RENTAL CONTRACT (شاشة إنشاء عقد إيجار) -->
+      <div id="screen-contract-rent" class="phone-mockup" style="left: 500px; top: 1000px;" onclick="openSimulator('contract_rent')">
+        <div class="screen-tag"><span class="badge-num">12</span> إنشاء عقد إيجار (Rental Contract)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-2.5 text-xs">
+          <div class="text-center border-b border-slate-200 pb-1.5">
+            <h4 class="font-extrabold text-xs text-slate-900">إنشاء عقد إيجار شرعي وقانوني</h4>
+            <p class="text-[10px] text-slate-500">وفق أحكام القانون المدني اليمني</p>
+          </div>
+
+          <div class="space-y-2 text-[10px]">
+            <div>
+              <label class="block font-bold text-slate-600 mb-0.5">الطرف الأول (المؤجر)</label>
+              <input type="text" value="عبدالله محمد الحاشدي" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold" readonly>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-600 mb-0.5">الطرف الثاني (المستأجر)</label>
+              <input type="text" value="خالد أحمد اليماني" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold" readonly>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <div>
+                <label class="block font-bold text-slate-600 mb-0.5">الإيجار الشهري</label>
+                <input type="text" value="1,200 $" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold text-teal-800" readonly>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-600 mb-0.5">مدة العقد</label>
+                <input type="text" value="سنة كاملة" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold" readonly>
+              </div>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-600 mb-0.5">مبلغ التأمين / الضمان</label>
+              <input type="text" value="1,200 $ (شهر واحد ضمان)" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5" readonly>
+            </div>
+          </div>
+
+          <button class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs shadow mt-2">
+            معاينة صك العقد والطباعة PDF 📄
+          </button>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 13: CREATE SALE CONTRACT (شاشة إنشاء عقد بيع وتمليك) -->
+      <div id="screen-contract-sale" class="phone-mockup" style="left: 900px; top: 1000px;" onclick="openSimulator('contract_sale')">
+        <div class="screen-tag"><span class="badge-num">13</span> عقد بيع وتمليك (Sale & Deed)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-2.5 text-xs">
+          <div class="text-center border-b border-slate-200 pb-1.5">
+            <h4 class="font-extrabold text-xs text-slate-900">عقد بيع وشراء وتمليك عقار</h4>
+            <p class="text-[10px] text-slate-500">بصيرة شرعية معمدة وسجل عقاري</p>
+          </div>
+
+          <div class="space-y-2 text-[10px]">
+            <div>
+              <label class="block font-bold text-slate-600 mb-0.5">البائع (المسقط لملكه)</label>
+              <input type="text" value="محمد صالح العمري" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold" readonly>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-600 mb-0.5">المشتري (المتملك للعين)</label>
+              <input type="text" value="طارق عبدالكريم الهمداني" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold" readonly>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <div>
+                <label class="block font-bold text-slate-600 mb-0.5">المساحة باللبن الصنعانية</label>
+                <input type="text" value="12 لبنة حر معمدة" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold" readonly>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-600 mb-0.5">إجمالي الثمن المتفق عليه</label>
+                <input type="text" value="450,000 $" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold text-amber-700" readonly>
+              </div>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-600 mb-0.5">رقم البصيرة وسجل التوثيق</label>
+              <input type="text" value="بصيرة رقم 984 / سجل صنعاء" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5" readonly>
+            </div>
+          </div>
+
+          <button class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs shadow mt-2">
+            معاينة عقد البيع والختم الرقمي 📄
+          </button>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 14: CONTRACT PREVIEW & PDF PRINT (معاينة العقد والطباعة) -->
+      <div id="screen-contract-preview" class="phone-mockup" style="left: 1300px; top: 1000px;" onclick="openSimulator('contract_preview')">
+        <div class="screen-tag"><span class="badge-num">14</span> معاينة العقد والطباعة (PDF Preview)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-2 bg-slate-200 overflow-y-auto">
+          <!-- A4 Sheet Simulation -->
+          <div class="bg-white p-3 rounded-lg shadow-md border border-slate-300 font-amiri text-[9px] leading-relaxed relative">
+            <div class="text-center border-b pb-1 mb-1.5 font-bold">
+              <span class="block text-[8px] text-slate-600">الجمهورية اليمنية</span>
+              <span class="text-teal-900 font-black text-[10px]">بسم الله الرحمن الرحيم</span>
+              <h5 class="text-[11px] font-black text-slate-900">عقد إيجار شرعي وقانوني موثق</h5>
+            </div>
+
+            <p class="text-slate-800 text-[8.5px]">
+              بعون الله وتوفيقه، تم الاتفاق بين <strong>الطرف الأول:</strong> عبدالله الحاشدي (مؤجر) و<strong>الطرف الثاني:</strong> خالد اليماني (مستأجر) على إيجار الفيلا الكائنة في حدة — صنعاء.
+            </p>
+
+            <div class="bg-slate-50 p-1.5 rounded my-1 border border-slate-200 text-[8px]">
+              <span><strong>القيمة:</strong> 1,200 $ شهرياً</span> | <span><strong>المدة:</strong> سنة هجرية</span>
+            </div>
+
+            <div class="pt-2 border-t flex justify-between items-end text-[7.5px] mt-2">
+              <div class="text-center">توقيع المؤجر<br><strong>عبدالله الحاشدي</strong></div>
+              <!-- Official Stamp -->
+              <div class="w-12 h-12 border border-teal-800 rounded-full flex flex-col items-center justify-center bg-teal-50 text-[7px] text-teal-900 font-bold">
+                <span>موثق رسمياً</span>
+                <span>QR SEAL</span>
+              </div>
+              <div class="text-center">توقيع المستأجر<br><strong>خالد اليماني</strong></div>
+            </div>
+          </div>
+
+          <div class="mt-2 space-y-1">
+            <button class="w-full py-1.5 bg-[#134E4A] text-white font-bold rounded-lg text-[10px]">🖨️ طباعة A4 بصيغة PDF</button>
+            <button class="w-full py-1.5 bg-emerald-600 text-white font-bold rounded-lg text-[10px]">📤 إرسال للواتساب</button>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 15: CHAT & INQUIRIES (المحادثات والتواصل) -->
+      <div id="screen-chat" class="phone-mockup" style="left: 1700px; top: 1000px;" onclick="openSimulator('chat')">
+        <div class="screen-tag"><span class="badge-num">15</span> المحادثات والتواصل (Chat)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content flex flex-col justify-between">
+          <!-- Chat Header -->
+          <div class="bg-white border-b border-slate-200 p-2.5 flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-teal-800 text-white flex items-center justify-center text-xs font-bold">
+              ع
+            </div>
+            <div class="flex-1 min-w-0">
+              <h5 class="font-bold text-xs text-slate-900 truncate">الشيخ عبدالله الحاشدي (المالك)</h5>
+              <span class="text-[9px] text-emerald-600 font-medium">متصل الآن 🟢</span>
+            </div>
+          </div>
+
+          <!-- Messages Body -->
+          <div class="p-3 space-y-2 text-[10px]">
+            <!-- Property Quote snippet -->
+            <div class="bg-slate-100 p-2 rounded-xl text-slate-600 border border-slate-200">
+              <span class="font-bold text-teal-800 block text-[9px]">عقار قيد الاستفسار:</span>
+              فيلا VIP حجر مشذب — حدة ($1,200)
+            </div>
+
+            <div class="bg-slate-200 text-slate-800 p-2 rounded-2xl rounded-tr-none max-w-[80%] self-start">
+              السلام عليكم ورحمة الله، هل الفيلا متاحة للمعاينة اليوم بعد العصر؟
+            </div>
+
+            <div class="bg-[#134E4A] text-white p-2 rounded-2xl rounded-tl-none max-w-[80%] mr-auto text-right">
+              وعليكم السلام ورحمة الله، نعم أهلاً بك. الحارس متواجد والمفتاح جاهز للمعاينة.
+            </div>
+          </div>
+
+          <!-- Input bar -->
+          <div class="p-2 bg-white border-t border-slate-200 flex gap-1.5 items-center">
+            <input type="text" placeholder="اكتب رسالتك للمالك..." class="flex-1 bg-slate-100 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none" readonly>
+            <button class="bg-[#134E4A] text-white p-2 rounded-xl text-xs">➤</button>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 7: ADD PROPERTY (إضافة عقار جديد) -->
+      <div id="screen-add-prop" class="phone-mockup" style="left: 2100px; top: 1000px;" onclick="openSimulator('add_prop')">
+        <div class="screen-tag"><span class="badge-num">7</span> إضافة عقار جديد (Add Property)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-2.5 text-xs">
+          <div>
+            <h4 class="font-extrabold text-xs text-slate-900">إضافة إعلان عقاري جديد</h4>
+            <p class="text-[10px] text-slate-500">سيتم إرسال الإعلان للمراجعة والاعتماد</p>
+          </div>
+
+          <div class="space-y-2 text-[10px]">
+            <div>
+              <label class="block font-bold text-slate-600 mb-0.5">عنوان العقار</label>
+              <input type="text" value="فيلا دورين حجر مشذب مع حوش واسع" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold" readonly>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <div>
+                <label class="block font-bold text-slate-600 mb-0.5">المحافظة</label>
+                <input type="text" value="صنعاء" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5" readonly>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-600 mb-0.5">النوع</label>
+                <input type="text" value="فيلا سكنية" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5" readonly>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <div>
+                <label class="block font-bold text-slate-600 mb-0.5">السعر والعملة</label>
+                <input type="text" value="1,200 $" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 font-bold text-teal-800" readonly>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-600 mb-0.5">نوع الصفقة</label>
+                <input type="text" value="للإيجار" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5" readonly>
+              </div>
+            </div>
+          </div>
+
+          <!-- Button to Pick Map Coordinates -->
+          <button class="w-full py-2 bg-teal-50 border border-teal-300 text-teal-900 font-bold rounded-xl text-[10px] flex items-center justify-center gap-1 shadow-xs">
+            <span>📍</span> تحديد موقع العقار على الخريطة (GPS)
+          </button>
+
+          <button class="w-full py-2 bg-[#134E4A] text-white font-bold rounded-xl text-xs shadow">
+            إرسال العقار للاعتماد والنشر
+          </button>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 8: PICK LOCATION ON MAP (تحديد موقع العقار على الخريطة) -->
+      <div id="screen-pick-map" class="phone-mockup" style="left: 2500px; top: 1000px;" onclick="openSimulator('pick_map')">
+        <div class="screen-tag"><span class="badge-num">8</span> تحديد الموقع على الخريطة (Pick Location)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content bg-[#E2E8F0] relative overflow-hidden flex flex-col justify-between p-3">
+          <!-- Search District Pin -->
+          <div class="bg-white p-2 rounded-xl border border-slate-300 shadow text-[10px] flex items-center justify-between z-20">
+            <span>📍 حدة — جوار المركز الليبي</span>
+            <span class="text-teal-700 font-bold">تغيير</span>
+          </div>
+
+          <!-- Crosshair in center -->
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div class="w-10 h-10 flex flex-col items-center justify-center text-rose-600 text-2xl font-black -mt-4 animate-bounce">
+              📍
+            </div>
+          </div>
+
+          <!-- Bottom Confirm Card -->
+          <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xl z-20 space-y-1.5">
+            <div class="text-[10px]">
+              <span class="text-slate-400">الإحداثيات الدقيقة:</span>
+              <p class="font-mono font-bold text-slate-800 text-[11px]">15.3547° N, 44.2075° E</p>
+            </div>
+            <button class="w-full py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs shadow">
+              تأكيد هذا الموقع للعقار ✓
+            </button>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 16: PROFILE & SETTINGS (الملف الشخصي والإعدادات) -->
+      <div id="screen-profile" class="phone-mockup" style="left: 2900px; top: 1000px;" onclick="openSimulator('profile')">
+        <div class="screen-tag"><span class="badge-num">16</span> الملف الشخصي (Profile)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-3">
+          <!-- User Info -->
+          <div class="bg-white p-3 rounded-2xl border border-slate-200 text-center shadow-xs">
+            <div class="w-14 h-14 mx-auto rounded-full bg-[#134E4A] text-amber-300 flex items-center justify-center text-xl font-bold mb-1 shadow">
+              👤
+            </div>
+            <h4 class="font-bold text-xs text-slate-900">عبدالله الحاشدي</h4>
+            <span class="bg-teal-50 text-teal-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-teal-200">حساب موثق رسمي</span>
+          </div>
+
+          <!-- Menu Options -->
+          <div class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 text-[11px] font-semibold text-slate-700">
+            <div class="p-2.5 flex justify-between items-center">
+              <span>🏠 عقاراتي المعروضة</span><span class="text-slate-400 font-sans">3 ›</span>
+            </div>
+            <div class="p-2.5 flex justify-between items-center">
+              <span>📑 عقودي الموثقة</span><span class="text-slate-400 font-sans">5 ›</span>
+            </div>
+            <div class="p-2.5 flex justify-between items-center">
+              <span>🌐 اللغة (العربية / English)</span><span class="text-teal-700 font-bold">العربية</span>
+            </div>
+            <div class="p-2.5 flex justify-between items-center">
+              <span>🛡️ لوحة إدارة البوابة</span><span class="text-amber-600 font-bold">دخول ›</span>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 17: ADMIN DASHBOARD (لوحة تحكم المدير) -->
+      <div id="screen-admin-dashboard" class="phone-mockup" style="left: 3300px; top: 160px;" onclick="openSimulator('admin')">
+        <div class="screen-tag"><span class="badge-num">17</span> لوحة تحكم المدير (Admin Dashboard)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-3">
+          <div class="flex justify-between items-center">
+            <div>
+              <h4 class="font-extrabold text-xs text-slate-900">🛡️ لوحة الإدارة العليا</h4>
+              <p class="text-[10px] text-slate-500">إشراف بوابة اليمن العقارية</p>
+            </div>
+            <span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full">المدير العام</span>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-2 gap-2 text-[10px]">
+            <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-slate-400">إجمالي العقارات</span>
+              <p class="font-black text-sm text-teal-900 mt-0.5">3,450</p>
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-slate-400">طلبات قيد المراجعة</span>
+              <p class="font-black text-sm text-amber-600 mt-0.5">3 معلق</p>
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-slate-400">عقود منجزة</span>
+              <p class="font-black text-sm text-teal-900 mt-0.5">1,280</p>
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-slate-400">مستخدم نشط</span>
+              <p class="font-black text-sm text-teal-900 mt-0.5">18,500</p>
+            </div>
+          </div>
+
+          <!-- Quick Action -->
+          <button class="w-full py-2 bg-[#134E4A] text-white font-bold rounded-xl text-xs shadow">
+            فحص واعتماد الإعلانات المعلقة (3) ⚡
+          </button>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+      <!-- SCREEN 18: PROPERTY APPROVALS REVIEW (مراجعة طلبات النشر) -->
+      <div id="screen-admin-review" class="phone-mockup" style="left: 3300px; top: 1000px;" onclick="openSimulator('admin_review')">
+        <div class="screen-tag"><span class="badge-num">18</span> مراجعة طلبات النشر (Approvals Review)</div>
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <div class="phone-status-bar"><span>10:45</span><span>5G 100%</span></div>
+        <div class="screen-content p-3 space-y-2.5 text-xs">
+          <div class="border-b border-slate-200 pb-1.5 flex justify-between items-center">
+            <h4 class="font-extrabold text-xs text-slate-900">طلبات النشر بانتظار الموافقة</h4>
+            <span class="text-[10px] text-amber-600 font-bold">3 طلبات</span>
+          </div>
+
+          <div class="space-y-2">
+            <!-- Review Card 1 -->
+            <div class="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h6 class="font-bold text-xs text-slate-900">فيلا دورين حجر مشذب</h6>
+                  <p class="text-[10px] text-slate-500">صنعاء — حدة ($1,200)</p>
+                </div>
+                <span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded">معلق</span>
+              </div>
+              <div class="flex gap-1.5 pt-1 border-t border-slate-100">
+                <button class="flex-1 bg-emerald-600 text-white py-1 rounded-lg text-[10px] font-bold">اعتماد ونشر ✓</button>
+                <button class="flex-1 bg-rose-50 text-rose-600 py-1 rounded-lg text-[10px] font-bold">رفض ✕</button>
+              </div>
+            </div>
+
+            <!-- Review Card 2 -->
+            <div class="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h6 class="font-bold text-xs text-slate-900">محل تجاري للتقبيل</h6>
+                  <p class="text-[10px] text-slate-500">عدن — المنصورة ($400)</p>
+                </div>
+                <span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded">معلق</span>
+              </div>
+              <div class="flex gap-1.5 pt-1 border-t border-slate-100">
+                <button class="flex-1 bg-emerald-600 text-white py-1 rounded-lg text-[10px] font-bold">اعتماد ونشر ✓</button>
+                <button class="flex-1 bg-rose-50 text-rose-600 py-1 rounded-lg text-[10px] font-bold">رفض ✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- FULLY INTERACTIVE LIVE SIMULATOR MODAL (Phone Simulator Mode) -->
+  <!-- ============================================================== -->
+  <div id="simulator-modal">
+    <!-- Simulator Phone Shell -->
+    <div class="relative flex flex-col items-center">
+      <!-- Top Floating Navigation in Simulator -->
+      <div class="mb-3 bg-slate-900/95 border border-slate-800 text-white px-4 py-2 rounded-2xl flex items-center justify-between w-[370px] shadow-2xl">
+        <div class="flex items-center gap-2">
+          <span class="text-amber-400 font-bold text-xs">📱 محاكي التطبيق الحي</span>
+          <span id="sim-current-screen-name" class="text-[11px] text-slate-300">الرئيسية</span>
+        </div>
+        <button onclick="closeSimulator()" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-rose-900 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs transition">
+          ✕
+        </button>
+      </div>
+
+      <!-- Real Phone Frame for Interactive Simulator -->
+      <div class="w-[360px] h-[740px] rounded-[48px] bg-white border-[10px] border-slate-900 shadow-2xl relative flex flex-col overflow-hidden">
+        <!-- Hardware Notch -->
+        <div class="phone-notch"><span class="sensor"></span><span class="lens"></span></div>
+        <!-- Status Bar -->
+        <div class="phone-status-bar bg-[#134E4A]">
+          <span id="sim-live-clock">10:45</span>
+          <span>5G 100%</span>
+        </div>
+
+        <!-- Dynamic Screen Render Area -->
+        <div id="sim-viewport" class="flex-1 overflow-y-auto bg-[#F8FAFC] relative">
+          <!-- Injected via JavaScript based on active screen -->
+        </div>
+
+        <!-- Simulator Bottom Navigation -->
+        <div id="sim-bottom-nav" class="h-14 bg-white border-t border-slate-200 flex items-center justify-around text-[10px] text-slate-500 font-bold z-30 select-none shadow">
+          <button onclick="navigateSimulator('home')" class="sim-nav-btn flex flex-col items-center text-teal-800">
+            <span>🏠</span><span>الرئيسية</span>
+          </button>
+          <button onclick="navigateSimulator('map')" class="sim-nav-btn flex flex-col items-center hover:text-teal-800">
+            <span>🗺️</span><span>الخريطة</span>
+          </button>
+          <button onclick="navigateSimulator('add_prop')" class="bg-[#134E4A] hover:bg-teal-800 text-amber-300 w-9 h-9 rounded-full flex items-center justify-center -mt-3 shadow-lg">
+            <span class="text-lg font-bold">+</span>
+          </button>
+          <button onclick="navigateSimulator('contract_rent')" class="sim-nav-btn flex flex-col items-center hover:text-teal-800">
+            <span>📑</span><span>العقود</span>
+          </button>
+          <button onclick="navigateSimulator('profile')" class="sim-nav-btn flex flex-col items-center hover:text-teal-800">
+            <span>👤</span><span>حسابي</span>
+          </button>
+        </div>
+
+        <div class="phone-home-indicator"><div class="bar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT CONTROLLER -->
+  <script>
+    // State management for canvas pan & zoom
+    let panX = 40;
+    let panY = 20;
+    let zoom = 0.55;
+    let isDragging = false;
+    let startX, startY;
+    let currentLanguage = 'ar';
+    let flowLinesVisible = true;
+
+    const container = document.getElementById('canvas-container');
+    const world = document.getElementById('canvas-world');
+
+    function updateTransform() {
+      world.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    }
+
+    function onCanvasMouseDown(e) {
+      if (e.target.closest('.phone-mockup') || e.target.closest('button')) return;
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+      container.classList.add('grabbing');
+    }
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+      container.classList.remove('grabbing');
+    });
+
+    function onCanvasWheel(e) {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+
+      const newZoom = Math.max(0.2, Math.min(1.8, zoom * zoomFactor));
+      panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+      panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+      zoom = newZoom;
+      updateTransform();
+    }
+
+    function zoomCanvas(factor) {
+      const newZoom = Math.max(0.2, Math.min(1.8, zoom * factor));
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      panX = centerX - (centerX - panX) * (newZoom / zoom);
+      panY = centerY - (centerY - panY) * (newZoom / zoom);
+      zoom = newZoom;
+      updateTransform();
+    }
+
+    function resetCanvasView() {
+      zoom = 0.45;
+      panX = 80;
+      panY = 60;
+      updateTransform();
+    }
+
+    function focusScreen(screenKey) {
+      const elMap = {
+        splash: 'screen-splash',
+        signup: 'screen-signup',
+        login: 'screen-login',
+        home: 'screen-home',
+        search: 'screen-search',
+        details: 'screen-details',
+        map_screen: 'screen-map',
+        favorites: 'screen-favorites',
+        owner: 'screen-owner',
+        contracts_rent: 'screen-contract-rent',
+        contracts_sale: 'screen-contract-sale',
+        contract_preview: 'screen-contract-preview',
+        chat: 'screen-chat',
+        add_property: 'screen-add-prop',
+        pick_map: 'screen-pick-map',
+        profile: 'screen-profile',
+        admin_dashboard: 'screen-admin-dashboard',
+        admin_review: 'screen-admin-review'
+      };
+
+      const targetId = elMap[screenKey];
+      if (!targetId) return;
+      const el = document.getElementById(targetId);
+      if (!el) return;
+
+      document.querySelectorAll('.phone-mockup').forEach(p => p.classList.remove('active-focus'));
+      el.classList.add('active-focus');
+
+      // Center the screen on canvas
+      const targetLeft = parseFloat(el.style.left);
+      const targetTop = parseFloat(el.style.top);
+
+      zoom = 0.85;
+      panX = (window.innerWidth / 2) - (targetLeft * zoom) - (160 * zoom);
+      panY = (window.innerHeight / 2) - (targetTop * zoom) - (330 * zoom);
+      updateTransform();
+    }
+
+    function toggleFlowLines() {
+      flowLinesVisible = !flowLinesVisible;
+      const svg = document.getElementById('flow-connections-svg');
+      svg.style.display = flowLinesVisible ? 'block' : 'none';
+      document.getElementById('btn-toggle-flow').classList.toggle('bg-teal-900', flowLinesVisible);
+    }
+
+    function toggleBrowserFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    function toggleLanguage() {
+      currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+      document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+      document.getElementById('btn-lang').textContent = currentLanguage === 'ar' ? 'EN' : 'عربي';
+    }
+
+    // ==========================================
+    // Interactive Simulator Engine
+    // ==========================================
+    let simCurrentScreen = 'home';
+
+    function openSimulator(initialScreen = 'home') {
+      document.getElementById('simulator-modal').classList.add('open');
+      navigateSimulator(initialScreen);
+    }
+
+    function closeSimulator() {
+      document.getElementById('simulator-modal').classList.remove('open');
+    }
+
+    function navigateSimulator(screen) {
+      simCurrentScreen = screen;
+      const viewport = document.getElementById('sim-viewport');
+      const titleSpan = document.getElementById('sim-current-screen-name');
+
+      // Mapping titles
+      const names = {
+        splash: 'شاشة البداية',
+        signup: 'تسجيل حساب جديد',
+        login: 'تسجيل الدخول',
+        home: 'الرئيسية',
+        search: 'نتائج البحث والتصفية',
+        details: 'تفاصيل العقار',
+        map: 'الخريطة العقارية',
+        favorites: 'المفضلة',
+        owner: 'ملف المالك',
+        contract_rent: 'عقد إيجار إلكتروني',
+        contract_sale: 'عقد بيع وتمليك',
+        contract_preview: 'معاينة العقد والطباعة',
+        chat: 'المحادثة المباشرة',
+        add_prop: 'إضافة عقار',
+        pick_map: 'تحديد الموقع GPS',
+        profile: 'الملف الشخصي',
+        admin: 'لوحة الإدارة',
+        admin_review: 'مراجعة طلبات النشر'
+      };
+      titleSpan.textContent = names[screen] || 'الرئيسية';
+
+      // Update Nav active style
+      document.querySelectorAll('.sim-nav-btn').forEach(b => b.classList.remove('text-teal-800'));
+
+      // Render content dynamically based on screen
+      if (screen === 'splash') {
+        viewport.innerHTML = `
+          <div class="h-full bg-gradient-to-b from-[#134E4A] via-[#0F3B38] to-[#0A2624] text-white flex flex-col justify-between p-6 text-center">
+            <div class="pt-16">
+              <div class="w-20 h-20 mx-auto rounded-3xl bg-teal-500/20 border-2 border-teal-400/40 flex items-center justify-center text-4xl shadow-2xl mb-4">🇾🇪</div>
+              <h2 class="text-xl font-extrabold text-white">بوابة اليمن العقارية</h2>
+              <p class="text-xs text-amber-300 font-medium mt-1">Yemen Real Estate Portal</p>
+              <p class="text-[11px] text-teal-200 mt-4 leading-relaxed px-4">منصة البحث والتوثيق العقاري الذكية المعتمدة في اليمن</p>
+            </div>
+            <div class="w-full space-y-2 pb-6">
+              <button onclick="navigateSimulator('home')" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-900 font-extrabold rounded-2xl text-xs shadow-lg">ابدأ الاستكشاف</button>
+              <button onclick="navigateSimulator('login')" class="w-full py-2 bg-teal-900/50 text-teal-200 text-xs rounded-xl">تسجيل الدخول</button>
+            </div>
+          </div>
+        `;
+      } else if (screen === 'home') {
+        viewport.innerHTML = `
+          <div>
+            <div class="bg-[#134E4A] text-white p-4 pt-2 rounded-b-2xl shadow">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-extrabold text-xs">🇾🇪 بوابة اليمن العقارية</span>
+                <span class="text-[10px] bg-teal-800 px-2 py-0.5 rounded-full border border-teal-600">صنعاء 📍</span>
+              </div>
+              <div onclick="navigateSimulator('search')" class="bg-white rounded-xl p-2.5 text-slate-400 text-xs flex items-center justify-between shadow-inner cursor-pointer">
+                <span>ابحث: فيلا، شقة، أرضية...</span><span>🔍</span>
+              </div>
+            </div>
+
+            <div class="p-3 space-y-3">
+              <div class="flex gap-1.5 text-[11px]">
+                <button class="bg-[#134E4A] text-white font-bold px-3 py-1 rounded-lg">الكل</button>
+                <button class="bg-white border text-slate-700 px-3 py-1 rounded-lg">للإيجار</button>
+                <button class="bg-white border text-slate-700 px-3 py-1 rounded-lg">للبيع</button>
+              </div>
+
+              <!-- Card 1 -->
+              <div onclick="navigateSimulator('details')" class="cursor-pointer bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow transition">
+                <div class="h-32 bg-slate-200 relative">
+                  <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+                  <span class="absolute top-2 right-2 bg-teal-800 text-white text-[9px] font-bold px-2 py-0.5 rounded">للإيجار</span>
+                  <span class="absolute bottom-2 left-2 bg-amber-500 text-slate-900 text-xs font-black px-2 py-0.5 rounded">$1,200</span>
+                </div>
+                <div class="p-2.5">
+                  <h4 class="font-bold text-xs text-slate-900 truncate">فيلا VIP حجر يمني مشذب</h4>
+                  <p class="text-[10px] text-slate-500">📍 صنعاء — حدة الدبلوماسي</p>
+                </div>
+              </div>
+
+              <!-- Card 2 -->
+              <div onclick="navigateSimulator('details')" class="cursor-pointer bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow transition">
+                <div class="h-32 bg-slate-200 relative">
+                  <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+                  <span class="absolute top-2 right-2 bg-teal-800 text-white text-[9px] font-bold px-2 py-0.5 rounded">للإيجار</span>
+                  <span class="absolute bottom-2 left-2 bg-amber-500 text-slate-900 text-xs font-black px-2 py-0.5 rounded">$650</span>
+                </div>
+                <div class="p-2.5">
+                  <h4 class="font-bold text-xs text-slate-900 truncate">شقة مفروشة إطلالة كورنيش خور مكسر</h4>
+                  <p class="text-[10px] text-slate-500">📍 عدن — خور مكسر</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (screen === 'details') {
+        viewport.innerHTML = `
+          <div class="pb-6">
+            <div class="relative h-48 bg-slate-200">
+              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+              <button onclick="navigateSimulator('home')" class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 font-bold text-xs">✕</button>
+              <span class="absolute bottom-2 left-2 bg-amber-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded shadow">$1,200 / شهرياً</span>
+            </div>
+            <div class="p-4 space-y-3">
+              <h3 class="font-extrabold text-sm text-slate-900">فيلا VIP حجر يمني مشذب مع حديقة وموقف سيارات</h3>
+              <p class="text-xs text-slate-500">📍 صنعاء — حدة الدبلوماسي</p>
+              
+              <div class="grid grid-cols-4 gap-1.5 text-center bg-slate-100 p-2.5 rounded-xl text-xs">
+                <div><span class="block text-slate-400 text-[10px]">غرف</span><strong class="text-teal-900">5</strong></div>
+                <div><span class="block text-slate-400 text-[10px]">حمامات</span><strong class="text-teal-900">4</strong></div>
+                <div><span class="block text-slate-400 text-[10px]">المساحة</span><strong class="text-teal-900">350م²</strong></div>
+                <div><span class="block text-slate-400 text-[10px]">اللبن</span><strong class="text-teal-900">8 لبن</strong></div>
+              </div>
+
+              <div class="pt-2 space-y-2">
+                <button onclick="navigateSimulator('contract_rent')" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs shadow flex items-center justify-center gap-1.5">
+                  <span>📑</span> توليد ومعاينة العقد الإلكتروني
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                  <button onclick="navigateSimulator('owner')" class="py-2 bg-[#134E4A] text-white rounded-xl text-xs font-bold">ملف المالك</button>
+                  <button onclick="navigateSimulator('chat')" class="py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">محادثة فورية</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (screen === 'contract_rent') {
+        viewport.innerHTML = `
+          <div class="p-4 space-y-3 text-xs">
+            <h4 class="font-extrabold text-sm text-slate-900 border-b pb-2">عقد إيجار شرعي وقانوني</h4>
+            <div class="space-y-2">
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-0.5">الطرف الأول (المؤجر)</label>
+                <input type="text" value="عبدالله محمد الحاشدي" class="w-full bg-slate-100 p-2 rounded-lg font-bold">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-0.5">الطرف الثاني (المستأجر)</label>
+                <input type="text" value="خالد أحمد اليماني" class="w-full bg-slate-100 p-2 rounded-lg font-bold">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[10px] text-slate-500 mb-0.5">الإيجار الشهري</label>
+                  <input type="text" value="1,200 $" class="w-full bg-slate-100 p-2 rounded-lg font-bold text-teal-800">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-slate-500 mb-0.5">مدة العقد</label>
+                  <input type="text" value="سنة كاملة" class="w-full bg-slate-100 p-2 rounded-lg font-bold">
+                </div>
+              </div>
+            </div>
+            <button onclick="navigateSimulator('contract_preview')" class="w-full py-3 bg-[#134E4A] text-white font-extrabold rounded-xl text-xs shadow mt-3">
+              معاينة صك العقد والطباعة A4 📄
+            </button>
+          </div>
+        `;
+      } else if (screen === 'contract_preview') {
+        viewport.innerHTML = `
+          <div class="p-3 bg-slate-100 min-h-full">
+            <div class="bg-white p-4 rounded-xl shadow-md font-amiri text-xs leading-relaxed text-slate-900 border border-slate-300">
+              <div class="text-center border-b pb-2 mb-2">
+                <span class="text-[10px] text-slate-500 block">الجمهورية اليمنية</span>
+                <span class="font-bold text-teal-900">بسم الله الرحمن الرحيم</span>
+                <h5 class="text-sm font-black text-slate-900 mt-1">عقد إيجار شرعي وقانوني موثق</h5>
+              </div>
+              <p class="text-[10px]">بعون الله وتوفيقه، اتفق الطرف الأول (عبدالله الحاشدي) والطرف الثاني (خالد اليماني) على إيجار فيلا حدة بمبلغ 1,200 $ شهرياً.</p>
+              <div class="mt-4 pt-2 border-t flex justify-between items-end text-[9px]">
+                <div>المؤجر<br><strong>عبدالله الحاشدي</strong></div>
+                <div class="w-12 h-12 border-2 border-teal-800 rounded-full flex items-center justify-center text-[8px] font-bold bg-teal-50">موثق ✓</div>
+                <div>المستأجر<br><strong>خالد اليماني</strong></div>
+              </div>
+            </div>
+            <button onclick="window.print()" class="w-full py-2.5 bg-[#134E4A] text-white font-bold rounded-xl text-xs mt-3 shadow">
+              🖨️ طباعة العقد بصيغة PDF
+            </button>
+          </div>
+        `;
+      } else if (screen === 'add_prop') {
+        viewport.innerHTML = `
+          <div class="p-4 space-y-3 text-xs">
+            <h4 class="font-extrabold text-sm text-slate-900">إضافة عقار جديد</h4>
+            <div class="space-y-2">
+              <input type="text" placeholder="عنوان العقار..." class="w-full bg-slate-100 p-2.5 rounded-xl font-medium" value="شقة سوبر ديلوكس في حدة">
+              <div class="grid grid-cols-2 gap-2">
+                <select class="w-full bg-slate-100 p-2.5 rounded-xl"><option>صنعاء</option><option>عدن</option></select>
+                <select class="w-full bg-slate-100 p-2.5 rounded-xl"><option>للإيجار</option><option>للبيع</option></select>
+              </div>
+              <input type="text" placeholder="السعر المطلوب..." class="w-full bg-slate-100 p-2.5 rounded-xl font-bold" value="500 $">
+            </div>
+            <button onclick="navigateSimulator('pick_map')" class="w-full py-2.5 bg-teal-50 border border-teal-300 text-teal-900 font-bold rounded-xl text-xs">
+              📍 تحديد الموقع على الخريطة (GPS)
+            </button>
+            <button onclick="alert('تم إرسال العقار للوحة الإدارة بنجاح!'); navigateSimulator('admin_review');" class="w-full py-3 bg-[#134E4A] text-white font-bold rounded-xl text-xs shadow">
+              إرسال للمراجعة والاعتماد
+            </button>
+          </div>
+        `;
+      } else if (screen === 'pick_map') {
+        viewport.innerHTML = `
+          <div class="h-full bg-slate-200 relative flex flex-col justify-between p-3">
+            <div class="bg-white p-2.5 rounded-xl shadow text-xs font-bold text-center">
+              📍 تم اختيار: حدة — صنعاء
+            </div>
+            <div class="text-4xl text-center animate-bounce text-rose-600">📍</div>
+            <button onclick="navigateSimulator('add_prop')" class="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl text-xs shadow">
+              تأكيد الموقع للعقار ✓
+            </button>
+          </div>
+        `;
+      } else if (screen === 'admin_review') {
+        viewport.innerHTML = `
+          <div class="p-3 space-y-2 text-xs">
+            <h4 class="font-extrabold text-sm text-slate-900 border-b pb-2">طلبات النشر المعلقة</h4>
+            <div class="bg-white p-3 rounded-xl border space-y-2">
+              <h5 class="font-bold text-xs">شقة سوبر ديلوكس في حدة</h5>
+              <p class="text-[10px] text-slate-500">المالك: حمير بن سبأ • 500 $</p>
+              <div class="flex gap-2">
+                <button onclick="alert('تم اعتماد العقار وظهوره على الخريطة!'); navigateSimulator('home');" class="flex-1 py-1.5 bg-emerald-600 text-white font-bold rounded-lg text-xs">اعتماد ونشر ✓</button>
+                <button onclick="alert('تم رفض العقار'); navigateSimulator('admin');" class="flex-1 py-1.5 bg-rose-100 text-rose-700 font-bold rounded-lg text-xs">رفض ✕</button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (screen === 'map') {
+        viewport.innerHTML = `
+          <div class="h-full bg-slate-200 relative flex flex-col justify-between p-3">
+            <div class="bg-white p-2 rounded-xl shadow text-xs font-bold text-center">
+              🗺️ خريطة اليمن العقارية التفاعلية
+            </div>
+            <div class="flex justify-around items-center">
+              <div class="p-3 bg-teal-800 text-white rounded-full font-bold text-xs shadow">صنعاء (14)</div>
+              <div class="p-3 bg-teal-800 text-white rounded-full font-bold text-xs shadow">عدن (8)</div>
+              <div class="p-3 bg-teal-800 text-white rounded-full font-bold text-xs shadow">المكلا (9)</div>
+            </div>
+            <button onclick="navigateSimulator('details')" class="w-full py-2.5 bg-[#134E4A] text-white font-bold rounded-xl text-xs shadow">
+              معاينة عقارات صنعاء المختارة
+            </button>
+          </div>
+        `;
+      } else {
+        // Fallback or generic screen
+        viewport.innerHTML = `
+          <div class="p-6 text-center text-xs space-y-4">
+            <div class="text-3xl">📱</div>
+            <h4 class="font-bold text-sm text-slate-900">${names[screen] || screen}</h4>
+            <p class="text-slate-500">تم فتح هذه الشاشة بنجاح داخل المحاكي التفاعلي.</p>
+            <button onclick="navigateSimulator('home')" class="py-2 px-4 bg-[#134E4A] text-white rounded-xl font-bold">العودة للرئيسية</button>
+          </div>
+        `;
+      }
+    }
+
+    // Initialize Canvas on load
+    window.addEventListener('DOMContentLoaded', () => {
+      resetCanvasView();
+    });
+  </script>
+</body>
+</html>

@@ -625,34 +625,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        // Direct Zillow-Style Map Button
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () => context.go('/map'),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.map_rounded, size: 18),
-                              const SizedBox(width: 4),
-                              Text(
-                                'الخريطة',
-                                style: GoogleFonts.cairo(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
 
@@ -721,7 +693,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // Zillow-Style Yemen Map Banner
+              // Yemen Map Banner
               InkWell(
                 onTap: () => context.go('/map'),
                 borderRadius: BorderRadius.circular(16),

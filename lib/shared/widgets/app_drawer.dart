@@ -120,7 +120,7 @@ class AppDrawer extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'Zillow 🇾🇪',
+                    'تفاعلية 🇾🇪',
                     style: GoogleFonts.cairo(
                       color: Colors.white,
                       fontSize: 10,

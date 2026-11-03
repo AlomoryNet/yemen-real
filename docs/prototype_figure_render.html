@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2) PROTOTYPE DESIGN — Yemen Real Estate Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #E2E8F0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    /* Academic Report Page Container (A4 Exact Ratio: 794px x 1123px) */
+    .report-page {
+      width: 794px;
+      height: 1123px;
+      background: #FFFFFF;
+      padding: 32px 42px 24px 42px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    /* Academic Section Heading */
+    .section-header {
+      border-bottom: 1.5px solid #0F172A;
+      padding-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .section-title {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 15px;
+      font-weight: bold;
+      color: #000000;
+      letter-spacing: 0.5px;
+      margin: 0;
+    }
+    .section-subtitle {
+      font-family: 'Cairo', sans-serif;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #134E4A;
+      margin-top: 1px;
+    }
+
+    /* Diagram Area with Dot Grid */
+    .diagram-area {
+      height: 505px;
+      position: relative;
+      background-color: #FAFAFA;
+      background-image: radial-gradient(#CBD5E1 1.2px, transparent 1.2px);
+      background-size: 15px 15px;
+      border-radius: 8px;
+      border: 1px solid #CBD5E1;
+      margin-top: 6px;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    /* Wireframe Phone Element */
+    .wireframe-phone {
+      width: 136px;
+      height: 174px;
+      border: 1.5px solid #1E293B;
+      border-radius: 16px;
+      background: #FFFFFF;
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      font-family: 'Cairo', system-ui, sans-serif;
+      z-index: 10;
+    }
+
+    .phone-notch {
+      width: 38px;
+      height: 6px;
+      background: #0F172A;
+      border-radius: 3px;
+      margin: 2px auto 1px auto;
+      flex-shrink: 0;
+    }
+
+    .phone-header-block {
+      background: #134E4A;
+      color: #FFFFFF;
+      text-align: center;
+      padding: 2px 4px;
+      font-weight: 700;
+      font-size: 7px;
+      flex-shrink: 0;
+    }
+
+    .phone-home-indicator {
+      width: 34px;
+      height: 2px;
+      background: #64748B;
+      border-radius: 1px;
+      margin: 2px auto;
+      flex-shrink: 0;
+    }
+
+    .wire-label {
+      font-size: 4.8px;
+      color: #475569;
+      margin-bottom: 0.5px;
+      font-weight: 700;
+      text-align: right;
+    }
+    .wire-line-input {
+      width: 100%;
+      height: 7.5px;
+      border-bottom: 1px solid #94A3B8;
+      margin-bottom: 1.5px;
+      font-size: 4.6px;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      padding: 0 1px;
+      direction: rtl;
+    }
+    .wire-pill-btn {
+      background: #134E4A;
+      color: #FDE68A;
+      font-size: 5.8px;
+      font-weight: 800;
+      text-align: center;
+      padding: 1.8px 0;
+      border-radius: 5px;
+      margin-top: 1.5px;
+      cursor: pointer;
+    }
+
+    .branch-tag {
+      position: absolute;
+      font-family: 'Times New Roman', serif;
+      font-size: 9px;
+      font-weight: bold;
+      color: #0F172A;
+      background: #FFFFFF;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #94A3B8;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      z-index: 15;
+    }
+
+    /* Caption Styling */
+    .figure-caption {
+      text-align: center;
+      margin-top: 2px;
+      margin-bottom: 4px;
+    }
+    .figure-caption p {
+      font-family: 'Times New Roman', Times, serif;
+      font-style: italic;
+      font-size: 11.5px;
+      color: #000000;
+      margin: 0;
+      font-weight: bold;
+    }
+    .figure-caption span {
+      font-family: 'Cairo', sans-serif;
+      font-size: 9.5px;
+      color: #134E4A;
+      font-weight: 800;
+    }
+
+    /* Academic Explanation Box */
+    .explanation-box {
+      background: #F8FAFC;
+      border: 1.2px solid #CBD5E1;
+      border-radius: 8px;
+      padding: 9px 12px;
+      margin-bottom: 2px;
+    }
+    .explanation-english {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 9.8px;
+      line-height: 1.4;
+      color: #1E293B;
+      text-align: justify;
+      margin-bottom: 6px;
+    }
+    .explanation-arabic {
+      font-family: 'Cairo', sans-serif;
+      font-size: 8.8px;
+      line-height: 1.48;
+      color: #0F172A;
+      text-align: justify;
+      direction: rtl;
+      border-top: 1px solid #E2E8F0;
+      padding-top: 5px;
+    }
+    .explanation-arabic strong {
+      color: #134E4A;
+    }
+
+    /* Page Footer */
+    .page-footer {
+      text-align: center;
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12px;
+      color: #000000;
+      font-weight: bold;
+      padding-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="report-page">
+
+    <!-- 1. HEADER (Matches Academic Reference) -->
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">2) PROTOTYPE DESIGN</h2>
+        <div class="section-subtitle">بوابة اليمن العقارية — مخطط التدفق والنموذج الأولي المترابط</div>
+      </div>
+      <div style="font-family: monospace; font-size: 8px; color: #64748B;">
+        SPECIFICATION v2.3.0
+      </div>
+    </div>
+
+    <!-- 2. DIAGRAM CANVAS AREA (505px Height) -->
+    <div class="diagram-area">
+
+      <!-- SVG CONNECTING LINES (Clean Orthogonal Architecture) -->
+      <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;">
+        <!-- Side exit from Signup (x=206, y=75) to Center Junction (x=355, y=75) -->
+        <path d="M 206 75 L 355 75" fill="none" stroke="#1E293B" stroke-width="1.3" />
+        
+        <!-- Side exit from Login (x=504, y=75) to Center Junction (x=355, y=75) -->
+        <path d="M 504 75 L 355 75" fill="none" stroke="#1E293B" stroke-width="1.3" />
+        
+        <!-- Drop from Junction (x=355, y=75) into Top of Home (x=355, y=110) -->
+        <path d="M 355 75 L 355 110" fill="none" stroke="#1E293B" stroke-width="1.3" />
+
+        <!-- Line from Home Bottom (x=355, y=305) downward to y=318 -->
+        <path d="M 355 305 L 355 318" fill="none" stroke="#1E293B" stroke-width="1.3" />
+        
+        <!-- Branch to Left (User & Owner) -->
+        <path d="M 355 318 L 112 318 L 112 328" fill="none" stroke="#1E293B" stroke-width="1.3" />
+        <path d="M 262 318 L 262 328" fill="none" stroke="#1E293B" stroke-width="1.3" />
+
+        <!-- Branch to Right (Add Property) -->
+        <path d="M 355 318 L 597 318 L 597 328" fill="none" stroke="#1E293B" stroke-width="1.3" />
+      </svg>
+
+      <!-- BRANCH LABELS (Exact Match to Reference Figure) -->
+      <span class="branch-tag" style="left: 96px; top: 304px;">User</span>
+      <span class="branch-tag" style="left: 246px; top: 304px;">Owner</span>
+
+      <!-- ============================================== -->
+      <!-- SCREEN 1: SIGNUP (Top-Left, left: 70px, top: 12px) -->
+      <!-- ============================================== -->
+      <div class="wireframe-phone" style="left: 70px; top: 12px;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block">Signup (إنشاء حساب)</div>
+        <div style="padding: 5px 7px; flex: 1; display: flex; flex-direction: column;">
+          <div class="wire-label">Full Name / الاسم الكامل</div>
+          <div class="wire-line-input">حمير بن سبأ الحاشدي</div>
+          <div class="wire-label">Phone / الهاتف اليمني (+967)</div>
+          <div class="wire-line-input">771 234 567</div>
+          <div class="wire-label">Account Type / نوع الحساب</div>
+          <div style="display: flex; gap: 2px; margin-bottom: 2px;">
+            <span style="flex:1; background: #CCFBF1; color: #0F3B38; font-size: 4px; font-weight: bold; text-align: center; padding: 1px; border-radius: 2px;">باحث عن سكن</span>
+            <span style="flex:1; background: #F1F5F9; color: #64748B; font-size: 4px; text-align: center; padding: 1px; border-radius: 2px;">مالك ومؤجر</span>
+          </div>
+          <div class="wire-label">Password / كلمة المرور</div>
+          <div class="wire-line-input">••••••••••••</div>
+          <div class="wire-pill-btn">Signup / إنشاء الحساب</div>
+          <div style="font-size: 4.8px; text-align: center; color: #64748B; margin-top: 2px; direction: rtl;">
+            لديك حساب مسجل؟ <span style="color: #D97706; font-weight: bold;">دخول</span>
+          </div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- SCREEN 2: LOGIN (Top-Right, left: 504px, top: 12px) -->
+      <!-- ============================================== -->
+      <div class="wireframe-phone" style="left: 504px; top: 12px;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block">Login (تسجيل الدخول)</div>
+        <div style="padding: 8px 7px; flex: 1; display: flex; flex-direction: column;">
+          <div style="text-align: center; margin-bottom: 3px;">
+            <div style="width: 16px; height: 16px; margin: 0 auto; background: #CCFBF1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px;">🔑</div>
+            <span style="font-size: 5.5px; font-weight: bold; color: #134E4A;">دخول بوابة اليمن العقارية</span>
+          </div>
+          <div class="wire-label">Phone or Email</div>
+          <div class="wire-line-input">770000000</div>
+          <div class="wire-label">Password</div>
+          <div class="wire-line-input">••••••••</div>
+          <div class="wire-pill-btn" style="margin-top: 4px;">Login / دخول آمن</div>
+          <div style="margin-top: 4px; border: 1px dashed #CBD5E1; border-radius: 3px; padding: 1.5px; text-align: center; font-size: 4.5px; color: #047857; font-weight: bold;">
+            💬 OTP عبر واتساب
+          </div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- SCREEN 3: HOME (Center, left: 284px, top: 110px) -->
+      <!-- ============================================== -->
+      <div class="wireframe-phone" style="left: 284px; top: 110px; width: 142px; height: 195px; border-width: 2px; border-color: #134E4A;">
+        <div class="phone-notch"></div>
+        <div style="background: #134E4A; color: #FFF; padding: 2px 4px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 6px; font-weight: 800;">🇾🇪 بوابة اليمن العقارية</span>
+          <span style="font-size: 4.8px; background: rgba(255,255,255,0.2); padding: 0.5px 2px; border-radius: 2px;">صنعاء 📍</span>
+        </div>
+        <div style="padding: 2px 4px; background: #0F3B38;">
+          <div style="background: #FFF; border-radius: 3px; padding: 1.5px 3px; display: flex; justify-content: space-between; font-size: 4.8px; color: #64748B; direction: rtl;">
+            <span>بحث: فيلا حدة، شقة المعلا...</span><span>🔍</span>
+          </div>
+        </div>
+        <div style="display: flex; background: #F8FAFC; border-bottom: 1px solid #CBD5E1; text-align: center; font-size: 5px; font-weight: bold; direction: rtl;">
+          <div style="flex: 1; padding: 1.5px 0; color: #134E4A; border-bottom: 1.5px solid #134E4A;">للإيجار (Rent)</div>
+          <div style="flex: 1; padding: 1.5px 0; color: #64748B;">للبيع (Sale)</div>
+        </div>
+        <div style="padding: 2.5px 3px; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px; direction: rtl;">
+          <!-- Listing 1 -->
+          <div style="display: flex; gap: 2.5px; border: 1px solid #E2E8F0; border-radius: 3px; padding: 1.5px; background: #FFF;">
+            <div style="width: 20px; height: 20px; background: #E2E8F0; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 8px;">🏡</div>
+            <div style="flex: 1; min-width: 0; text-align: right;">
+              <div style="font-size: 5px; font-weight: 800; color: #0F172A; white-space: nowrap; overflow: hidden;">فيلا VIP حجر — حدة</div>
+              <div style="display: flex; justify-content: space-between; font-size: 4.5px;">
+                <span style="color: #D97706; font-weight: 800;">$1,200/شهر</span>
+                <span style="color: #059669; font-weight: bold;">معمدة ✓</span>
+              </div>
+            </div>
+          </div>
+          <!-- Listing 2 -->
+          <div style="display: flex; gap: 2.5px; border: 1px solid #E2E8F0; border-radius: 3px; padding: 1.5px; background: #FFF;">
+            <div style="width: 20px; height: 20px; background: #E2E8F0; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 8px;">🏢</div>
+            <div style="flex: 1; min-width: 0; text-align: right;">
+              <div style="font-size: 5px; font-weight: 800; color: #0F172A; white-space: nowrap; overflow: hidden;">شقة راقية — عدن</div>
+              <div style="display: flex; justify-content: space-between; font-size: 4.5px;">
+                <span style="color: #D97706; font-weight: 800;">$650/شهر</span>
+                <span style="color: #64748B;">خور مكسر</span>
+              </div>
+            </div>
+          </div>
+          <!-- Listing 3 -->
+          <div style="display: flex; gap: 2.5px; border: 1px solid #E2E8F0; border-radius: 3px; padding: 1.5px; background: #FFF;">
+            <div style="width: 20px; height: 20px; background: #E2E8F0; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 8px;">📐</div>
+            <div style="flex: 1; min-width: 0; text-align: right;">
+              <div style="font-size: 5px; font-weight: 800; color: #0F172A; white-space: nowrap; overflow: hidden;">أرض 10 قصب — السحول</div>
+              <div style="font-size: 4.5px; color: #047857; font-weight: 800;">15,000,000 ر.ي</div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- SCREEN 4: USER DETAILS (Bottom-Left, left: 45px, top: 328px) -->
+      <!-- ============================================== -->
+      <div class="wireframe-phone" style="left: 45px; top: 328px; width: 134px; height: 170px;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block" style="background:#0F3B38;">Property Details (User)</div>
+        <div style="padding: 3px 5px; flex: 1; display: flex; flex-direction: column; text-align: right; direction: rtl;">
+          <div style="width: 100%; height: 38px; background: #E2E8F0; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 13px;">
+            🏡
+          </div>
+          <div style="margin-top: 1.5px;">
+            <div style="font-size: 5px; font-weight: 800; color: #0F172A;">فيلا VIP حجر هيلاني — حدة</div>
+            <div style="display: flex; justify-content: space-between; font-size: 4.6px; margin-top: 0.5px;">
+              <span style="font-weight: 800; color: #D97706;">$1,200 / شهر</span>
+              <span style="color: #64748B;">صنعاء — الحي الدبلوماسي</span>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #F1F5F9; padding: 1.5px; border-radius: 2px; text-align: center; margin-top: 1.5px; font-size: 4px; font-weight: bold; color: #134E4A;">
+            <div>5 غرف</div><div>4 حمام</div><div>350 م²</div><div>8 لبن</div>
+          </div>
+          <div style="margin-top: auto; display: flex; flex-direction: column; gap: 1.5px;">
+            <div style="background: #134E4A; color: #FFF; font-size: 4.6px; font-weight: bold; text-align: center; padding: 1.8px; border-radius: 2px;">📞 اتصال بمالك العقار</div>
+            <div style="background: #059669; color: #FFF; font-size: 4.6px; font-weight: bold; text-align: center; padding: 1.8px; border-radius: 2px;">💬 محادثة واتساب فورية</div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- SCREEN 5: OWNER CONTRACT (Bottom-Middle, left: 195px, top: 328px) -->
+      <!-- ============================================== -->
+      <div class="wireframe-phone" style="left: 195px; top: 328px; width: 134px; height: 170px;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block" style="background:#D97706; color:#0F172A;">Contracts (Owner)</div>
+        <div style="padding: 3px 5px; flex: 1; display: flex; flex-direction: column; text-align: right; direction: rtl;">
+          <div style="border: 1px solid #CBD5E1; border-radius: 3px; padding: 1px; background: #FEF3C7; text-align: center; margin-bottom: 1.5px;">
+            <span style="font-size: 3.8px; color: #92400E; font-weight: bold;">الجمهورية اليمنية</span><br>
+            <strong style="font-size: 4.8px; color: #78350F;">عقد إيجار شرعي وقانوني</strong>
+          </div>
+          <div class="wire-label">المؤجر: <span style="color:#0F172A;">عبدالله محمد الحاشدي</span></div>
+          <div class="wire-label">المستأجر: <span style="color:#0F172A;">خالد أحمد اليماني</span></div>
+          <div class="wire-label">الأجرة: <span style="color:#B45309; font-weight:bold;">1,200 $ (مقدماً) + شهر تأمين</span></div>
+          <div style="margin-top: auto; display: flex; flex-direction: column; gap: 1.5px;">
+            <div style="background: #D97706; color: #0F172A; font-size: 4.6px; font-weight: 800; text-align: center; padding: 1.8px; border-radius: 2px;">📄 معاينة الصك A4</div>
+            <div style="background: #134E4A; color: #FFF; font-size: 4.6px; font-weight: bold; text-align: center; padding: 1.8px; border-radius: 2px;">🖨️ طباعة العقد مع الختم</div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- SCREEN 6: ADD PROPERTY (Bottom-Right, left: 530px, top: 328px) -->
+      <!-- ============================================== -->
+      <div class="wireframe-phone" style="left: 530px; top: 328px; width: 134px; height: 170px;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block">Add Property (إضافة عقار)</div>
+        <div style="padding: 3px 5px; flex: 1; display: flex; flex-direction: column; text-align: right; direction: rtl;">
+          <div style="display: flex; gap: 1.5px; margin-bottom: 1px;">
+            <span style="flex:1; background: #134E4A; color: #FFF; font-size: 4px; font-weight: bold; text-align: center; padding: 0.5px; border-radius: 2px;">للإيجار</span>
+            <span style="flex:1; background: #F1F5F9; color: #64748B; font-size: 4px; text-align: center; padding: 0.5px; border-radius: 2px;">للبيع</span>
+          </div>
+          <div class="wire-label">عنوان العقار *</div>
+          <div class="wire-line-input">فيلا دورين حجر مشذب</div>
+          <div class="wire-label">المحافظة والحي *</div>
+          <div class="wire-line-input">صنعاء — حدة</div>
+          <div class="wire-label">السعر والعملة *</div>
+          <div class="wire-line-input">1,200 دولار أمريكي ($)</div>
+          <div style="background: #CCFBF1; border: 1px solid #14B8A6; color: #0F3B38; font-size: 4px; font-weight: bold; text-align: center; padding: 1.2px; border-radius: 2px; margin: 1px 0;">
+            📍 تحديد الموقع GPS على الخريطة
+          </div>
+          <div style="margin-top: auto; display: flex; gap: 2px;">
+            <div style="flex: 2; background: #134E4A; color: #FFF; font-size: 4.6px; font-weight: bold; text-align: center; padding: 1.8px 0; border-radius: 2px;">إرسال للاعتماد</div>
+            <div style="flex: 1; background: #F1F5F9; border: 1px solid #CBD5E1; color: #64748B; font-size: 4.6px; text-align: center; padding: 1.8px 0; border-radius: 2px;">إلغاء</div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+    </div>
+
+    <!-- 3. CAPTION (Exact Style as Academic Paper) -->
+    <div class="figure-caption">
+      <p>Figure 2.1: Yemen Real Estate Portal prototype</p>
+      <span>الشكل 2.1: مخطط النموذج الأولي وتدفق الشاشات — تطبيق بوابة اليمن العقارية</span>
+    </div>
+
+    <!-- 4. EXPLANATION BOX (No Overlap, Generous Breathing Room) -->
+    <div class="explanation-box">
+      <!-- Academic English Paragraph (Reference Match) -->
+      <div class="explanation-english">
+        This prototype of Yemen Real Estate Portal provides a clear understanding of the navigation flow, the process, and how the app travels from one screen to another. The prototype also provides an accurate overview of the user interface before being implemented, supporting the dual-journey architecture for property seekers and verified property owners across all Yemeni governorates.
+      </div>
+
+      <!-- Comprehensive Technical Explanation in Arabic (Direct App Explanation) -->
+      <div class="explanation-arabic">
+        <strong>الشرح الهندسي التوضيحي لتطبيق بوابة اليمن العقارية:</strong>
+        يوضح هذا النموذج الأولي (Figure 2.1) دورة عمل النظام العقاري المتكامل وتفاعلاته المباشرة:
+        <br>
+        • <strong>التسجيل والمصادقة (Signup & Login):</strong> تمكين المستخدم من توثيق حسابه برقم هاتفه اليمني (+967) واختيار دوره (باحث / مالك)، مع توفير الدخول الآمن بخاصية OTP عبر تطبيق واتساب.
+        <br>
+        • <strong>الشاشة الرئيسية (Home):</strong> بوابة التصفح المركزية لعقارات الإيجار والبيع، مزودة ببحث ذكي متعدد الفلاتر (المدينة، الحي، السعر بالدولار/الريال) وعرض إعلانات موثقة بالبصائر الشرعية.
+        <br>
+        • <strong>مسار الباحث (User):</strong> استعراض مواصفات العقار المعمارية الدقيقة (المساحة باللبن الصنعانية والقصب، الغرف) مع قنوات اتصال هاتفي مباشر ومحادثات واتساب فورية بالمالك دون وسيط.
+        <br>
+        • <strong>مسار المالك والعقود (Owner):</strong> إدارة العقار وتوليد وطباعة عقود الإيجار والبيع الشرعية والقانونية بصيغة A4 الرسمية متضمنة الأختام الرقمية وأكواد QR للتحقق السريع.
+        <br>
+        • <strong>إضافة عقار (Add Property):</strong> تتيح للمالك إدراج تفاصيل العقار وتحديد موقعه الدقيق بنظام GPS على خريطة اليمن وإرساله للمراجعة والاعتماد الإداري.
+      </div>
+    </div>
+
+    <!-- 5. FOOTER (Exact Page Number: 4) -->
+    <div class="page-footer">
+      4
+    </div>
+
+  </div>
+
+</body>
+</html>

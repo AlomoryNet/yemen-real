@@ -1,0 +1,143 @@
+{
+  "screens_tested": [
+    {
+      "id": "screen-splash",
+      "index": 1,
+      "tagText": "1\nشاشة البداية (Splash)",
+      "left": "100px",
+      "top": "160px"
+    },
+    {
+      "id": "screen-signup",
+      "index": 2,
+      "tagText": "2\nتسجيل حساب جديد (Sign Up)",
+      "left": "500px",
+      "top": "160px"
+    },
+    {
+      "id": "screen-login",
+      "index": 3,
+      "tagText": "3\nتسجيل الدخول (Login)",
+      "left": "500px",
+      "top": "510px"
+    },
+    {
+      "id": "screen-home",
+      "index": 4,
+      "tagText": "4\nالشاشة الرئيسية (Home)",
+      "left": "1300px",
+      "top": "160px"
+    },
+    {
+      "id": "screen-search",
+      "index": 5,
+      "tagText": "5\nشاشة نتائج البحث (Search Results)",
+      "left": "1700px",
+      "top": "160px"
+    },
+    {
+      "id": "screen-details",
+      "index": 6,
+      "tagText": "6\nتفاصيل العقار (Property Details)",
+      "left": "2100px",
+      "top": "160px"
+    },
+    {
+      "id": "screen-map",
+      "index": 7,
+      "tagText": "10\nخريطة اليمن والتجميع (Map Clusters)",
+      "left": "2500px",
+      "top": "160px"
+    },
+    {
+      "id": "screen-favorites",
+      "index": 8,
+      "tagText": "9\nشاشة المفضلة (Favorites)",
+      "left": "2900px",
+      "top": "160px"
+    },
+    {
+      "id": "screen-owner",
+      "index": 9,
+      "tagText": "11\nملف صاحب العقار (Owner Profile)",
+      "left": "100px",
+      "top": "1000px"
+    },
+    {
+      "id": "screen-contract-rent",
+      "index": 10,
+      "tagText": "12\nإنشاء عقد إيجار (Rental Contract)",
+      "left": "500px",
+      "top": "1000px"
+    },
+    {
+      "id": "screen-contract-sale",
+      "index": 11,
+      "tagText": "13\nعقد بيع وتمليك (Sale & Deed)",
+      "left": "900px",
+      "top": "1000px"
+    },
+    {
+      "id": "screen-contract-preview",
+      "index": 12,
+      "tagText": "14\nمعاينة العقد والطباعة (PDF Preview)",
+      "left": "1300px",
+      "top": "1000px"
+    },
+    {
+      "id": "screen-chat",
+      "index": 13,
+      "tagText": "15\nالمحادثات والتواصل (Chat)",
+      "left": "1700px",
+      "top": "1000px"
+    },
+    {
+      "id": "screen-add-prop",
+      "index": 14,
+      "tagText": "7\nإضافة عقار جديد (Add Property)",
+      "left": "2100px",
+      "top": "1000px"
+    },
+    {
+      "id": "screen-pick-map",
+      "index": 15,
+      "tagText": "8\nتحديد الموقع على الخريطة (Pick Location)",
+      "left": "2500px",
+      "top": "1000px"
+    },
+    {
+      "id": "screen-profile",
+      "index": 16,
+      "tagText": "16\nالملف الشخصي (Profile)",
+      "left": "2900px",
+      "top": "1000px"
+    },
+    {
+      "id": "screen-admin-dashboard",
+      "index": 17,
+      "tagText": "17\nلوحة تحكم المدير (Admin Dashboard)",
+      "left": "3300px",
+      "top": "160px"
+    },
+    {
+      "id": "screen-admin-review",
+      "index": 18,
+      "tagText": "18\nمراجعة طلبات النشر (Approvals Review)",
+      "left": "3300px",
+      "top": "1000px"
+    }
+  ],
+  "user_flows_verified": [],
+  "console_errors": [],
+  "screenshots_taken": [
+    "01_full_18_screens_board.png",
+    "02_sim_home.png",
+    "03_sim_details.png",
+    "04_sim_contract.png",
+    "05_sim_map.png",
+    "06_sim_add_property_gps.png",
+    "07_sim_admin_review.png",
+    "08_mobile_responsive.png"
+  ],
+  "flow_lines_count": 19
+}

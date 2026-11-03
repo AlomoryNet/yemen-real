@@ -97,7 +97,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
               const Spacer(),
 
               // Action Buttons: Yemen Map Button & Add Property Button side-by-side
-              // 1. Yemen Map Button (Zillow / Portal Blue)
+              // 1. Yemen Map Button (Portal Blue)
               ElevatedButton.icon(
                 key: const ValueKey('header_map_button'),
                 style: ElevatedButton.styleFrom(

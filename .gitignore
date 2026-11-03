@@ -35,6 +35,8 @@ supabase/.temp/
 /*.png
 !assets/**
 !docs/screenshots/**
+!/Figure_2_1_Yemen_Prototype_Design.png
+!/Figure_2_2_Contracts_Flow.png
 
 
 # IntelliJ related

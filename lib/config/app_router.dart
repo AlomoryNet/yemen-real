@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../features/admin/presentation/admin_dashboard_screen.dart';
 import '../features/auth/presentation/auth_callback_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
@@ -20,9 +22,6 @@ import '../shared/widgets/empty_state_view.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Last back-press time — used for double-back-to-exit on home
-DateTime? _lastBackPress;
-
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: '/',
@@ -42,7 +41,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/',
       name: 'home',
-      builder: (context, state) => const _BackHandlerWrapper(child: HomeScreen()),
+      builder: (context, state) => const HomeScreen(),
     ),
     GoRoute(
       path: '/search',
@@ -143,52 +142,229 @@ final GoRouter appRouter = GoRouter(
   ],
 );
 
-/// يلتف حول الصفحة الرئيسية لمنع الخروج عند ضغطة رجوع واحدة.
-/// الضغطة الأولى: snackbar "اضغط مرة أخرى للخروج"
-/// الضغطة الثانية خلال ثانيتين: خروج فعلي
-class _BackHandlerWrapper extends StatelessWidget {
+/// معالج الرجوع العام للتطبيق (Global App Back Handler):
+/// 1. من أي شاشة غير الرئيسية: الضغط مرة واحدة يعود خطوة واحدة إلى الخلف (أو للرئيسية).
+/// 2. من الصفحة الرئيسية: الضغط مرة واحدة يُظهر تنبيه "اضغط مرة أخرى للخروج"، والضغط مرتين متتاليتين يخرج من التطبيق.
+class GlobalAppBackHandler extends StatefulWidget {
   final Widget child;
-  const _BackHandlerWrapper({required this.child});
+  const GlobalAppBackHandler({super.key, required this.child});
+
+  @override
+  State<GlobalAppBackHandler> createState() => _GlobalAppBackHandlerState();
+}
+
+class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler>
+    with WidgetsBindingObserver {
+  DateTime? _lastBackPressTime;
+  final List<String> _navigationHistory = ['/'];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    appRouter.routerDelegate.addListener(_onRouteChanged);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    appRouter.routerDelegate.removeListener(_onRouteChanged);
+    super.dispose();
+  }
+
+  void _onRouteChanged() {
+    try {
+      final location = appRouter.routerDelegate.currentConfiguration.uri.toString();
+      if (_navigationHistory.isEmpty || _navigationHistory.last != location) {
+        _navigationHistory.add(location);
+        if (_navigationHistory.length > 40) {
+          _navigationHistory.removeAt(0);
+        }
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Future<bool> didPopRoute() async {
+    return await _handleBackPress();
+  }
+
+  Future<bool> _handleBackPress() async {
+    // 1. فحص ما إذا كان هناك ديالوج أو قائمة منبثقة أو صفحة تم فتحها بـ push يمكن الرجوع منها
+    final nav = rootNavigatorKey.currentState;
+    if (nav != null && nav.canPop()) {
+      nav.pop();
+      return true;
+    }
+
+    // 2. التحقق من مسار الشاشة الحالية
+    String currentLocation = '/';
+    try {
+      currentLocation = appRouter.routerDelegate.currentConfiguration.uri.toString();
+    } catch (_) {}
+
+    // 3. إذا لم تكن في الصفحة الرئيسية، ارجع خطوة واحدة إلى الخلف!
+    if (currentLocation != '/' && currentLocation.isNotEmpty) {
+      // إزالة المسار الحالي من سجل التنقل
+      while (_navigationHistory.isNotEmpty &&
+          _navigationHistory.last == currentLocation) {
+        _navigationHistory.removeLast();
+      }
+
+      if (_navigationHistory.isNotEmpty && _navigationHistory.last != currentLocation) {
+        final target = _navigationHistory.removeLast();
+        appRouter.go(target);
+      } else {
+        // العودة إلى الصفحة الرئيسية كخيار افتراضي آمن
+        appRouter.go('/');
+      }
+      return true;
+    }
+
+    // 4. إذا كنت في الصفحة الرئيسية ('/')
+    // الضغط مرة واحدة: إشعار
+    // الضغط مرتين متتاليتين خلال ثانيتين: خروج من التطبيق
+    final now = DateTime.now();
+    final isDouble = _lastBackPressTime != null &&
+        now.difference(_lastBackPressTime!) < const Duration(seconds: 2);
+
+    if (isDouble) {
+      await SystemNavigator.pop();
+      return true;
+    } else {
+      _lastBackPressTime = now;
+      final ctx = rootNavigatorKey.currentContext ?? context;
+      final messenger = ScaffoldMessenger.maybeOf(ctx);
+      if (messenger != null) {
+        messenger.removeCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'اضغط مرة أخرى للخروج من التطبيق',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cairo(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: const Color(0xFF134E4A),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          ),
+        );
+      }
+      return true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
+      onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        final now = DateTime.now();
-        final isDouble = _lastBackPress != null &&
-            now.difference(_lastBackPress!) < const Duration(seconds: 2);
-        if (isDouble) {
-          // خروج فعلي
-          // ignore: deprecated_member_use
-          await Future.delayed(Duration.zero);
-          if (context.mounted) {
-            Navigator.of(rootNavigatorKey.currentContext!).pop();
-          }
-        } else {
-          _lastBackPress = now;
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'اضغط مرة أخرى للخروج من التطبيق',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontFamily: 'Cairo'),
-                ),
-                duration: const Duration(seconds: 2),
-                backgroundColor: const Color(0xFF134E4A),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                margin: const EdgeInsets.all(16),
-              ),
-            );
-          }
-        }
+        _handleBackPress();
       },
-      child: child,
+      child: widget.child,
     );
   }
 }
+
+/// موزع زر الرجوع الجذري للتطبيق (Root Back Button Dispatcher)
+/// يعترض ضغطات زر الرجوع الصلبة والبرمجية من نظام أندرويد على مستوى نظام التشغيل
+class AppRootBackButtonDispatcher extends RootBackButtonDispatcher {
+  DateTime? _lastBackPressTime;
+  final List<String> _history = ['/'];
+
+  AppRootBackButtonDispatcher() {
+    appRouter.routerDelegate.addListener(_onRouteChanged);
+  }
+
+  void _onRouteChanged() {
+    try {
+      final loc = appRouter.routerDelegate.currentConfiguration.uri.toString();
+      if (_history.isEmpty || _history.last != loc) {
+        _history.add(loc);
+        if (_history.length > 50) _history.removeAt(0);
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Future<bool> didPopRoute() async {
+    // 1. فحص وجود حوار منبثق أو شاشة فرعية يمكن إغلاقها بـ pop
+    final nav = rootNavigatorKey.currentState;
+    if (nav != null && nav.canPop()) {
+      nav.pop();
+      return true;
+    }
+
+    // 2. فحص مسار الشاشة الحالية
+    String loc = '/';
+    try {
+      loc = appRouter.routerDelegate.currentConfiguration.uri.toString();
+    } catch (_) {}
+
+    // 3. إذا لم تكن في الصفحة الرئيسية، عد خطوة واحدة إلى الخلف!
+    if (loc != '/' && loc.isNotEmpty) {
+      while (_history.isNotEmpty && _history.last == loc) {
+        _history.removeLast();
+      }
+      if (_history.isNotEmpty && _history.last != loc) {
+        final target = _history.removeLast();
+        appRouter.go(target);
+      } else {
+        appRouter.go('/');
+      }
+      return true;
+    }
+
+    // 4. في الصفحة الرئيسية ('/'): ضغط مزدوج للخروج
+    final now = DateTime.now();
+    final isDouble = _lastBackPressTime != null &&
+        now.difference(_lastBackPressTime!) < const Duration(seconds: 2);
+
+    if (isDouble) {
+      await SystemNavigator.pop();
+      return true;
+    } else {
+      _lastBackPressTime = now;
+      final ctx = rootNavigatorKey.currentContext;
+      if (ctx != null) {
+        final messenger = ScaffoldMessenger.maybeOf(ctx);
+        if (messenger != null) {
+          messenger.removeCurrentSnackBar();
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'اضغط مرة أخرى للخروج من التطبيق',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.cairo(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              duration: const Duration(seconds: 2),
+              backgroundColor: const Color(0xFF134E4A),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            ),
+          );
+        }
+      }
+      return true;
+    }
+  }
+}
+
+final AppRootBackButtonDispatcher appBackButtonDispatcher = AppRootBackButtonDispatcher();
+

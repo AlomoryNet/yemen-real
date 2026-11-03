@@ -68,7 +68,13 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp> {
       themeMode: ThemeMode.light,
 
       // Routing
-      routerConfig: appRouter,
+      routeInformationProvider: appRouter.routeInformationProvider,
+      routeInformationParser: appRouter.routeInformationParser,
+      routerDelegate: appRouter.routerDelegate,
+      backButtonDispatcher: appBackButtonDispatcher,
+      builder: (context, child) => GlobalAppBackHandler(
+        child: child ?? const SizedBox.shrink(),
+      ),
 
       // Localization
       locale: currentLocale,
@@ -86,3 +92,4 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp> {
     );
   }
 }
+  

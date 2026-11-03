@@ -161,7 +161,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         onPressed: _applyFilters,
                       ),
                       const SizedBox(width: 8),
-                      // Zillow-Style Map Button in Top Bar
+                      // Yemen Map Button in Top Bar
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primary,

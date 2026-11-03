@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figure 2.2: Smart Contracts & Negotiation Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&family=Times+New+Roman&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0; padding: 0; background: #E2E8F0;
+      display: flex; justify-content: center; align-items: center; min-height: 100vh;
+      font-family: 'Times New Roman', Times, serif;
+    }
+    .report-page {
+      width: 860px; height: 1220px; background: #FFFFFF;
+      padding: 50px 65px 40px 65px; position: relative;
+      display: flex; flex-direction: column; justify-content: space-between;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    }
+    .diagram-area {
+      flex: 1; position: relative;
+      background-image: radial-gradient(#CBD5E1 1.2px, transparent 1.2px);
+      background-size: 16px 16px; border-radius: 8px;
+      margin-top: 15px; margin-bottom: 20px;
+    }
+    .wireframe-phone {
+      width: 156px; height: 310px; border: 1.5px solid #1E293B; border-radius: 22px;
+      background: #FFFFFF; position: absolute; display: flex; flex-direction: column;
+      overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      font-family: 'Cairo', system-ui, sans-serif;
+    }
+    .phone-notch {
+      width: 48px; height: 9px; background: #0F172A; border-radius: 5px;
+      margin: 3px auto 2px auto; flex-shrink: 0;
+    }
+    .phone-header-block {
+      background: #FEF3C7; color: #78350F; text-align: center;
+      padding: 4px 6px; font-weight: 700; font-size: 8.5px; flex-shrink: 0;
+    }
+    .phone-home-indicator {
+      width: 45px; height: 2.5px; background: #64748B; border-radius: 2px;
+      margin: 3px auto; flex-shrink: 0;
+    }
+    .wire-label { font-size: 6.5px; color: #64748B; margin-bottom: 1.5px; font-weight: 600; }
+    .wire-line-input { width: 100%; height: 11px; border-bottom: 1px solid #94A3B8; margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="report-page">
+    <div>
+      <h2 style="font-family: 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #000; margin: 0; letter-spacing: 0.5px;">
+        2.1) SMART CONTRACTS & VERIFICATION FLOW
+      </h2>
+    </div>
+
+    <div class="diagram-area">
+      <!-- SVG Connectors -->
+      <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;">
+        <!-- Property Details (Top Center: 365, 335) down to Rent (178, 395) and Sale (552, 395) -->
+        <path d="M 365 335 L 365 370 L 178 370 L 178 395" fill="none" stroke="#334155" stroke-width="1.4" />
+        <path d="M 365 370 L 552 370 L 552 395" fill="none" stroke="#334155" stroke-width="1.4" />
+        <!-- Rent & Sale down to PDF Preview (365, 745) -->
+        <path d="M 178 705 L 178 725 L 365 725 L 365 745" fill="none" stroke="#334155" stroke-width="1.4" />
+        <path d="M 552 705 L 552 725 L 365 725 L 365 745" fill="none" stroke="#334155" stroke-width="1.4" />
+      </svg>
+
+      <!-- 1. TOP PHONE: PROPERTY DETAILS -->
+      <div class="wireframe-phone" style="left: 287px; top: 25px;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block" style="background:#C7D2FE; color:#1E1B4B;">Property Details</div>
+        <div style="padding: 10px; flex: 1; display: flex; flex-direction: column;">
+          <div style="height: 65px; background: #F1F5F9; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 8px;">🖼️ Luxury Villa Haddah</div>
+          <div style="font-size: 7.5px; font-weight: bold; margin-top: 6px;">VIP Villa — Diplomatic Quarter</div>
+          <div style="font-size: 7px; color: #047857; font-weight: bold;">$1,200 / Month</div>
+          <div style="margin-top: auto; display: flex; flex-direction: column; gap: 4px;">
+            <div style="background: #FEF3C7; color: #92400E; font-size: 7px; font-weight: bold; text-align: center; padding: 4px; border-radius: 6px;">Create Rental Contract</div>
+            <div style="background: #E0E7FF; color: #3730A3; font-size: 7px; font-weight: bold; text-align: center; padding: 4px; border-radius: 6px;">Create Sale Contract</div>
+          </div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <!-- 2. MIDDLE LEFT: RENTAL CONTRACT -->
+      <div class="wireframe-phone" style="left: 100px; top: 395px;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block">عقد إيجار سكني</div>
+        <div style="padding: 10px; flex: 1; display: flex; flex-direction: column; font-size: 6.5px;">
+          <div class="wire-label">First Party (Lessor / المؤجر)</div>
+          <div class="wire-line-input"></div>
+          <div class="wire-label">Second Party (Tenant / المستأجر)</div>
+          <div class="wire-line-input"></div>
+          <div class="wire-label">Monthly Rent & Currency ($ / YER)</div>
+          <div class="wire-line-input"></div>
+          <div class="wire-label">Security Deposit (الضمان)</div>
+          <div class="wire-line-input"></div>
+          <div style="margin-top: auto; background: #D97706; color: #FFF; font-weight: bold; text-align: center; padding: 4px; border-radius: 6px;">Preview Contract A4</div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <!-- 3. MIDDLE RIGHT: SALE CONTRACT -->
+      <div class="wireframe-phone" style="left: 474px; top: 395px;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block">عقد بيع وتمليك</div>
+        <div style="padding: 10px; flex: 1; display: flex; flex-direction: column; font-size: 6.5px;">
+          <div class="wire-label">Seller (البائع المسقط)</div>
+          <div class="wire-line-input"></div>
+          <div class="wire-label">Buyer (المشتري المتملك)</div>
+          <div class="wire-line-input"></div>
+          <div class="wire-label">Land Area (اللبن الصنعانية)</div>
+          <div class="wire-line-input"></div>
+          <div class="wire-label">Basirah Deed No. (رقم البصيرة)</div>
+          <div class="wire-line-input"></div>
+          <div style="margin-top: auto; background: #D97706; color: #FFF; font-weight: bold; text-align: center; padding: 4px; border-radius: 6px;">Preview Deed A4</div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+      <!-- 4. BOTTOM CENTER: PREVIEW & PRINT A4 PDF -->
+      <div class="wireframe-phone" style="left: 287px; top: 745px; z-index: 10;">
+        <div class="phone-notch"></div>
+        <div class="phone-header-block" style="background:#134E4A; color:#FFF;">صك العقد والطباعة</div>
+        <div style="padding: 8px; flex: 1; display: flex; flex-direction: column; font-family: 'Amiri', serif;">
+          <div style="text-align: center; border-bottom: 1px solid #CBD5E1; padding-bottom: 2px;">
+            <span style="font-size: 5px; color: #64748B;">الجمهورية اليمنية</span><br>
+            <strong style="font-size: 6.5px;">عقد إيجار شرعي وقانوني</strong>
+          </div>
+          <div style="font-size: 5px; margin-top: 4px; line-height: 1.4; color: #334155;">
+            بعون الله وتوفيقه، اتفق المؤجر عبدالله الحاشدي والمستأجر خالد اليماني على إيجار فيلا حدة بمبلغ $1,200 شهرياً.
+          </div>
+          <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #CBD5E1; padding-top: 3px;">
+            <span style="font-size: 5px;">توقيع المؤجر</span>
+            <div style="width: 20px; height: 20px; border: 1px solid #134E4A; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4px; font-weight: bold; color: #134E4A;">QR SEAL</div>
+            <span style="font-size: 5px;">توقيع المستأجر</span>
+          </div>
+          <div style="margin-top: 4px; background: #134E4A; color: #FFF; font-size: 6.5px; font-weight: bold; text-align: center; padding: 3px 0; border-radius: 4px; font-family: 'Cairo', sans-serif;">
+            🖨️ Print to PDF A4
+          </div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+
+    </div>
+
+    <div style="text-align: center; margin-bottom: 12px;">
+      <p style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 13.5px; color: #000; margin: 0;">
+        Figure 2.2: Smart Contracts and Legal Verification Flow
+      </p>
+    </div>
+
+    <div style="font-family: 'Times New Roman', serif; font-size: 13.5px; line-height: 1.5; color: #000; text-align: justify; margin-bottom: 25px; padding: 0 10px;">
+      <p style="margin: 0;">
+        This figure illustrates the specialized legal contracts engine within Yemen Real Estate Portal, showing how property details seamlessly transform into formally recognized Yemeni rental agreements or sale deeds, culminating in official PDF printing with digital verification seals.
+      </p>
+    </div>
+
+    <div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 13px; color: #000;">
+      5
+    </div>
+  </div>
+
+</body>
+</html>
+

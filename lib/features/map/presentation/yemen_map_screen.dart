@@ -79,7 +79,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   int _activeCardImageIndex = 0;
   bool _isSatellite = false;
 
-  // Freehand Map Drawing Mode (Zillow "يرسم" feature)
+  // Freehand Map Drawing Mode
   bool _isDrawingMode = false;
   List<LatLng> _drawnPolygon = [];
 
@@ -588,6 +588,79 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     }
   }
 
+  /// فتح Google Maps للملاحة إلى موقع العقار الحقيقي
+  Future<void> _openGoogleMapsNavigation(Property prop) async {
+    final lat = prop.latitude;
+    final lng = prop.longitude;
+
+    if (lat == null || lng == null || lat == 0.0 || lng == 0.0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'لم يتم تحديد موقع هذا العقار على الخريطة بعد. يرجى التواصل مع صاحب العقار لتحديد الموقع.',
+              style: GoogleFonts.cairo(fontSize: 13),
+            ),
+            backgroundColor: Colors.orange.shade700,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'اتصال',
+              textColor: Colors.white,
+              onPressed: () => _makeCall(prop.contactPhone),
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    // رابط Google Maps للملاحة بإحداثيات العقار الحقيقية
+    final googleMapsUrl =
+        'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving';
+    // رابط بديل يفتح موقع العقار مباشرة عبر تطبيق الملاحة
+    final googleMapsAppUrl = 'google.navigation:q=$lat,$lng&mode=d';
+    final geoUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+
+    try {
+      // محاولة فتح تطبيق Google Maps للملاحة مباشرة
+      final appUri = Uri.parse(googleMapsAppUrl);
+      if (await canLaunchUrl(appUri)) {
+        await launchUrl(appUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {}
+
+    try {
+      // محاولة فتح تطبيق الخرائط عبر بروتوكول geo المعتمد
+      if (await canLaunchUrl(geoUri)) {
+        await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {}
+
+    // فتح رابط Google Maps عبر المتصفح كبديل
+    try {
+      final webUri = Uri.parse(googleMapsUrl);
+      if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'تعذر فتح خرائط Google. تأكد من تثبيت التطبيق أو الاتصال بالإنترنت.',
+              style: GoogleFonts.cairo(fontSize: 13),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _openWhatsApp(String phone, String title) async {
     final cleanPhone = Formatters.formatPhoneForWhatsApp(phone);
     final msg = Uri.encodeComponent(
@@ -1086,7 +1159,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               // 1. Full Screen Interactive Map or List View
               if (!_isListView)
                 GestureDetector(
-                  // Handlers for freehand drawing feature (Zillow "يرسم")
+                  // Handlers for freehand drawing feature
                   onPanStart: _isDrawingMode
                       ? (details) {
                           final latLng = _mapController.camera
@@ -1162,14 +1235,17 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       },
                     ),
                     children: [
-                      // CartoDB Voyager: World-standard clean pastel map matching Zillow / Google Maps exactly
+                      // OpenStreetMap — بلاطات مجانية مفتوحة بلا مفتاح API
                       TileLayer(
                         urlTemplate: _isSatellite
                             ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-                        subdomains: const ['a', 'b', 'c', 'd'],
+                            : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.yemenreal.portal',
                         maxZoom: 19,
+                        // OpenStreetMap مجاني ومفتوح — لا يحتاج مفتاح API
+                        additionalOptions: const {
+                          'attribution': '© OpenStreetMap contributors',
+                        },
                       ),
 
                       // Official Yemen Governorate Boundaries from downloaded GeoJSON
@@ -1195,7 +1271,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           }).toList(),
                         ),
 
-                      // Drawn Polygon Layer (Zillow Draw Area)
+                      // Drawn Polygon Layer
                       if (_drawnPolygon.isNotEmpty)
                         PolygonLayer(
                           polygons: [
@@ -1208,7 +1284,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           ],
                         ),
 
-                      // Dynamic Spatial Clustering Layer (Zillow Style with Yemen Portal Blue Brand)
+                      // Dynamic Spatial Clustering Layer (Yemen Portal Blue Brand)
                       MarkerLayer(
                         markers: clusters.map((cluster) {
                           if (cluster.isSingle) {
@@ -1233,7 +1309,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                     math.max(_currentZoom, 14.5),
                                   );
                                 },
-                                child: _buildZillowMarker(
+                                child: _buildPropertyPriceMarker(
                                   priceText: priceText,
                                   isSelected: isSelected,
                                   isRent: isRent,
@@ -1283,7 +1359,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             final prop = filteredProperties[index];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
-                              child: _buildZillowPropertyCard(
+                              child: _buildSelectedPropertyCard(
                                 prop,
                                 onSelectOnMap: () {
                                   setState(() {
@@ -1599,7 +1675,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 ),
               ),
 
-              // 8. Exact Zillow Selected Property Card (Screenshot 4)
+              // 8. Selected Property Card
               if (_selectedProperty != null && !_isListView)
                 Positioned(
                   bottom: 10,
@@ -1608,7 +1684,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 480),
-                      child: _buildZillowPropertyCard(_selectedProperty!),
+                      child: _buildSelectedPropertyCard(_selectedProperty!),
                     ),
                   ),
                 ),
@@ -1852,157 +1928,85 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               ),
             ),
 
-            // Row 2: Organized Horizontal Scrollable Filter Bar
+            // Row 2: شريط الفلاتر والتصنيفات — قابل للتمرير بدون تداخل
             SizedBox(
-              height: 42,
-              child: SingleChildScrollView(
+              height: 44,
+              child: ListView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                child: Row(
-                  children: [
-                    // 1. All Filters Button (الفلاتر)
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: hasActiveFilters
-                            ? const Color(0xFF0D6EFD).withAlpha(25)
-                            : Colors.white,
-                        foregroundColor: hasActiveFilters
-                            ? const Color(0xFF0D6EFD)
-                            : AppColors.textPrimary,
-                        side: BorderSide(
-                          color: hasActiveFilters
-                              ? const Color(0xFF0D6EFD)
-                              : Colors.grey.shade300,
-                          width: hasActiveFilters ? 1.5 : 1.0,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                        minimumSize: const Size(0, 32),
-                      ),
-                      icon: const Icon(Icons.tune, size: 15),
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            hasActiveFilters ? 'الفلاتر (نشط)' : 'الفلاتر',
-                            style: GoogleFonts.cairo(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 3),
-                          const Icon(Icons.keyboard_arrow_down_rounded, size: 14),
-                        ],
-                      ),
-                      onPressed: _showFilterModal,
-                    ),
-                    const SizedBox(width: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                children: [
+                  // 1. زر الفلاتر الشاملة
+                  _buildFilterBarBtn(
+                    label: hasActiveFilters ? 'الفلاتر ✓' : 'الفلاتر',
+                    icon: Icons.tune,
+                    isActive: hasActiveFilters,
+                    onTap: _showFilterModal,
+                  ),
+                  const SizedBox(width: 6),
 
-                    // 2. Deal Type Dropdown (الكل / للبيع / للإيجار)
-                    _buildDealTypeDropdown(),
-                    const SizedBox(width: 6),
+                  // 2. نوع المعاملة
+                  _buildDealTypeDropdown(),
+                  const SizedBox(width: 6),
 
-                    // 3. Property Type Dropdown (نوع العقار)
-                    _buildPropertyTypeDropdown(),
-                    const SizedBox(width: 6),
+                  // 3. نوع العقار
+                  _buildPropertyTypeDropdown(),
+                  const SizedBox(width: 6),
 
-                    // 4. "خريطة اليمن 🇾🇪" (Offline Official Map) Button
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F766E).withAlpha(20),
-                        foregroundColor: const Color(0xFF0F766E),
-                        elevation: 1,
-                        side: const BorderSide(color: Color(0xFF0D9488), width: 1.2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                        minimumSize: const Size(0, 32),
-                      ),
-                      icon: const Icon(Icons.map_rounded, size: 14),
-                      label: Text(
-                        'خريطة اليمن 🇾🇪',
-                        style: GoogleFonts.cairo(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onPressed: _showOfflineMapDialog,
-                    ),
-                    const SizedBox(width: 6),
+                  // 4. رسم المنطقة
+                  _buildFilterBarBtn(
+                    label: _drawnPolygon.isNotEmpty ? 'مسح الرسم' : 'رسم منطقة',
+                    icon: _drawnPolygon.isNotEmpty ? Icons.close_rounded : Icons.draw_rounded,
+                    isActive: _isDrawingMode || _drawnPolygon.isNotEmpty,
+                    onTap: () {
+                      if (_drawnPolygon.isNotEmpty) {
+                        setState(() {
+                          _drawnPolygon.clear();
+                          _isDrawingMode = false;
+                        });
+                      } else {
+                        setState(() {
+                          _isDrawingMode = !_isDrawingMode;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 6),
 
-                    // 5. Draw Area Tool ("رسم منطقة")
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: _isDrawingMode || _drawnPolygon.isNotEmpty
-                            ? const Color(0xFF0D6EFD)
-                            : Colors.white,
-                        foregroundColor: _isDrawingMode || _drawnPolygon.isNotEmpty
-                            ? Colors.white
-                            : AppColors.textPrimary,
-                        side: BorderSide(
-                          color: _isDrawingMode || _drawnPolygon.isNotEmpty
-                              ? const Color(0xFF0D6EFD)
-                              : Colors.grey.shade300,
-                          width: 1.2,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                        minimumSize: const Size(0, 32),
-                      ),
-                      icon: Icon(
-                        _drawnPolygon.isNotEmpty ? Icons.close_rounded : Icons.draw_rounded,
-                        size: 14,
-                      ),
-                      label: Text(
-                        _drawnPolygon.isNotEmpty ? 'مسح الرسم' : 'رسم منطقة',
-                        style: GoogleFonts.cairo(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onPressed: () {
-                        if (_drawnPolygon.isNotEmpty) {
-                          setState(() {
-                            _drawnPolygon.clear();
-                            _isDrawingMode = false;
-                          });
-                        } else {
-                          setState(() {
-                            _isDrawingMode = !_isDrawingMode;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 6),
+                  // 5. خريطة اليمن الرسمية
+                  _buildFilterBarBtn(
+                    label: 'خريطة اليمن 🇾🇪',
+                    icon: Icons.map_rounded,
+                    isActive: false,
+                    onTap: _showOfflineMapDialog,
+                  ),
+                  const SizedBox(width: 6),
 
-                    // Vertical Separator
-                    Container(
-                      height: 20,
-                      width: 1,
-                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                      color: Colors.grey.shade300,
-                    ),
+                  // فاصل عمودي
+                  Container(
+                    width: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+                    color: Colors.grey.shade300,
+                  ),
+                  const SizedBox(width: 6),
 
-                    // 6. Governorates Quick Chips
+                  // 5. جميع المحافظات
+                  _buildGovernorateChip(
+                    label: 'كافة المحافظات 🇾🇪',
+                    isSelected: _selectedGovName == null,
+                    onTap: () => _selectGovernorate(null),
+                  ),
+
+                  // 6. المحافظات
+                  for (final gov in _governorates) ...[  
+                    const SizedBox(width: 5),
                     _buildGovernorateChip(
-                      label: 'كافة المحافظات 🇾🇪',
-                      isSelected: _selectedGovName == null,
-                      onTap: () => _selectGovernorate(null),
+                      label: gov.name,
+                      isSelected: _selectedGovName == gov.name,
+                      onTap: () => _selectGovernorate(gov),
                     ),
-                    for (final gov in _governorates)
-                      _buildGovernorateChip(
-                        label: gov.name,
-                        isSelected: _selectedGovName == gov.name,
-                        onTap: () => _selectGovernorate(gov),
-                      ),
                   ],
-                ),
+                ],
               ),
             ),
             const SizedBox(height: 2),
@@ -2196,6 +2200,84 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     );
   }
 
+  /// زر شريط الفلاتر العلوي — موحد ومنظم
+  Widget _buildFilterBarBtn({
+    required String label,
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF0D6EFD) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? const Color(0xFF0D6EFD) : Colors.grey.shade300,
+            width: isActive ? 1.5 : 1.0,
+          ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF0D6EFD).withAlpha(40),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: isActive ? Colors.white : AppColors.textPrimary,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: GoogleFonts.cairo(
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+                color: isActive ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// زر دائري للإجراءات في بطاقة العقار
+  Widget _buildCircleActionBtn({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(21),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: 1.5),
+            color: color.withAlpha(12),
+          ),
+          child: Icon(icon, color: color, size: 18),
+        ),
+      ),
+    );
+  }
+
   // Google Maps–style circular cluster badge
   Widget _buildYemenPortalClusterBadge({required int count}) {
     final double size = count >= 100 ? 56 : (count >= 10 ? 50 : 44);
@@ -2246,7 +2328,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   }
 
   // Google Maps–style teardrop location pin with price badge
-  Widget _buildZillowMarker({
+  Widget _buildPropertyPriceMarker({
     required String priceText,
     required bool isSelected,
     required bool isRent,
@@ -2357,7 +2439,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                     final p = props[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildZillowPropertyCard(
+                      child: _buildSelectedPropertyCard(
                         p,
                         onSelectOnMap: () {
                           Navigator.pop(ctx);
@@ -2427,8 +2509,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     );
   }
 
-  // Exact Zillow Selected Property Card (Screenshot 4)
-  Widget _buildZillowPropertyCard(Property prop, {VoidCallback? onSelectOnMap}) {
+  // Selected Property Card
+  Widget _buildSelectedPropertyCard(Property prop, {VoidCallback? onSelectOnMap}) {
     final isRent = prop.dealType == AppConstants.dealRent;
     final images = prop.images.isNotEmpty
         ? prop.images.map((img) => img.imageUrl).toList()
@@ -2540,7 +2622,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0D6EFD), // Zillow Blue
+                            color: const Color(0xFF0D6EFD), // Portal Blue
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -2764,76 +2846,55 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                     ),
                     const SizedBox(height: 10),
 
-                    // Action Buttons: Call + WhatsApp + Big Blue "تحقق من التوافر"
+                    // أزرار الإجراءات: اتصال + واتساب + تفاصيل + الوصول للعقار
                     Row(
                       children: [
-                        // Call Phone Circular Button
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF0D6EFD),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(
-                              Icons.phone,
-                              color: Color(0xFF0D6EFD),
-                              size: 19,
-                            ),
-                            tooltip: 'اتصال',
-                            onPressed: () => _makeCall(prop.contactPhone),
-                          ),
+                        // زر الاتصال
+                        _buildCircleActionBtn(
+                          icon: Icons.phone,
+                          color: const Color(0xFF0D6EFD),
+                          tooltip: 'اتصال',
+                          onTap: () => _makeCall(prop.contactPhone),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
 
-                        // WhatsApp Circular Button
+                        // زر واتساب
                         if (prop.contactWhatsapp != null &&
                             prop.contactWhatsapp!.isNotEmpty) ...[
-                          Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.green.shade600,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: Icon(
-                                Icons.chat,
-                                color: Colors.green.shade600,
-                                size: 19,
-                              ),
-                              tooltip: 'واتساب',
-                              onPressed: () => _openWhatsApp(
-                                prop.contactWhatsapp!,
-                                prop.title,
-                              ),
+                          _buildCircleActionBtn(
+                            icon: Icons.chat,
+                            color: Colors.green.shade600,
+                            tooltip: 'واتساب',
+                            onTap: () => _openWhatsApp(
+                              prop.contactWhatsapp!,
+                              prop.title,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                         ],
 
-                        // Large Wide Blue Primary Button: "تحقق من التوافر" / "عرض التفاصيل"
+                        // زر الوصول إلى العقار عبر Google Maps
+                        _buildCircleActionBtn(
+                          icon: Icons.directions_rounded,
+                          color: Colors.green.shade700,
+                          tooltip: 'الوصول إلى العقار',
+                          onTap: () => _openGoogleMapsNavigation(prop),
+                        ),
+                        const SizedBox(width: 6),
+
+                        // زر التفاصيل / التوافر
                         Expanded(
                           child: SizedBox(
-                            height: 42,
+                            height: 40,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color(0xFF0D6EFD), // Zillow Blue
+                                backgroundColor: const Color(0xFF0D6EFD),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
                               ),
                               onPressed: () {
                                 if (onSelectOnMap != null) {
@@ -2843,17 +2904,48 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                 }
                               },
                               child: Text(
-                                isRent ? 'تحقق من التوافر' : 'عرض التفاصيل والحجز',
+                                isRent ? 'تحقق من التوافر' : 'عرض التفاصيل',
                                 style: GoogleFonts.cairo(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
+
+                    // زر الوصول إلى العقار — بارز ومستقل
+                    if (onSelectOnMap == null) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 40,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.green.shade700,
+                            side: BorderSide(color: Colors.green.shade600, width: 1.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          icon: Icon(Icons.directions_rounded, size: 18, color: Colors.green.shade700),
+                          label: Text(
+                            'الوصول إلى العقار عبر Google Maps',
+                            style: GoogleFonts.cairo(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                          onPressed: () => _openGoogleMapsNavigation(prop),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
