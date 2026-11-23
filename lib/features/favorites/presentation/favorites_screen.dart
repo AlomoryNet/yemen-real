@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/responsive.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
@@ -22,20 +26,23 @@ class FavoritesScreen extends ConsumerWidget {
 
     if (!authState.isAuthenticated) {
       return Scaffold(
-        appBar: const AppHeader(),
-        body: Center(
-          child: EmptyStateView(
+        appBar: const AppHeader(title: 'المفضلة', showBack: true),
+        drawer: Responsive.isDesktop(context)
+            ? null
+            : const AppDrawer(),
+        body: AppPageBody(
+          child: Center(
+            child: EmptyStateView(
             icon: Icons.favorite_border,
-            title: 'تسجيل الدخول مطلوب',
-            description:
-                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
-            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            title: context.l10n.fav_login_required,
+            description: context.l10n.fav_signup_prompt,
+            actionText: context.l10n.fav_signup_or_login,
             onAction: () => AuthPromptDialog.show(
               context,
-              message:
-                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              message: context.l10n.fav_signup_prompt,
               redirectTo: '/favorites',
             ),
+          ),
           ),
         ),
       );
@@ -44,9 +51,13 @@ class FavoritesScreen extends ConsumerWidget {
     final favoritesAsync = ref.watch(favoritesProvider);
 
     return Scaffold(
-      appBar: const AppHeader(),
-      body: SingleChildScrollView(
-        child: Column(
+      appBar: const AppHeader(title: 'المفضلة', showBack: true),
+      drawer: Responsive.isDesktop(context)
+          ? null
+          : const AppDrawer(),
+      body: AppPageBody(
+        child: SingleChildScrollView(
+          child: Column(
           children: [
             Center(
               child: ConstrainedBox(
@@ -60,7 +71,7 @@ class FavoritesScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'العقارات المفضلة',
+                        context.l10n.fav_title,
                         style: GoogleFonts.cairo(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -69,7 +80,7 @@ class FavoritesScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'العقارات التي قمت بحفظها لسهولة الرجوع إليها ومقارنتها.',
+                        context.l10n.fav_subtitle,
                         style: GoogleFonts.cairo(
                           fontSize: 13,
                           color: AppColors.textSecondary,
@@ -82,11 +93,10 @@ class FavoritesScreen extends ConsumerWidget {
                           if (properties.isEmpty) {
                             return EmptyStateView(
                               icon: Icons.favorite_border,
-                              title: 'لا توجد عقارات في المفضلة',
-                              description:
-                                  'يمكنك إضافة أي عقار إلى قائمتك بالنقر على أيقونة القلب في بطاقة العقار',
-                              actionText: 'تصفح العقارات الآن',
-                              onAction: () => context.push('/search'),
+                              title: context.l10n.fav_empty_title,
+                              description: context.l10n.fav_empty_desc,
+                              actionText: context.l10n.fav_empty_action,
+                              onAction: () => context.push('/map'),
                             );
                           }
 
@@ -119,8 +129,8 @@ class FavoritesScreen extends ConsumerWidget {
                             },
                           );
                         },
-                        loading: () => const LoadingView(
-                          message: 'جاري تحميل قائمة المفضلة...',
+                        loading: () => LoadingView(
+                          message: context.l10n.fav_loading,
                         ),
                         error: (err, _) => ErrorView(
                           message: err.toString(),
@@ -136,6 +146,7 @@ class FavoritesScreen extends ConsumerWidget {
             ),
             const AppFooter(),
           ],
+        ),
         ),
       ),
     );

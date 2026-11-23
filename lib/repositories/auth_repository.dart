@@ -5,6 +5,7 @@ import '../core/constants/app_constants.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/user_profile.dart';
 import '../services/supabase_service.dart';
+import '../core/l10n/app_strings.dart';
 
 class AuthRepository {
   final SupabaseClient? _client = SupabaseService.client;
@@ -42,7 +43,7 @@ class AuthRepository {
       }
 
       // If profile does not exist yet in DB, safely insert it once (upsert with DO NOTHING)
-      final fullName = user.userMetadata?['full_name'] as String? ?? 'مستخدم';
+      final fullName = user.userMetadata?['full_name'] as String? ?? tr.misc_user;
       final phone = user.userMetadata?['phone'] as String?;
       try {
         await _client.from('profiles').upsert({
@@ -100,7 +101,7 @@ class AuthRepository {
       // Block unverified user from logging in
       if (existing != null && !existing.isVerified) {
         throw AppException(
-          'البريد الإلكتروني لم يتم تأكيده بعد. يرجى فتح بريدك الإلكتروني والضغط على رابط التفعيل للمتابعة.',
+          tr.sys_email_not_confirmed,
           code: 'email_not_confirmed',
         );
       }
@@ -127,14 +128,14 @@ class AuthRepository {
 
       final user = response.user;
       if (user == null) {
-        throw AppException('فشل تسجيل الدخول', code: 'invalid_credentials');
+        throw AppException(tr.sys_login_failed, code: 'invalid_credentials');
       }
 
       // Enforce email confirmation check on Supabase response
       if (user.emailConfirmedAt == null) {
         await _client.auth.signOut();
         throw AppException(
-          'البريد الإلكتروني لم يتم تأكيده بعد. يرجى فتح بريدك الإلكتروني والضغط على رابط التفعيل للمتابعة.',
+          tr.sys_email_not_confirmed,
           code: 'email_not_confirmed',
         );
       }
@@ -146,7 +147,7 @@ class AuthRepository {
 
       return UserProfile(
         id: user.id,
-        fullName: user.userMetadata?['full_name'] as String? ?? 'مستخدم',
+        fullName: user.userMetadata?['full_name'] as String? ?? tr.misc_user,
         email: user.email ?? cleanEmail,
         phone: user.userMetadata?['phone'] as String?,
         role: AppConstants.roleUser,
@@ -172,7 +173,7 @@ class AuthRepository {
       );
       if (exists) {
         throw AppException(
-          'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد.',
+          tr.sys_user_exists,
           code: 'user_already_exists',
         );
       }
@@ -202,13 +203,13 @@ class AuthRepository {
 
       final user = response.user;
       if (user == null) {
-        throw AppException('فشل إنشاء الحساب');
+        throw AppException(tr.sys_signup_failed);
       }
 
       // Check if user already exists in Supabase (identities will be empty on duplicate signup)
       if (user.identities != null && user.identities!.isEmpty) {
         throw AppException(
-          'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد.',
+          tr.sys_user_exists,
           code: 'user_already_exists',
         );
       }
@@ -234,7 +235,7 @@ class AuthRepository {
     final cleanEmail = email.trim().toLowerCase();
     if (cleanEmail.isEmpty) {
       throw AppException(
-        'يرجى إدخال البريد الإلكتروني أولاً',
+        tr.sys_enter_email_first,
         code: 'invalid_email',
       );
     }
@@ -244,7 +245,7 @@ class AuthRepository {
       if (diff.inSeconds < 60) {
         final remaining = 60 - diff.inSeconds;
         throw AppException(
-          'يرجى الانتظار $remaining ثانية قبل طلب إعادة إرسال رابط التفعيل مجدداً لمنع تكرار الطلبات.',
+          tr.sys_resend_wait(remaining),
           code: 'rate_limit',
         );
       }

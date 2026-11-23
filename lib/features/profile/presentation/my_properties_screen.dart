@@ -1,15 +1,19 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/property_provider.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
@@ -26,20 +30,25 @@ class MyPropertiesScreen extends ConsumerWidget {
     if (!authState.isAuthenticated) {
       return Scaffold(
         appBar: const AppHeader(),
-        bottomNavigationBar: const AppBottomNavBar(currentRoute: '/my-properties'),
-        body: Center(
-          child: EmptyStateView(
+        drawer: Responsive.isDesktop(context)
+            ? null
+            : const AppDrawer(),
+        bottomNavigationBar: Responsive.isDesktop(context)
+            ? null
+            : const AppBottomNavBar(currentRoute: '/my-properties'),
+        body: AppPageBody(
+          child: Center(
+            child: EmptyStateView(
             icon: Icons.apartment,
-            title: 'تسجيل الدخول مطلوب',
-            description:
-                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
-            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            title: context.l10n.myprops_login_required,
+            description: context.l10n.myprops_signup_prompt,
+            actionText: context.l10n.myprops_signup_or_login,
             onAction: () => AuthPromptDialog.show(
               context,
-              message:
-                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              message: context.l10n.myprops_signup_prompt,
               redirectTo: '/my-properties',
             ),
+          ),
           ),
         ),
       );
@@ -50,19 +59,25 @@ class MyPropertiesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: const AppHeader(),
-      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/my-properties'),
+      drawer: Responsive.isDesktop(context)
+          ? null
+          : const AppDrawer(),
+      bottomNavigationBar: Responsive.isDesktop(context)
+          ? null
+          : const AppBottomNavBar(currentRoute: '/my-properties'),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: Text(
-          'إضافة عقار جديد',
+          context.l10n.myprops_add_new,
           style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
         ),
         onPressed: () => context.push('/add-property'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: AppPageBody(
+        child: SingleChildScrollView(
+          child: Column(
           children: [
             Center(
               child: ConstrainedBox(
@@ -78,37 +93,42 @@ class MyPropertiesScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'عقاراتي المعلنة',
-                                style: GoogleFonts.cairo(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  context.l10n.myprops_title,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'إدارة عقاراتك، متابعة المشاهدات، وتعديل الحالة.',
-                                style: GoogleFonts.cairo(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
+                                const SizedBox(height: 4),
+                                Text(
+                                  context.l10n.myprops_subtitle,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Row(
                             children: [
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0D6EFD),
+                                  backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.white,
                                 ),
                                 icon: const Icon(Icons.map_rounded, size: 18),
                                 label: Text(
-                                  'خريطة اليمن',
+                                  context.l10n.myprops_yemen_map,
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -122,7 +142,7 @@ class MyPropertiesScreen extends ConsumerWidget {
                                 ),
                                 icon: const Icon(Icons.add_home_outlined, size: 18),
                                 label: Text(
-                                  'أضف عقاراً',
+                                  context.l10n.myprops_add_property,
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -140,10 +160,10 @@ class MyPropertiesScreen extends ConsumerWidget {
                           if (properties.isEmpty) {
                             return EmptyStateView(
                               icon: Icons.apartment_outlined,
-                              title: 'لم تقم بنشر أي عقار بعد',
+                              title: context.l10n.myprops_empty_title,
                               description:
-                                  'انشر أول عقار لك الآن مجاناً وابدأ باستقبال طلبات المهتمين مباشرة',
-                              actionText: 'أضف عقارك الأول',
+                                  context.l10n.myprops_empty_desc,
+                              actionText: context.l10n.myprops_empty_action,
                               onAction: () => context.push('/add-property'),
                             );
                           }
@@ -159,7 +179,7 @@ class MyPropertiesScreen extends ConsumerWidget {
                               return Card(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  side: const BorderSide(
+                                  side: BorderSide(
                                     color: AppColors.divider,
                                   ),
                                 ),
@@ -173,20 +193,22 @@ class MyPropertiesScreen extends ConsumerWidget {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Row(
-                                            children: [
-                                              StatusBadge.dealType(
-                                                prop.dealType,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              StatusBadge.propertyStatus(
-                                                prop.status,
-                                              ),
-                                            ],
+                                          Flexible(
+                                            child: Row(
+                                              children: [
+                                                StatusBadge.dealType(
+                                                  prop.dealType,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                StatusBadge.propertyStatus(
+                                                  prop.status,
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                           PopupMenuButton<String>(
                                             itemBuilder: (context) => [
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'contract',
                                                 child: Row(
                                                   children: [
@@ -194,20 +216,20 @@ class MyPropertiesScreen extends ConsumerWidget {
                                                       Icons
                                                           .description_outlined,
                                                       size: 18,
-                                                      color: AppColors.primary,
+                                                      color: AppColors.primaryInk,
                                                     ),
                                                     SizedBox(width: 8),
-                                                    Text('تشكيل وطباعة العقد'),
+                                                    Text(context.l10n.myprops_contract),
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'edit',
-                                                child: Text('تعديل الإعلان'),
+                                                child: Text(context.l10n.myprops_edit),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'view',
-                                                child: Text('عرض الإعلان'),
+                                                child: Text(context.l10n.myprops_view),
                                               ),
                                               PopupMenuItem(
                                                 value:
@@ -220,18 +242,18 @@ class MyPropertiesScreen extends ConsumerWidget {
                                                   prop.status ==
                                                           AppConstants
                                                               .statusPublished
-                                                      ? 'إخفاء الإعلان'
-                                                      : 'إعادة النشر',
+                                                      ? context.l10n.myprops_hide
+                                                      : context.l10n.myprops_republish,
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'archive',
-                                                child: Text('أرشفة الإعلان'),
+                                                child: Text(context.l10n.myprops_archive),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Text(
-                                                  'حذف نهائي',
+                                                  context.l10n.myprops_delete_permanent,
                                                   style: TextStyle(
                                                     color: AppColors.error,
                                                   ),
@@ -324,18 +346,21 @@ class MyPropertiesScreen extends ConsumerWidget {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            'المشاهدات: ${prop.viewsCount} • تاريخ الإضافة: ${Formatters.formatDate(prop.createdAt)}',
-                                            style: GoogleFonts.cairo(
-                                              fontSize: 11,
-                                              color: AppColors.textMuted,
+                                          Expanded(
+                                            child: Text(
+                                              '${context.l10n.myprops_views} ${prop.viewsCount} • ${context.l10n.myprops_added_on} ${Formatters.formatDate(prop.createdAt)}',
+                                              style: GoogleFonts.cairo(
+                                                fontSize: 11,
+                                                color: AppColors.textMuted,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                           TextButton(
                                             onPressed: () => context.push(
                                               '/property/${prop.id}',
                                             ),
-                                            child: const Text('معاينة'),
+                                            child: Text(context.l10n.myprops_preview),
                                           ),
                                         ],
                                       ),
@@ -347,7 +372,7 @@ class MyPropertiesScreen extends ConsumerWidget {
                           );
                         },
                         loading: () =>
-                            const LoadingView(message: 'جاري تحميل عقاراتك...'),
+                            LoadingView(message: context.l10n.myprops_loading),
                         error: (err, _) => ErrorView(
                           message: err.toString(),
                           onRetry: () =>
@@ -361,6 +386,7 @@ class MyPropertiesScreen extends ConsumerWidget {
             ),
             const AppFooter(),
           ],
+        ),
         ),
       ),
     );

@@ -7,8 +7,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../models/property.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
@@ -16,6 +18,8 @@ import '../../../providers/property_provider.dart';
 import '../../../services/storage_service.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 
@@ -132,7 +136,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'يلزم تسجيل الدخول بحساب مفعل عبر البريد الإلكتروني لنشر العقارات.',
+            context.l10n.addprop_verified_login_required,
             style: GoogleFonts.cairo(),
           ),
           backgroundColor: AppColors.error,
@@ -147,7 +151,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'يجب الموافقة على إقرار ملكية الحق في نشر الإعلان للمتابعة',
+            context.l10n.addprop_ownership_pledge_required,
             style: GoogleFonts.cairo(),
           ),
           backgroundColor: AppColors.error,
@@ -161,10 +165,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
       builder: (dialogCtx) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.rate_review_outlined, color: AppColors.primary),
+            Icon(Icons.rate_review_outlined, color: AppColors.primaryInk),
             const SizedBox(width: 8),
             Text(
-              'المراجعة الذاتية للإعلان',
+              context.l10n.addprop_self_review_title,
               style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
             ),
           ],
@@ -177,41 +181,41 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'يرجى مراجعة بيانات إعلانك بدقة قبل النشر الفعلي:',
+                  context.l10n.addprop_review_intro,
                   style: GoogleFonts.cairo(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 14),
-                _buildReviewItem('العنوان', _titleController.text.trim()),
+                _buildReviewItem(context.l10n.addprop_review_title_label, _titleController.text.trim()),
                 _buildReviewItem(
-                  'نوع العملية',
+                  context.l10n.addprop_review_deal_type_label,
                   AppConstants.getDealTypeNameAr(_dealType),
                 ),
                 _buildReviewItem(
-                  'السعر',
+                  context.l10n.addprop_review_price_label,
                   Formatters.formatCurrency(
                     double.tryParse(_priceController.text) ?? 0,
                     _currency,
                   ),
                 ),
                 _buildReviewItem(
-                  'المساحة',
-                  '${_areaController.text.trim()} م²',
+                  context.l10n.addprop_review_area_label,
+                  '${_areaController.text.trim()} ${context.l10n.addprop_sqm_unit}',
                 ),
                 _buildReviewItem(
-                  'الموقع',
+                  context.l10n.addprop_review_location_label,
                   '${_cityController.text.trim()} - ${_districtController.text.trim()}',
                 ),
-                _buildReviewItem('هاتف المعلن', _phoneController.text.trim()),
+                _buildReviewItem(context.l10n.addprop_review_phone_label, _phoneController.text.trim()),
                 _buildReviewItem(
-                  'حالة النشر',
+                  context.l10n.addprop_review_status_label,
                   isDraft
-                      ? 'مسودة خاصة'
+                      ? context.l10n.addprop_status_private_draft
                       : (ref.read(authProvider).isAdmin
-                            ? 'نشر فوري (حساب الإدارة)'
-                            : 'طلب نشر قيد المراجعة'),
+                            ? context.l10n.addprop_status_instant_publish
+                            : context.l10n.addprop_status_pending_review),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -222,8 +226,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                   ),
                   child: Text(
                     ref.read(authProvider).isAdmin
-                        ? 'بصفتك المدير العام، سيتم نشر هذا العقار مباشرة في المنصة.'
-                        : 'وفق سياسة النشر المعتمدة، يتم إرسال إعلانك إلى الإدارة (المسؤول العام: محمد السقاف) للمراجعة والاعتماد قبل ظهوره للعامة.',
+                        ? context.l10n.addprop_admin_publish_note
+                        : context.l10n.addprop_review_policy_note,
                     style: GoogleFonts.cairo(
                       fontSize: 12,
                       color: AppColors.primaryDark,
@@ -237,7 +241,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('تعديل البيانات'),
+            child: Text(context.l10n.addprop_edit_data),
           ),
           ElevatedButton(
             onPressed: () {
@@ -253,10 +257,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
             },
             child: Text(
               isDraft
-                  ? 'حفظ كمسودة'
+                  ? context.l10n.addprop_save_draft
                   : (ref.read(authProvider).isAdmin
-                        ? 'تأكيد ونشر الإعلان'
-                        : 'إرسال طلب النشر'),
+                        ? context.l10n.addprop_confirm_publish
+                        : context.l10n.addprop_submit_request),
             ),
           ),
         ],
@@ -302,7 +306,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'يلزم تأكيد بريدك الإلكتروني أولاً قبل نشر العقار.',
+            context.l10n.addprop_confirm_email_required,
             style: GoogleFonts.cairo(),
           ),
           backgroundColor: AppColors.error,
@@ -423,10 +427,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           SnackBar(
             content: Text(
               status == AppConstants.statusPublished
-                  ? 'تم نشر الإعلان بنجاح في بوابة اليمن العقارية'
+                  ? context.l10n.addprop_published_success
                   : (status == AppConstants.statusPending
-                        ? 'تم إرسال طلب نشر الإعلان بنجاح، وهو قيد مراجعة الإدارة للموافقة والاعتماد'
-                        : 'تم حفظ مسودة الإعلان بنجاح'),
+                        ? context.l10n.addprop_request_sent_success
+                        : context.l10n.addprop_draft_saved_success),
               style: GoogleFonts.cairo(),
             ),
             backgroundColor: AppColors.success,
@@ -440,7 +444,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'حدث خطأ أثناء حفظ الإعلان: ${e.toString()}',
+              '${context.l10n.addprop_save_error}: ${e.toString()}',
               style: GoogleFonts.cairo(),
             ),
             backgroundColor: AppColors.error,
@@ -456,20 +460,25 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
     if (!authState.isAuthenticated) {
       return Scaffold(
-        appBar: const AppHeader(),
-        body: Center(
-          child: EmptyStateView(
+        appBar: const AppHeader(title: 'إضافة عقار', showBack: true),
+        drawer: Responsive.isDesktop(context)
+            ? null
+            : const AppDrawer(),
+        body: AppPageBody(
+          child: Center(
+            child: EmptyStateView(
             icon: Icons.add_business_outlined,
-            title: 'تسجيل الدخول مطلوب',
+            title: context.l10n.addprop_login_required_title,
             description:
-                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
-            actionText: 'إنشاء حساب أو تسجيل الدخول',
+                context.l10n.addprop_login_required_desc,
+            actionText: context.l10n.addprop_login_required_action,
             onAction: () => AuthPromptDialog.show(
               context,
               message:
-                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+                  context.l10n.addprop_login_required_desc,
               redirectTo: '/add-property',
             ),
+          ),
           ),
         ),
       );
@@ -478,9 +487,13 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
     final typesAsync = ref.watch(propertyTypesProvider);
 
     return Scaffold(
-      appBar: const AppHeader(),
-      body: SingleChildScrollView(
-        child: Column(
+      appBar: const AppHeader(title: 'إضافة عقار', showBack: true),
+      drawer: Responsive.isDesktop(context)
+          ? null
+          : const AppDrawer(),
+      body: AppPageBody(
+        child: SingleChildScrollView(
+          child: Column(
           children: [
             Center(
               child: ConstrainedBox(
@@ -498,8 +511,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                         // Page Title
                         Text(
                           widget.propertyToEdit == null
-                              ? 'إضافة إعلان عقاري جديد'
-                              : 'تعديل بيانات العقار',
+                              ? context.l10n.addprop_new_title
+                              : context.l10n.addprop_edit_title,
                           style: GoogleFonts.cairo(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -508,7 +521,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'أدخل بيانات العقار بدقة لضمان وصوله إلى المهتمين بأعلى كفاءة.',
+                          context.l10n.addprop_intro,
                           style: GoogleFonts.cairo(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -518,11 +531,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
                         // Section 1: Basic Ad Info
                         _buildSectionCard(
-                          title: 'معلومات الإعلان والعملية',
+                          title: context.l10n.addprop_section_basic_info,
                           icon: Icons.info_outline,
                           children: [
                             Text(
-                              'عنوان الإعلان *',
+                              context.l10n.addprop_title_label,
                               style: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -533,11 +546,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               controller: _titleController,
                               validator: (val) => Validators.requiredField(
                                 val,
-                                'عنوان الإعلان',
+                                context.l10n.addprop_title_field_name,
                               ),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText:
-                                    'مثال: شقة للبيع في حدة بتشطيب ديلوكس وموقع استراتيجي',
+                                    context.l10n.addprop_title_hint,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -553,7 +566,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'نوع العملية *',
+                                        context.l10n.addprop_deal_type_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -563,14 +576,14 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       DropdownButtonFormField<String>(
                                         isExpanded: true,
                                         value: _dealType,
-                                        items: const [
+                                        items: [
                                           DropdownMenuItem(
                                             value: AppConstants.dealSale,
-                                            child: Text('للبيع'),
+                                            child: Text(context.l10n.addprop_deal_sale),
                                           ),
                                           DropdownMenuItem(
                                             value: AppConstants.dealRent,
-                                            child: Text('للإيجار'),
+                                            child: Text(context.l10n.addprop_deal_rent),
                                           ),
                                         ],
                                         onChanged: (val) {
@@ -590,7 +603,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'نوع العقار *',
+                                        context.l10n.addprop_property_type_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -635,7 +648,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
                         // Section 2: Pricing & Area
                         _buildSectionCard(
-                          title: 'السعر والمساحة',
+                          title: context.l10n.addprop_section_price_area,
                           icon: Icons.payments_outlined,
                           children: [
                             Row(
@@ -648,7 +661,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'السعر المطلوب *',
+                                        context.l10n.addprop_price_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -661,10 +674,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         validator: (val) =>
                                             Validators.positiveNumber(
                                               val,
-                                              'السعر المطلوب',
+                                              context.l10n.addprop_price_field_name,
                                             ),
-                                        decoration: const InputDecoration(
-                                          hintText: 'مثال: 50000000',
+                                        decoration: InputDecoration(
+                                          hintText: context.l10n.addprop_price_hint,
                                         ),
                                       ),
                                     ],
@@ -678,7 +691,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'العملة *',
+                                        context.l10n.addprop_currency_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -721,7 +734,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'المساحة الإجمالية (م²) *',
+                                        context.l10n.addprop_area_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -734,10 +747,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         validator: (val) =>
                                             Validators.positiveNumber(
                                               val,
-                                              'المساحة',
+                                              context.l10n.addprop_area_field_name,
                                             ),
-                                        decoration: const InputDecoration(
-                                          hintText: 'مثال: 180',
+                                        decoration: InputDecoration(
+                                          hintText: context.l10n.addprop_area_hint,
                                         ),
                                       ),
                                     ],
@@ -750,7 +763,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'عدد الغرف',
+                                        context.l10n.addprop_bedrooms_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -760,8 +773,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       TextFormField(
                                         controller: _bedroomsController,
                                         keyboardType: TextInputType.number,
-                                        decoration: const InputDecoration(
-                                          hintText: '0 إذا لم ينطبق',
+                                        decoration: InputDecoration(
+                                          hintText: context.l10n.addprop_na_hint,
                                         ),
                                       ),
                                     ],
@@ -774,7 +787,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'دورات المياه',
+                                        context.l10n.addprop_bathrooms_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -784,8 +797,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       TextFormField(
                                         controller: _bathroomsController,
                                         keyboardType: TextInputType.number,
-                                        decoration: const InputDecoration(
-                                          hintText: '0 إذا لم ينطبق',
+                                        decoration: InputDecoration(
+                                          hintText: context.l10n.addprop_na_hint,
                                         ),
                                       ),
                                     ],
@@ -800,7 +813,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
                         // Section 3: Location
                         _buildSectionCard(
-                          title: 'الموقع الجغرافي',
+                          title: context.l10n.addprop_section_location,
                           icon: Icons.location_on_outlined,
                           children: [
                             Row(
@@ -813,7 +826,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'المحافظة *',
+                                        context.l10n.addprop_governorate_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -869,7 +882,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'المنطقة أو الحي *',
+                                        context.l10n.addprop_district_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -881,11 +894,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         validator: (val) =>
                                             Validators.requiredField(
                                               val,
-                                              'الحي أو المنطقة',
+                                              context.l10n.addprop_district_field_name,
                                             ),
-                                        decoration: const InputDecoration(
+                                        decoration: InputDecoration(
                                           hintText:
-                                              'مثال: حدة، بيت بوس، المعلا...',
+                                              context.l10n.addprop_district_hint,
                                         ),
                                       ),
                                     ],
@@ -913,7 +926,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'أحياء ومناطق شائعة في $currentGov (انقر للاختيار السريع):',
+                                        '${context.l10n.addprop_common_districts_intro} $currentGov ${context.l10n.addprop_common_districts_quick_pick}',
                                         style: GoogleFonts.cairo(
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.w600,
@@ -961,7 +974,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                             ),
                             const SizedBox(height: 14),
                             Text(
-                              'تفاصيل العنوان والمعالم القريبة',
+                              context.l10n.addprop_address_details_label,
                               style: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -970,9 +983,9 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _addressController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText:
-                                    'مثال: بالقرب من جولة الرويشان - شارع 14',
+                                    context.l10n.addprop_address_hint,
                               ),
                             ),
                             const SizedBox(height: 18),
@@ -986,7 +999,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'تحديد الموقع الدقيق على الخريطة (انقر على الخريطة لتثبيت المكان):',
+                                  context.l10n.addprop_map_picker_label,
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
@@ -1085,8 +1098,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                           Expanded(
                                             child: Text(
                                               _selectedLatitude != null
-                                                  ? 'تم تثبيت الموقع: ${_selectedLatitude!.toStringAsFixed(4)}, ${_selectedLongitude!.toStringAsFixed(4)}'
-                                                  : 'انقر على أي نقطة في الخريطة لتثبيت موقع العقار بدقة',
+                                                  ? '${context.l10n.addprop_location_pinned} ${_selectedLatitude!.toStringAsFixed(4)}, ${_selectedLongitude!.toStringAsFixed(4)}'
+                                                  : context.l10n.addprop_map_tap_hint,
                                               style: GoogleFonts.cairo(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.bold,
@@ -1108,11 +1121,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
                         // Section 4: Description & Photos
                         _buildSectionCard(
-                          title: 'الوصف والصور',
+                          title: context.l10n.addprop_section_description_photos,
                           icon: Icons.photo_library_outlined,
                           children: [
                             Text(
-                              'الوصف الكامل للعقار *',
+                              context.l10n.addprop_description_label,
                               style: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -1123,10 +1136,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               controller: _descriptionController,
                               maxLines: 4,
                               validator: (val) =>
-                                  Validators.requiredField(val, 'الوصف'),
-                              decoration: const InputDecoration(
+                                  Validators.requiredField(val, context.l10n.addprop_description_field_name),
+                              decoration: InputDecoration(
                                 hintText:
-                                    'اذكر تفاصيل ومميزات العقار، التشطيبات، المداخل، والخدمات المتوفرة...',
+                                    context.l10n.addprop_description_hint,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -1136,7 +1149,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'صور العقار (بحد أقصى 5 ميجابايت لكل صورة)',
+                                  context.l10n.addprop_photos_label,
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
@@ -1147,7 +1160,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                   icon: const Icon(
                                     Icons.add_photo_alternate_outlined,
                                   ),
-                                  label: const Text('إضافة صور'),
+                                  label: Text(context.l10n.addprop_add_photos),
                                 ),
                               ],
                             ),
@@ -1188,7 +1201,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    'لم يتم اختيار صور بعد. يمكنك إضافة صور لجذب المزيد من المشترين.',
+                                    context.l10n.addprop_no_images_hint,
                                     style: GoogleFonts.cairo(
                                       color: AppColors.textMuted,
                                       fontSize: 12,
@@ -1203,7 +1216,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
                         // Section 5: Contact Info & Pledge
                         _buildSectionCard(
-                          title: 'بيانات التواصل والإقرار',
+                          title: context.l10n.addprop_section_contact_pledge,
                           icon: Icons.phone_callback_outlined,
                           children: [
                             Row(
@@ -1214,7 +1227,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'رقم الهاتف للتواصل *',
+                                        context.l10n.addprop_phone_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -1225,7 +1238,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         controller: _phoneController,
                                         keyboardType: TextInputType.phone,
                                         validator: Validators.phone,
-                                        decoration: const InputDecoration(
+                                        decoration: InputDecoration(
                                           hintText: '770000000',
                                         ),
                                       ),
@@ -1239,7 +1252,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'رقم الواتساب',
+                                        context.l10n.addprop_whatsapp_label,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -1249,8 +1262,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       TextFormField(
                                         controller: _whatsappController,
                                         keyboardType: TextInputType.phone,
-                                        decoration: const InputDecoration(
-                                          hintText: 'اختياري للتواصل السريع',
+                                        decoration: InputDecoration(
+                                          hintText: context.l10n.addprop_whatsapp_hint,
                                         ),
                                       ),
                                     ],
@@ -1266,7 +1279,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               contentPadding: EdgeInsets.zero,
                               controlAffinity: ListTileControlAffinity.leading,
                               title: Text(
-                                'أقر وأتعهد بصحة كافة البيانات والمعلومات الواردة في هذا الإعلان، وبامتلاكي الحق النظامي والشرعي في تسويقه أو نشره.',
+                                context.l10n.addprop_pledge_text,
                                 style: GoogleFonts.cairo(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -1284,11 +1297,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
                         // Section: Contract Customization & Print
                         _buildSectionCard(
-                          title: 'تشكيل وطباعة عقد العقار اليمني',
+                          title: context.l10n.addprop_section_contract,
                           icon: Icons.description_outlined,
                           children: [
                             Text(
-                              'يمكنك تشكيل وتخصيص شروط العقد وحفظ نموذجك المعتمد لطباعته وتوثيقه عند إتمام الصفقة مع المستأجر أو المشتري.',
+                              context.l10n.addprop_contract_intro,
                               style: GoogleFonts.cairo(
                                 fontSize: 13,
                                 color: AppColors.textSecondary,
@@ -1301,19 +1314,19 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                   horizontal: 16,
                                   vertical: 12,
                                 ),
-                                side: const BorderSide(
-                                  color: AppColors.primary,
+                                side: BorderSide(
+                                  color: AppColors.primaryInk,
                                 ),
                               ),
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.edit_note,
-                                color: AppColors.primary,
+                                color: AppColors.primaryInk,
                               ),
                               label: Text(
-                                'تخصيص بنود العقد والطباعة',
+                                context.l10n.addprop_customize_contract,
                                 style: GoogleFonts.cairo(
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
+                                  color: AppColors.primaryInk,
                                 ),
                               ),
                               onPressed: () {
@@ -1326,7 +1339,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       'owner',
                                   title: _titleController.text.trim().isNotEmpty
                                       ? _titleController.text.trim()
-                                      : 'عقار معلن',
+                                      : context.l10n.misc_listed_property,
                                   description: _descriptionController.text
                                       .trim(),
                                   dealType: _dealType,
@@ -1365,7 +1378,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 onPressed: _isSaving
                                     ? null
                                     : () => _showSelfReviewModal(isDraft: true),
-                                child: const Text('حفظ كمسودة'),
+                                child: Text(context.l10n.addprop_save_draft),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -1393,7 +1406,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                       )
                                     : const Icon(Icons.send_outlined),
                                 label: Text(
-                                  'معاينة الإعلان ونشره',
+                                  context.l10n.addprop_preview_publish,
                                   style: GoogleFonts.cairo(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
@@ -1412,6 +1425,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
             const AppFooter(),
           ],
         ),
+        ),
       ),
     );
   }
@@ -1424,7 +1438,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.divider),
+        side: BorderSide(color: AppColors.divider),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -1433,7 +1447,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, size: 20, color: AppColors.primary),
+                Icon(icon, size: 20, color: AppColors.primaryInk),
                 const SizedBox(width: 8),
                 Text(
                   title,
@@ -1464,7 +1478,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
       clipBehavior: Clip.antiAlias,
       child: isNetwork
           ? Image.network(source, fit: BoxFit.cover)
-          : const Center(child: Icon(Icons.image, color: AppColors.primary)),
+          : Center(child: Icon(Icons.image, color: AppColors.primaryInk)),
     );
   }
 }

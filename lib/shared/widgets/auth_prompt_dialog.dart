@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 
 class AuthPromptDialog extends StatelessWidget {
@@ -9,22 +10,21 @@ class AuthPromptDialog extends StatelessWidget {
 
   const AuthPromptDialog({
     super.key,
-    this.message =
-        'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+    required this.message,
     this.redirectTo,
   });
 
   static Future<void> show(
     BuildContext context, {
-    String message =
-        'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+    String? message,
     String? redirectTo,
   }) {
+    final resolvedMessage = message ?? context.l10n.sh_auth_prompt_message;
     return showDialog(
       context: context,
       barrierDismissible: true,
       builder: (ctx) =>
-          AuthPromptDialog(message: message, redirectTo: redirectTo),
+          AuthPromptDialog(message: resolvedMessage, redirectTo: redirectTo),
     );
   }
 
@@ -42,16 +42,16 @@ class AuthPromptDialog extends StatelessWidget {
               color: AppColors.primaryMuted,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.verified_user_outlined,
-              color: AppColors.primary,
+              color: AppColors.primaryInk,
               size: 26,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'تسجيل الدخول مطلوب',
+              context.l10n.sh_auth_login_required,
               style: GoogleFonts.cairo(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
@@ -85,7 +85,7 @@ class AuthPromptDialog extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline,
                   size: 18,
                   color: AppColors.textSecondary,
@@ -93,7 +93,7 @@ class AuthPromptDialog extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'تصفح العقارات والخدمات متاح مجاناً للزوار، بينما تتطلب العمليات المحمية حساباً موثقاً بالبريد لحفظ حقوقك.',
+                    context.l10n.sh_auth_info_note,
                     style: GoogleFonts.cairo(
                       fontSize: 11.5,
                       color: AppColors.textSecondary,
@@ -130,7 +130,7 @@ class AuthPromptDialog extends StatelessWidget {
                   context.push(uri.toString());
                 },
                 child: Text(
-                  'تسجيل الدخول',
+                  context.l10n.sh_login,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
@@ -161,7 +161,7 @@ class AuthPromptDialog extends StatelessWidget {
                   context.push(uri.toString());
                 },
                 child: Text(
-                  'إنشاء حساب جديد',
+                  context.l10n.sh_auth_register_new,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
@@ -176,7 +176,7 @@ class AuthPromptDialog extends StatelessWidget {
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'متابعة التصفح كزائر',
+              context.l10n.sh_auth_continue_guest,
               style: GoogleFonts.cairo(
                 fontSize: 12,
                 color: AppColors.textMuted,

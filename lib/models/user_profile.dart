@@ -1,4 +1,5 @@
 import '../core/constants/app_constants.dart';
+import '../core/l10n/app_strings.dart';
 
 class UserProfile {
   final String id;
@@ -29,7 +30,7 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       id: json['id'] as String,
-      fullName: json['full_name'] as String? ?? 'مستخدم',
+      fullName: json['full_name'] as String? ?? tr.misc_user,
       email: json['email'] as String?,
       phone: json['phone'] as String?,
       avatarUrl: json['avatar_url'] as String?,

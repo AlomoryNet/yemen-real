@@ -1,5 +1,6 @@
 import 'package:url_launcher/url_launcher.dart';
 import '../core/utils/formatters.dart';
+import '../core/l10n/app_strings.dart';
 
 class ExternalCommunicationService {
   /// Open phone dialer
@@ -20,7 +21,7 @@ class ExternalCommunicationService {
   }) async {
     final cleanPhone = Formatters.formatPhoneForWhatsApp(phoneNumber);
     final message = Uri.encodeComponent(
-      'السلام عليكم، بخصوص العقار المعروض في بوابة اليمن العقارية: "$propertyTitle" (رقم: $propertyId)، أود الاستفسار عن التفاصيل.',
+      tr.misc_whatsapp_inquiry(propertyTitle, propertyId),
     );
     final urlString = 'https://wa.me/$cleanPhone?text=$message';
     final uri = Uri.parse(urlString);

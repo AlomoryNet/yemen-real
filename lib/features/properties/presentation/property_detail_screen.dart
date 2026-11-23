@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../models/property.dart';
 import '../../../providers/auth_provider.dart';
@@ -18,12 +19,15 @@ import '../../../repositories/report_repository.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/external_contact_buttons.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../property_requests/presentation/rental_request_modal.dart';
+import '../../../core/l10n/app_strings.dart';
 
 class PropertyDetailScreen extends ConsumerStatefulWidget {
   final String propertyId;
@@ -40,14 +44,14 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
 
   void _showReportDialog(BuildContext context, Property property) {
     final reasonController = TextEditingController();
-    String selectedReason = 'معلومات غير دقيقة أو مضللة';
+    String selectedReason = context.l10n.detail_reason_inaccurate;
     final reportReasons = [
-      'معلومات غير دقيقة أو مضللة',
-      'السعر غير مطابق للواقع',
-      'العقار مكرر أو مباع بالفعل',
-      'صور غير لائقة أو غير مطابقة',
-      'انتحال صفة أو احتيال',
-      'سبب آخر',
+      context.l10n.detail_reason_inaccurate,
+      context.l10n.detail_reason_price,
+      context.l10n.detail_reason_duplicate,
+      context.l10n.detail_reason_images,
+      context.l10n.detail_reason_fraud,
+      context.l10n.detail_reason_other,
     ];
 
     showDialog(
@@ -55,7 +59,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(
-            'الإبلاغ عن إعلان مخالف',
+            context.l10n.detail_report_title,
             style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
           ),
           content: Column(
@@ -63,7 +67,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ساعدنا في الحفاظ على موثوقية المنصة بإبلاغنا عن أي مخالفة.',
+                context.l10n.detail_report_intro,
                 style: GoogleFonts.cairo(
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -71,7 +75,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'سبب البلاغ *',
+                context.l10n.detail_report_reason_label,
                 style: GoogleFonts.cairo(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -94,7 +98,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'تفاصيل إضافية (اختياري)',
+                context.l10n.detail_report_details_label,
                 style: GoogleFonts.cairo(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -104,8 +108,8 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               TextField(
                 controller: reasonController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'وضّح سبب البلاغ بالتفصيل...',
+                decoration: InputDecoration(
+                  hintText: context.l10n.detail_report_details_hint,
                 ),
               ),
             ],
@@ -113,7 +117,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('إلغاء'),
+              child: Text(context.l10n.detail_cancel),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -131,7 +135,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'تم استلام بلاغك بنجاح وسيقوم فريق الإدارة بمراجعته.',
+                        context.l10n.detail_report_submitted,
                         style: GoogleFonts.cairo(),
                       ),
                       backgroundColor: AppColors.success,
@@ -139,7 +143,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   );
                 }
               },
-              child: const Text('إرسال البلاغ'),
+              child: Text(context.l10n.detail_submit_report),
             ),
           ],
         ),
@@ -152,12 +156,18 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     final propertyAsync = ref.watch(propertyDetailProvider(widget.propertyId));
 
     return Scaffold(
-      appBar: const AppHeader(),
-      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/property'),
-      body: propertyAsync.when(
+      appBar: const AppHeader(title: 'تفاصيل العقار', showBack: true),
+      drawer: Responsive.isDesktop(context)
+          ? null
+          : const AppDrawer(),
+      bottomNavigationBar: Responsive.isDesktop(context)
+          ? null
+          : const AppBottomNavBar(currentRoute: '/property'),
+      body: AppPageBody(
+        child: propertyAsync.when(
         data: (property) => _buildDetailContent(context, property),
         loading: () =>
-            const LoadingView(message: 'جاري تحميل تفاصيل العقار...'),
+            LoadingView(message: context.l10n.detail_loading),
         error: (err, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -169,11 +179,12 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context.go('/search'),
-                child: const Text('تصفح العقارات المتاحة'),
+                onPressed: () => context.go('/map'),
+                child: Text(context.l10n.detail_browse_properties),
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -209,28 +220,28 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                         InkWell(
                           onTap: () => context.go('/'),
                           child: Text(
-                            'الرئيسية',
+                            context.l10n.detail_home,
                             style: GoogleFonts.cairo(
                               color: AppColors.textMuted,
                               fontSize: 13,
                             ),
                           ),
                         ),
-                        const Text(
+                        Text(
                           ' / ',
                           style: TextStyle(color: AppColors.textMuted),
                         ),
                         InkWell(
-                          onTap: () => context.go('/search'),
+                          onTap: () => context.go('/map'),
                           child: Text(
-                            'العقارات',
+                            context.l10n.detail_properties,
                             style: GoogleFonts.cairo(
                               color: AppColors.textMuted,
                               fontSize: 13,
                             ),
                           ),
                         ),
-                        const Text(
+                        Text(
                           ' / ',
                           style: TextStyle(color: AppColors.textMuted),
                         ),
@@ -371,7 +382,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
   Widget _buildImagePlaceholder() {
     return Container(
       color: AppColors.surfaceVariant,
-      child: const Center(
+      child: Center(
         child: Icon(Icons.apartment, size: 60, color: AppColors.textMuted),
       ),
     );
@@ -386,7 +397,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: AppColors.divider),
+        side: BorderSide(color: AppColors.divider),
       ),
       elevation: 2,
       child: Padding(
@@ -410,7 +421,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       AuthPromptDialog.show(
                         context,
                         message:
-                            'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+                            context.l10n.detail_auth_prompt_message,
                         redirectTo: '/property/${property.id}',
                       );
                       return;
@@ -428,20 +439,20 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               style: GoogleFonts.cairo(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+                color: AppColors.primaryInk,
                 height: 1.2,
               ),
             ),
             const SizedBox(height: 16),
-            const Divider(color: AppColors.divider),
+            Divider(color: AppColors.divider),
             const SizedBox(height: 16),
 
             // Publisher Info
             Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   backgroundColor: AppColors.primaryMuted,
-                  child: Icon(Icons.person, color: AppColors.primary),
+                  child: Icon(Icons.person, color: AppColors.primaryInk),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -449,14 +460,14 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        property.owner?.fullName ?? 'معلن موثق',
+                        property.owner?.fullName ?? tr.misc_verified_advertiser,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
                       Text(
-                        'تاريخ النشر: ${Formatters.formatDate(property.createdAt)}',
+                        '${context.l10n.detail_publish_date} ${Formatters.formatDate(property.createdAt)}',
                         style: GoogleFonts.cairo(
                           fontSize: 12,
                           color: AppColors.textMuted,
@@ -489,7 +500,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   ),
                   icon: const Icon(Icons.assignment_outlined, size: 20),
                   label: Text(
-                    'إرسال طلب استئجار',
+                    context.l10n.detail_send_rental_request,
                     style: GoogleFonts.cairo(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -501,7 +512,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       AuthPromptDialog.show(
                         context,
                         message:
-                            'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+                            context.l10n.detail_auth_prompt_message,
                         redirectTo: '/property/${property.id}',
                       );
                       return;
@@ -518,49 +529,25 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+                  side: BorderSide(color: AppColors.primaryInk, width: 1.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                icon: const Icon(
+                icon: Icon(
                   Icons.description_outlined,
-                  color: AppColors.primary,
+                  color: AppColors.primaryInk,
                   size: 20,
                 ),
                 label: Text(
-                  'معاينة وتشكيل العقد والطباعة',
+                  context.l10n.detail_contract_preview,
                   style: GoogleFonts.cairo(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: AppColors.primaryInk,
                   ),
                 ),
                 onPressed: () => context.push('/contract', extra: property),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F766E),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                icon: const Icon(Icons.map_rounded, size: 20),
-                label: Text(
-                  'عرض موقع العقار على الخريطة',
-                  style: GoogleFonts.cairo(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                onPressed: () => context.push('/map'),
               ),
             ),
 
@@ -578,7 +565,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     color: AppColors.error,
                   ),
                   label: Text(
-                    'إبلاغ عن مخالفة',
+                    context.l10n.detail_report_action,
                     style: GoogleFonts.cairo(
                       fontSize: 12,
                       color: AppColors.error,
@@ -590,19 +577,19 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'تم نسخ رابط العقار للمشاركة',
+                          context.l10n.detail_link_copied,
                           style: GoogleFonts.cairo(),
                         ),
                       ),
                     );
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.share_outlined,
                     size: 16,
                     color: AppColors.textSecondary,
                   ),
                   label: Text(
-                    'مشاركة الإعلان',
+                    context.l10n.detail_share_ad,
                     style: GoogleFonts.cairo(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -635,7 +622,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         // Location text
         Row(
           children: [
-            const Icon(Icons.location_on, color: AppColors.primary, size: 18),
+            Icon(Icons.location_on, color: AppColors.primaryInk, size: 18),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
@@ -664,35 +651,35 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             children: [
               _buildFeatureItem(
                 Icons.straighten,
-                'المساحة الإجمالية',
+                context.l10n.detail_total_area,
                 Formatters.formatArea(property.areaSqm),
               ),
               _buildFeatureItem(
                 Icons.category_outlined,
-                'نوع العقار',
+                context.l10n.detail_property_type,
                 property.propertyType?.nameAr ?? property.propertyTypeId,
               ),
               if (property.bedrooms > 0)
                 _buildFeatureItem(
                   Icons.bed_outlined,
-                  'عدد غرف النوم',
-                  '${property.bedrooms} غرف',
+                  context.l10n.detail_bedrooms,
+                  '${property.bedrooms} ${context.l10n.detail_rooms_unit}',
                 ),
               if (property.bathrooms > 0)
                 _buildFeatureItem(
                   Icons.bathtub_outlined,
-                  'دورات المياه',
-                  '${property.bathrooms} حمامات',
+                  context.l10n.detail_bathrooms,
+                  '${property.bathrooms} ${context.l10n.detail_bathrooms_unit}',
                 ),
               _buildFeatureItem(
                 Icons.visibility_outlined,
-                'عدد المشاهدات',
-                '${property.viewsCount} زيارة',
+                context.l10n.detail_views_label,
+                '${property.viewsCount} ${context.l10n.detail_views_unit}',
               ),
               _buildFeatureItem(
                 Icons.shield_outlined,
-                'طريقة النشر',
-                'مراجعة معلنة ذاتية',
+                context.l10n.detail_publishing_method,
+                context.l10n.detail_self_review_published,
               ),
             ],
           ),
@@ -701,7 +688,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
 
         // Full Description
         Text(
-          'تفاصيل ووصف العقار',
+          context.l10n.detail_description_title,
           style: GoogleFonts.cairo(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -751,7 +738,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             ),
             const SizedBox(width: 10),
             Text(
-              'موقع العقار على الخريطة',
+              context.l10n.detail_map_section_title,
               style: GoogleFonts.cairo(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -880,7 +867,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       ),
                       icon: const Icon(Icons.map_rounded, size: 16),
                       label: Text(
-                        'فتح الخريطة التفاعلية الشاملة',
+                        context.l10n.detail_open_full_map,
                         style: GoogleFonts.cairo(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -907,7 +894,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                         size: 16,
                       ),
                       label: Text(
-                        'الاتجاهات (خرائط جوجل)',
+                        context.l10n.detail_directions_google_maps,
                         style: GoogleFonts.cairo(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -941,7 +928,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: AppColors.primary),
+          Icon(icon, size: 20, color: AppColors.primaryInk),
           const SizedBox(width: 8),
           Expanded(
             child: Column(

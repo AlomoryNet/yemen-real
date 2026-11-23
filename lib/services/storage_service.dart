@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/env_config.dart';
 import '../core/constants/app_constants.dart';
 import '../core/exceptions/app_exception.dart';
+import '../core/l10n/app_strings.dart';
 
 class StorageService {
   final SupabaseClient? _supabaseClient;
@@ -39,7 +40,7 @@ class StorageService {
     // 1. Check file size
     final length = await file.length();
     if (length > AppConstants.maxImageSizeInBytes) {
-      throw AppException('حجم الصورة يتجاوز الحد المسموح به (5 ميجابايت)');
+      throw AppException(tr.sys_image_too_large);
     }
 
     // 2. Check extension
@@ -49,7 +50,7 @@ class StorageService {
         !name.endsWith('.png') &&
         !name.endsWith('.webp')) {
       throw AppException(
-        'صيغة الصورة غير مدعومة. الصيغ المتاحة: JPG, PNG, WEBP',
+        tr.sys_unsupported_image_format,
       );
     }
 
@@ -80,7 +81,7 @@ class StorageService {
 
       return publicUrl;
     } catch (e) {
-      throw AppException('فشل في رفع الصورة: ${e.toString()}');
+      throw AppException(tr.sys_upload_failed(e.toString()));
     }
   }
 }

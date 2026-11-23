@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yemen_real_estate_portal/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yemen_real_estate_portal/config/env_config.dart';
@@ -17,14 +18,14 @@ void main() {
 
   testWidgets('YemenMapScreen renders map controls, chips and header',
       (tester) async {
-    tester.view.physicalSize = const Size(1440, 2560);
+    tester.view.physicalSize = const Size(1080, 1920);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
-          home: YemenMapScreen(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: YemenMapScreen(),
         ),
       ),
     );
@@ -32,11 +33,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Verify presence of title badge and governorate chips
-    expect(find.text('خريطة اليمن'), findsWidgets);
-    expect(find.text('خريطة اليمن 🇾🇪'), findsOneWidget);
-    expect(find.text('كافة المحافظات 🇾🇪'), findsOneWidget);
-    expect(find.text('صنعاء'), findsOneWidget);
+    // Verify presence of the floating search pill, filter button and map/list toggle
+    expect(find.text('ابحث بالمحافظة، الحي، أو اسم العقار...'), findsWidgets);
+    expect(find.text('الفلاتر'), findsOneWidget);
+    expect(find.byIcon(Icons.tune), findsOneWidget);
     expect(find.text('عرض القائمة'), findsOneWidget);
   });
 }

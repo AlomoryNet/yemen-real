@@ -14,6 +14,11 @@ analyzer:
     unused_result: ignore
     deprecated_member_use: ignore
     curly_braces_in_flow_control_structures: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
 
 linter:
   rules:

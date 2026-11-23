@@ -1,0 +1,10 @@
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+include-externals: false
+template-arb-locale: en-US
+output-class: AppLocalizations
+output-localization-file: lib/core/l10n/app_localizations.dart
+preferred-output: dart
+untranslated-files: skip
+synthetic-package: false
+use-deferred-loading: false

@@ -1,9 +1,8 @@
+﻿import 'dart:ui' show ImageFilter;
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,25 +14,17 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../models/property.dart';
-import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
 import '../../../providers/property_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../data/demo_properties_generator.dart';
 import '../services/map_cluster_service.dart';
-
-class GovernorateBoundary {
-  final String englishName;
-  final String arabicName;
-  final List<List<LatLng>> polygonRings;
-
-  const GovernorateBoundary({
-    required this.englishName,
-    required this.arabicName,
-    required this.polygonRings,
-  });
-}
+import 'property_map_view.dart';
+import '../../../core/l10n/context_l10n.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class YemenGovernorateCoord {
   final String name;
@@ -50,7 +41,11 @@ class YemenGovernorateCoord {
 }
 
 class YemenMapScreen extends ConsumerStatefulWidget {
-  const YemenMapScreen({super.key});
+  /// Dashboard FAB opens the map/list view in list mode. Direct /map visits
+  /// keep the map as the initial view.
+  final bool initialListView;
+
+  const YemenMapScreen({super.key, this.initialListView = false});
 
   @override
   ConsumerState<YemenMapScreen> createState() => _YemenMapScreenState();
@@ -71,11 +66,19 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   int? _minBedrooms;
   bool _onlyExactCoordinates = false;
 
-  bool _isListView = false;
+  bool _isListView = false; // overwritten from widget.initialListView in initState
   bool _showSearchThisAreaBtn = false;
-  double _currentZoom = 7.5;
+  double _currentZoom = _defaultZoom;
   LatLng? _lastSearchCenter;
   Timer? _debounceTimer;
+  final ScrollController _listScrollController = ScrollController();
+
+  // Listing pagination — render 12 rows initially, extend on scroll.
+  static const int _pageSize = 12;
+  int _visibleCount = _pageSize;
+  int _lastFilteredCount = 0;
+  String _lastFilterKey = '';
+
   int _activeCardImageIndex = 0;
   bool _isSatellite = false;
 
@@ -83,9 +86,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   bool _isDrawingMode = false;
   List<LatLng> _drawnPolygon = [];
 
-  // Official Yemen GeoJSON Boundaries (Loaded from downloaded asset)
-  List<GovernorateBoundary> _governorateBoundaries = [];
-  bool _isLoadingGeoJson = false;
+  static const double _defaultZoom = 12.5;
+  static const LatLng _ibbCenter = LatLng(13.9667, 44.1833);
 
   static const List<YemenGovernorateCoord> _governorates = [
     YemenGovernorateCoord(
@@ -222,181 +224,49 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     ),
   ];
 
-  static const LatLng _yemenCenter = LatLng(15.3547, 44.2075);
-  static const double _initialZoom = 7.5;
-
-  static const Map<String, String> _shapeNameToArabic = {
-    'Sanʿaʾ': 'أمانة العاصمة',
-    'Sanʿaʾ Governorate': 'صنعاء',
-    'Lahij Governorate': 'لحج',
-    '‘Adan Governorate': 'عدن',
-    'Al Hudaydah Governorate': 'الحديدة',
-    'Ta\'izz Governorate': 'تعز',
-    'Shabwah Governorate': 'شبوة',
-    'Hadhramaut': 'حضرموت',
-    'Abyan Governorate': 'أبين',
-    'Al Jawf Governorate': 'الجوف',
-    'Ibb Governorate': 'إب',
-    'Al Bayda\' Governorate': 'البيضاء',
-    'Ad Dali\' Governorate': 'الضالع',
-    'Al Mahwit Governorate': 'المحويت',
-    'Sa\'dah Governorate': 'صعدة',
-    'Hajjah Governorate': 'حجة',
-    'Dhamar Governorate': 'ذمار',
-    '\'Amran Governorate': 'عمران',
-    'Al Mahrah Governorate': 'المهرة',
-    'Ma\'rib Governorate': 'مأرب',
-    'Raymah Governorate': 'ريمة',
-    'Socotra': 'سقطرى',
-  };
-
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
-    _lastSearchCenter = _yemenCenter;
-    _currentZoom = _initialZoom;
-    _loadYemenGeoJsonBoundaries();
-  }
-
-  Future<void> _loadYemenGeoJsonBoundaries() async {
-    if (_isLoadingGeoJson || _governorateBoundaries.isNotEmpty) return;
-    _isLoadingGeoJson = true;
-    try {
-      final jsonStr = await rootBundle.loadString('assets/map/yemen_adm1_simplified.geojson');
-      final data = json.decode(jsonStr) as Map<String, dynamic>;
-      final features = data['features'] as List<dynamic>;
-      final List<GovernorateBoundary> loaded = [];
-
-      for (final f in features) {
-        final props = f['properties'] as Map<String, dynamic>;
-        final shapeName = props['shapeName']?.toString() ?? '';
-        final arabicName = _shapeNameToArabic[shapeName] ?? shapeName;
-        final geom = f['geometry'] as Map<String, dynamic>;
-        final type = geom['type']?.toString();
-        final coords = geom['coordinates'] as List<dynamic>;
-
-        final List<List<LatLng>> rings = [];
-        if (type == 'Polygon') {
-          for (final ring in coords) {
-            final points = (ring as List<dynamic>).map((pt) {
-              final lon = (pt[0] as num).toDouble();
-              final lat = (pt[1] as num).toDouble();
-              return LatLng(lat, lon);
-            }).toList();
-            if (points.isNotEmpty) rings.add(points);
-          }
-        } else if (type == 'MultiPolygon') {
-          for (final poly in coords) {
-            for (final ring in poly as List<dynamic>) {
-              final points = (ring as List<dynamic>).map((pt) {
-                final lon = (pt[0] as num).toDouble();
-                final lat = (pt[1] as num).toDouble();
-                return LatLng(lat, lon);
-              }).toList();
-              if (points.isNotEmpty) rings.add(points);
-            }
-          }
-        }
-
-        if (rings.isNotEmpty) {
-          loaded.add(GovernorateBoundary(
-            englishName: shapeName,
-            arabicName: arabicName,
-            polygonRings: rings,
-          ));
-        }
-      }
-
-      if (mounted) {
+    _isListView = widget.initialListView;
+    // Use user's location (or Ibb fallback) for initial map center/zoom
+    _initMapCenter();
+    _listScrollController.addListener(() {
+      if (!_listScrollController.hasClients || !mounted) return;
+      final position = _listScrollController.position;
+      if (position.pixels >= position.maxScrollExtent - 300 &&
+          _visibleCount < _lastFilteredCount) {
         setState(() {
-          _governorateBoundaries = loaded;
+          _visibleCount = (_visibleCount + _pageSize).clamp(0, _lastFilteredCount);
         });
       }
-    } catch (e) {
-      debugPrint('Error loading Yemen GeoJSON: $e');
-    } finally {
-      _isLoadingGeoJson = false;
-    }
+    });
   }
 
-  void _showOfflineMapDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0F766E),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.map_rounded, color: Colors.white, size: 22),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'خريطة الجمهورية اليمنية المعتمدة (أوفلاين)',
-                        style: GoogleFonts.cairo(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.pinch_outlined, size: 16, color: Colors.grey),
-                    const SizedBox(width: 6),
-                    Text(
-                      'يمكنك تكبير وتصغير الخريطة باللمس أو الماوس',
-                      style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey.shade700),
-                    ),
-                  ],
-                ),
-              ),
-              Flexible(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-                  child: InteractiveViewer(
-                    minScale: 0.8,
-                    maxScale: 5.0,
-                    child: Image.asset(
-                      'assets/images/yemen_map_hd.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Image.asset(
-                        'assets/images/yemen_map.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  /// Initialize map center and zoom based on user's stored location (or Ibb fallback).
+  Future<void> _initMapCenter() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lat = prefs.getDouble('settings_latitude');
+      final lng = prefs.getDouble('settings_longitude');
+      if (lat != null && lng != null) {
+        _lastSearchCenter = LatLng(lat, lng);
+        _currentZoom = _defaultZoom;
+      } else {
+        _lastSearchCenter = _ibbCenter;
+        _currentZoom = _defaultZoom;
+      }
+    } catch (_) {
+      _lastSearchCenter = _ibbCenter;
+      _currentZoom = _defaultZoom;
+    }
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _listScrollController.dispose();
     _searchController.dispose();
     _mapController.dispose();
     super.dispose();
@@ -440,33 +310,6 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     });
 
     controller.forward();
-  }
-
-  void _selectGovernorate(YemenGovernorateCoord? gov) {
-    setState(() {
-      _selectedGovName = gov?.name;
-      _selectedDistrict = null;
-      _selectedProperty = null;
-      _showSearchThisAreaBtn = false;
-      _drawnPolygon.clear();
-      _isDrawingMode = false;
-      if (gov != null) {
-        _searchController.text = gov.name;
-      } else {
-        _searchController.clear();
-      }
-    });
-
-    if (gov != null) {
-      _animatedMapMove(
-        LatLng(gov.latitude, gov.longitude),
-        gov.defaultZoom,
-      );
-      _lastSearchCenter = LatLng(gov.latitude, gov.longitude);
-    } else {
-      _animatedMapMove(_yemenCenter, 7.0);
-      _lastSearchCenter = _yemenCenter;
-    }
   }
 
   (double, double) _getPropertyCoords(Property prop) {
@@ -559,27 +402,6 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     }).toList();
   }
 
-  String _formatPriceTag(Property p) {
-    final cur = p.currency == AppConstants.currencyYer
-        ? 'ر.ي'
-        : p.currency == AppConstants.currencyUsd
-            ? '\$'
-            : 'ر.س';
-
-    final isRent = p.dealType == AppConstants.dealRent;
-    final suffix = isRent ? '/شهرياً' : '';
-
-    if (p.price >= 1000000) {
-      final millions =
-          (p.price / 1000000).toStringAsFixed(1).replaceAll('.0', '');
-      return '$millions م $cur $suffix'.trim();
-    } else if (p.price >= 1000) {
-      final thousands = (p.price / 1000).toStringAsFixed(0);
-      return '$thousands ألف $cur $suffix'.trim();
-    }
-    return '${p.price.toStringAsFixed(0)} $cur $suffix'.trim();
-  }
-
   Future<void> _makeCall(String phone) async {
     final clean = Formatters.formatPhoneForDialing(phone);
     final uri = Uri.parse('tel:$clean');
@@ -598,14 +420,14 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'لم يتم تحديد موقع هذا العقار على الخريطة بعد. يرجى التواصل مع صاحب العقار لتحديد الموقع.',
+              context.l10n.map_location_missing_message,
               style: GoogleFonts.cairo(fontSize: 13),
             ),
-            backgroundColor: Colors.orange.shade700,
+            backgroundColor: AppColors.warning,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 4),
             action: SnackBarAction(
-              label: 'اتصال',
+              label: context.l10n.map_call,
               textColor: Colors.white,
               onPressed: () => _makeCall(prop.contactPhone),
             ),
@@ -650,10 +472,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'تعذر فتح خرائط Google. تأكد من تثبيت التطبيق أو الاتصال بالإنترنت.',
+              context.l10n.map_maps_open_error,
               style: GoogleFonts.cairo(fontSize: 13),
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -664,7 +486,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   Future<void> _openWhatsApp(String phone, String title) async {
     final cleanPhone = Formatters.formatPhoneForWhatsApp(phone);
     final msg = Uri.encodeComponent(
-      'السلام عليكم، بخصوص العقار المعروض في بوابة اليمن العقارية: $title',
+      '${context.l10n.map_whatsapp_prefix}: $title',
     );
     final uri = Uri.parse('https://wa.me/$cleanPhone?text=$msg');
     if (await canLaunchUrl(uri)) {
@@ -722,10 +544,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Icon(Icons.tune_rounded, color: Color(0xFF0D6EFD)),
+                      Icon(Icons.tune_rounded, color: AppColors.primaryInk),
                       const SizedBox(width: 8),
                       Text(
-                        'تصفية خريطة العقارات (Filters)',
+                        context.l10n.map_filter_title,
                         style: GoogleFonts.cairo(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -748,7 +570,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           });
                         },
                         child: Text(
-                          'إعادة ضبط',
+                          context.l10n.map_reset_filters,
                           style: GoogleFonts.cairo(
                             color: AppColors.error,
                             fontWeight: FontWeight.bold,
@@ -767,27 +589,27 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         children: [
                           // 1. Deal Type
                           Text(
-                            'نوع المعاملة',
+                            context.l10n.map_deal_type,
                             style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
                               _buildFilterOption(
-                                label: 'الكل',
+                                label: context.l10n.map_all,
                                 isSelected: tempDeal == '',
                                 onTap: () => setModalState(() => tempDeal = ''),
                               ),
                               const SizedBox(width: 8),
                               _buildFilterOption(
-                                label: 'للبيع',
+                                label: context.l10n.map_for_sale,
                                 isSelected: tempDeal == AppConstants.dealSale,
                                 onTap: () => setModalState(
                                     () => tempDeal = AppConstants.dealSale),
                               ),
                               const SizedBox(width: 8),
                               _buildFilterOption(
-                                label: 'للإيجار',
+                                label: context.l10n.map_for_rent,
                                 isSelected: tempDeal == AppConstants.dealRent,
                                 onTap: () => setModalState(
                                     () => tempDeal = AppConstants.dealRent),
@@ -798,7 +620,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
                           // 2. Property Type
                           Text(
-                            'نوع العقار',
+                            context.l10n.map_property_type,
                             style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
@@ -807,39 +629,39 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             runSpacing: 8,
                             children: [
                               _buildFilterOption(
-                                label: 'الكل',
+                                label: context.l10n.map_all,
                                 isSelected: tempType == null,
                                 onTap: () => setModalState(() => tempType = null),
                               ),
                               _buildFilterOption(
-                                label: 'شقق سكنية',
+                                label: context.l10n.map_type_apartment,
                                 isSelected: tempType == 'apartment',
                                 onTap: () =>
                                     setModalState(() => tempType = 'apartment'),
                               ),
                               _buildFilterOption(
-                                label: 'فلل ومنازل',
+                                label: context.l10n.map_type_villa,
                                 isSelected: tempType == 'villa',
                                 onTap: () => setModalState(() => tempType = 'villa'),
                               ),
                               _buildFilterOption(
-                                label: 'محلات تجارية',
+                                label: context.l10n.map_type_shop,
                                 isSelected: tempType == 'shop',
                                 onTap: () => setModalState(() => tempType = 'shop'),
                               ),
                               _buildFilterOption(
-                                label: 'أراضٍ',
+                                label: context.l10n.map_type_land,
                                 isSelected: tempType == 'land',
                                 onTap: () => setModalState(() => tempType = 'land'),
                               ),
                               _buildFilterOption(
-                                label: 'عمارات ومباني',
+                                label: context.l10n.map_type_building,
                                 isSelected: tempType == 'building',
                                 onTap: () =>
                                     setModalState(() => tempType = 'building'),
                               ),
                               _buildFilterOption(
-                                label: 'مكاتب تجارية',
+                                label: context.l10n.map_type_office,
                                 isSelected: tempType == 'office',
                                 onTap: () => setModalState(() => tempType = 'office'),
                               ),
@@ -849,7 +671,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
                           // 3. Governorate Selector
                           Text(
-                            'المحافظة',
+                            context.l10n.map_governorate,
                             style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
@@ -859,7 +681,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                               scrollDirection: Axis.horizontal,
                               children: [
                                 _buildFilterOption(
-                                  label: 'كافة المحافظات 🇾🇪',
+                                  label: context.l10n.map_all_governorates,
                                   isSelected: tempGov == null,
                                   onTap: () => setModalState(() {
                                     tempGov = null;
@@ -886,7 +708,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           // 4. District Selector (Appears if governorate selected)
                           if (tempGov != null && availableDistricts.isNotEmpty) ...[
                             Text(
-                              'المديرية في $tempGov',
+                              '${context.l10n.map_district_in} $tempGov',
                               style:
                                   GoogleFonts.cairo(fontWeight: FontWeight.bold),
                             ),
@@ -896,7 +718,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                               runSpacing: 8,
                               children: [
                                 _buildFilterOption(
-                                  label: 'كافة مديريات $tempGov',
+                                  label: '${context.l10n.map_all_districts_in} $tempGov',
                                   isSelected: tempDist == null,
                                   onTap: () =>
                                       setModalState(() => tempDist = null),
@@ -915,7 +737,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
                           // 5. Price Range
                           Text(
-                            'نطاق السعر',
+                            context.l10n.map_price_range,
                             style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
@@ -927,7 +749,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                   keyboardType: TextInputType.number,
                                   style: GoogleFonts.cairo(fontSize: 13),
                                   decoration: InputDecoration(
-                                    labelText: 'الحد الأدنى',
+                                    labelText: context.l10n.map_min_price,
                                     labelStyle: GoogleFonts.cairo(fontSize: 12),
                                     hintText: '0',
                                     border: OutlineInputBorder(
@@ -950,9 +772,9 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                   keyboardType: TextInputType.number,
                                   style: GoogleFonts.cairo(fontSize: 13),
                                   decoration: InputDecoration(
-                                    labelText: 'الحد الأقصى',
+                                    labelText: context.l10n.map_max_price,
                                     labelStyle: GoogleFonts.cairo(fontSize: 12),
-                                    hintText: 'بلا سقف',
+                                    hintText: context.l10n.map_no_max,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -972,7 +794,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
                           // 6. Bedrooms
                           Text(
-                            'عدد الغرف على الأقل',
+                            context.l10n.map_min_bedrooms,
                             style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
@@ -982,7 +804,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                 Padding(
                                   padding: const EdgeInsets.only(left: 6),
                                   child: _buildFilterOption(
-                                    label: b == null ? 'الكل' : '$b+',
+                                    label: b == null ? context.l10n.map_all : '$b+',
                                     isSelected: tempBeds == b,
                                     onTap: () => setModalState(() => tempBeds = b),
                                   ),
@@ -1015,14 +837,14 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'إحداثيات GPS دقيقة فقط',
+                                        context.l10n.map_exact_gps_only,
                                         style: GoogleFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12.5,
                                         ),
                                       ),
                                       Text(
-                                        'إخفاء العقارات ذات المواقع التقريبية',
+                                        context.l10n.map_hide_approximate,
                                         style: GoogleFonts.cairo(
                                           fontSize: 11,
                                           color: AppColors.textSecondary,
@@ -1033,7 +855,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                 ),
                                 Switch(
                                   value: tempExactGps,
-                                  activeColor: const Color(0xFF0D6EFD),
+                                  activeColor: AppColors.primary,
                                   onChanged: (val) {
                                     setModalState(() {
                                       tempExactGps = val;
@@ -1054,7 +876,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D6EFD),
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -1088,7 +910,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         Navigator.pop(ctx);
                       },
                       child: Text(
-                        'تطبيق الفلاتر',
+                        context.l10n.map_apply_filters,
                         style: GoogleFonts.cairo(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -1116,10 +938,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D6EFD) : AppColors.surfaceVariant,
+          color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0D6EFD) : AppColors.divider,
+            color: isSelected ? AppColors.primary : AppColors.divider,
           ),
         ),
         child: Text(
@@ -1134,25 +956,52 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     );
   }
 
+  void _onPropertyTap(Property prop, LatLng centroid) {
+    setState(() {
+      _selectedProperty = prop;
+      _activeCardImageIndex = 0;
+    });
+    _animatedMapMove(centroid, math.max(_currentZoom, 14.5));
+  }
+
   @override
   Widget build(BuildContext context) {
     final propertiesAsync = ref.watch(allMapPropertiesProvider);
+    final settings = ref.watch(settingsProvider);
     final isMobile = Responsive.isMobile(context);
+    final isDesktop = Responsive.isDesktop(context);
 
     return Scaffold(
-      drawer: const AppDrawer(),
-      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/map'),
-      body: propertiesAsync.when(
+      drawer: isDesktop ? null : const AppDrawer(),
+      bottomNavigationBar:
+          isDesktop ? null : const AppBottomNavBar(currentRoute: '/map'),
+      body: AppPageBody(
+        child: propertiesAsync.when(
         data: (allProperties) {
           final effectiveList = allProperties.isNotEmpty
               ? allProperties
               : DemoPropertiesGenerator.generateAllDemoProperties();
 
           final filteredProperties = _filterProperties(effectiveList);
-          final clusters = MapClusterService.clusterProperties(
-            properties: filteredProperties,
-            zoom: _currentZoom,
-          );
+
+          // Reset pagination whenever the result set changes.
+          final filterKey = [
+            _searchController.text,
+            _selectedDealType,
+            _selectedTypeId,
+            _selectedGovName,
+            _selectedDistrict,
+            _minPrice,
+            _maxPrice,
+            _minBedrooms,
+            _onlyExactCoordinates,
+            _drawnPolygon.length,
+          ].join('|');
+          if (filterKey != _lastFilterKey) {
+            _lastFilterKey = filterKey;
+            _visibleCount = _pageSize;
+          }
+          _lastFilteredCount = filteredProperties.length;
 
           return Stack(
             children: [
@@ -1187,160 +1036,54 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           }
                         }
                       : null,
-                  child: FlutterMap(
+                  child: PropertyMapView(
+                    properties: filteredProperties,
                     mapController: _mapController,
-                    options: MapOptions(
-                      initialCenter: _yemenCenter,
-                      initialZoom: _initialZoom,
-                      minZoom: 5.0,
-                      maxZoom: 18.0,
-                      interactionOptions: InteractionOptions(
-                        flags: _isDrawingMode
-                            ? InteractiveFlag.none
-                            : InteractiveFlag.all,
-                      ),
-                      onPositionChanged: (pos, hasGesture) {
-                        if (pos.zoom != _currentZoom) {
-                          setState(() {
-                            _currentZoom = pos.zoom;
-                          });
-                        }
-                        if (hasGesture && !_isDrawingMode) {
-                          _debounceTimer?.cancel();
-                          _debounceTimer =
-                              Timer(const Duration(milliseconds: 350), () {
-                            if (mounted) {
-                              final dist = _lastSearchCenter != null
-                                  ? const Distance().as(
-                                      LengthUnit.Kilometer,
-                                      _lastSearchCenter!,
-                                      pos.center,
-                                    )
-                                  : 0;
-                              if (dist > 3.0) {
-                                setState(() {
-                                  _showSearchThisAreaBtn = true;
-                                });
-                              }
+                    initialCenter: _lastSearchCenter ?? _ibbCenter,
+                    initialZoom: _currentZoom,
+                    minZoom: 5.0,
+                    maxZoom: 18.0,
+                    isSatellite: _isSatellite,
+                    selectedPropertyId: _selectedProperty?.id,
+                    highlightGovernorate: _selectedGovName,
+                    drawnPolygon: _drawnPolygon,
+                    showBoundaries: true,
+                    interactionFlags: _isDrawingMode
+                        ? InteractiveFlag.none
+                        : InteractiveFlag.all,
+                    onPositionChanged: (pos, hasGesture) {
+                      if (pos.zoom != _currentZoom) {
+                        setState(() {
+                          _currentZoom = pos.zoom;
+                        });
+                      }
+                      if (hasGesture && !_isDrawingMode) {
+                        _debounceTimer?.cancel();
+                        _debounceTimer = Timer(
+                            const Duration(milliseconds: 300), () {
+                          if (mounted) {
+                            final dist = _lastSearchCenter != null
+                                ? const Distance()
+                                    .as(LengthUnit.Kilometer,
+                                        _lastSearchCenter!, pos.center)
+                                : 0;
+                            if (dist > 3.0) {
+                              setState(() {
+                                _showSearchThisAreaBtn = true;
+                              });
                             }
-                          });
-                        }
-                      },
-                      onTap: (tapPosition, point) {
-                        if (_selectedProperty != null) {
-                          setState(() {
-                            _selectedProperty = null;
-                          });
-                        }
-                      },
-                    ),
-                    children: [
-                      // OpenStreetMap — بلاطات مجانية مفتوحة بلا مفتاح API
-                      TileLayer(
-                        urlTemplate: _isSatellite
-                            ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                            : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.yemenreal.portal',
-                        maxZoom: 19,
-                        // OpenStreetMap مجاني ومفتوح — لا يحتاج مفتاح API
-                        additionalOptions: const {
-                          'attribution': '© OpenStreetMap contributors',
-                        },
-                      ),
-
-                      // Official Yemen Governorate Boundaries from downloaded GeoJSON
-                      if (_governorateBoundaries.isNotEmpty)
-                        PolygonLayer(
-                          polygons: _governorateBoundaries.expand((gov) {
-                            final isSelected = _selectedGovName != null &&
-                                (gov.arabicName == _selectedGovName ||
-                                    gov.arabicName.contains(_selectedGovName!) ||
-                                    _selectedGovName!.contains(gov.arabicName));
-                            return gov.polygonRings.map((ring) {
-                              return Polygon(
-                                points: ring,
-                                color: isSelected
-                                    ? const Color(0xFF0D6EFD).withAlpha(45)
-                                    : Colors.transparent,
-                                borderColor: isSelected
-                                    ? const Color(0xFF0D6EFD)
-                                    : const Color(0xFF4A5568).withAlpha(120),
-                                borderStrokeWidth: isSelected ? 2.8 : 1.2,
-                              );
-                            });
-                          }).toList(),
-                        ),
-
-                      // Drawn Polygon Layer
-                      if (_drawnPolygon.isNotEmpty)
-                        PolygonLayer(
-                          polygons: [
-                            Polygon(
-                              points: _drawnPolygon,
-                              color: const Color(0xFF0D6EFD).withAlpha(45),
-                              borderColor: const Color(0xFF0D6EFD),
-                              borderStrokeWidth: 3.0,
-                            ),
-                          ],
-                        ),
-
-                      // Dynamic Spatial Clustering Layer (Yemen Portal Blue Brand)
-                      MarkerLayer(
-                        markers: clusters.map((cluster) {
-                          if (cluster.isSingle) {
-                            final prop = cluster.singleProperty;
-                            final isSelected = _selectedProperty?.id == prop.id;
-                            final priceText = _formatPriceTag(prop);
-                            final isRent = prop.dealType == AppConstants.dealRent;
-                            final hasExact = MapClusterService.hasExactCoordinates(prop);
-
-                            return Marker(
-                              point: cluster.centroid,
-                              width: isSelected ? 160 : 140,
-                              height: isSelected ? 74 : 66,
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedProperty = prop;
-                                    _activeCardImageIndex = 0;
-                                  });
-                                  _animatedMapMove(
-                                    LatLng(cluster.centroid.latitude, cluster.centroid.longitude),
-                                    math.max(_currentZoom, 14.5),
-                                  );
-                                },
-                                child: _buildPropertyPriceMarker(
-                                  priceText: priceText,
-                                  isSelected: isSelected,
-                                  isRent: isRent,
-                                  hasExact: hasExact,
-                                ),
-                              ),
-                            );
-                          } else {
-                            final count = cluster.count;
-                            return Marker(
-                              point: cluster.centroid,
-                              width: count >= 100 ? 60 : (count >= 10 ? 54 : 48),
-                              height: count >= 100 ? 60 : (count >= 10 ? 54 : 48),
-                              child: GestureDetector(
-                                onTap: () {
-                                  if (cluster.latSpan > 0.0003 || cluster.lngSpan > 0.0003 || _currentZoom < 15.0) {
-                                    final nextZoom = math.min(_currentZoom + 2.5, 16.5);
-                                    _animatedMapMove(cluster.centroid, nextZoom);
-                                  } else {
-                                    _showClusterPropertiesBottomSheet(cluster.properties);
-                                  }
-                                },
-                                child: _buildYemenPortalClusterBadge(
-                                  count: count,
-                                ),
-                              ),
-                            );
                           }
-                        }).toList(),
-                      ),
-                    ],
+                        });
+                      }
+                    },
+                    onMapTap: (tapPosition, point) {
+                      if (_selectedProperty != null) {
+                        setState(() {
+                          _selectedProperty = null;
+                        });
+                      }
+                    },
+                    onPropertyTap: _onPropertyTap,
                   ),
                 )
               else
@@ -1348,14 +1091,31 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 Container(
                   color: AppColors.background,
                   padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 100,
+                    top: MediaQuery.of(context).padding.top + 128,
                   ),
                   child: filteredProperties.isEmpty
                       ? _buildEmptyAreaView()
                       : ListView.builder(
+                          controller: _listScrollController,
                           padding: const EdgeInsets.all(16),
-                          itemCount: filteredProperties.length,
+                          itemCount: _visibleCount < _lastFilteredCount
+                              ? _visibleCount + 1
+                              : _visibleCount,
                           itemBuilder: (context, index) {
+                            if (index == _visibleCount) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: OutlinedButton.icon(
+                                  onPressed: () => setState(() {
+                                    _visibleCount =
+                                        (_visibleCount + _pageSize)
+                                            .clamp(0, _lastFilteredCount);
+                                  }),
+                                  icon: const Icon(Icons.expand_more_rounded),
+                                  label: Text(context.l10n.map_load_more),
+                                ),
+                              );
+                            }
                             final prop = filteredProperties[index];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -1393,7 +1153,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               // 3. Drawing Mode Instruction Banner
               if (_isDrawingMode)
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 96,
+                  top: MediaQuery.of(context).padding.top + 128,
                   left: 16,
                   right: 16,
                   child: Container(
@@ -1402,8 +1162,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D6EFD),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withAlpha(50),
@@ -1422,7 +1182,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'المس واسحب بإصبعك على الخريطة لرسم حدود المنطقة المطلوبة',
+                            context.l10n.map_draw_instruction,
                             style: GoogleFonts.cairo(
                               color: Colors.white,
                               fontSize: 12,
@@ -1438,7 +1198,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             });
                           },
                           child: Text(
-                            'إلغاء',
+                            context.l10n.map_cancel,
                             style: GoogleFonts.cairo(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -1453,7 +1213,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               // 4. Active Drawn Polygon Filter Badge
               if (_drawnPolygon.isNotEmpty && !_isDrawingMode)
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 96,
+                  top: MediaQuery.of(context).padding.top + 128,
                   left: 16,
                   right: 16,
                   child: Center(
@@ -1463,10 +1223,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: const Color(0xFF0D6EFD),
+                          color: AppColors.primaryInk,
                           width: 1.5,
                         ),
                         boxShadow: [
@@ -1479,18 +1239,18 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.check_circle,
-                            color: Color(0xFF0D6EFD),
+                            color: AppColors.primaryInk,
                             size: 16,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'تم حصر البحث بالرسم (${filteredProperties.length} عقار)',
+                            '${context.l10n.map_draw_filter_active} (${filteredProperties.length} ${context.l10n.map_result_property_unit})',
                             style: GoogleFonts.cairo(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF0D6EFD),
+                              color: AppColors.primaryInk,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -1506,10 +1266,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                 color: Colors.grey.shade200,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 14,
-                                color: Colors.black87,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ),
@@ -1522,14 +1282,14 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               // 5. "Search this area" Button
               if (_showSearchThisAreaBtn && !_isListView && !_isDrawingMode)
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 96,
+                  top: MediaQuery.of(context).padding.top + 210,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF0D6EFD),
+                        backgroundColor: AppColors.surface,
+                        foregroundColor: AppColors.primaryInk,
                         elevation: 4,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -1537,15 +1297,15 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
-                          side: const BorderSide(
-                            color: Color(0xFF0D6EFD),
+                          side: BorderSide(
+                            color: AppColors.primaryInk,
                             width: 1.5,
                           ),
                         ),
                       ),
                       icon: const Icon(Icons.refresh_rounded, size: 16),
                       label: Text(
-                        'البحث في هذه المنطقة',
+                        context.l10n.map_search_this_area,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
@@ -1561,62 +1321,32 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                   ),
                 ),
 
-              // 6. Floating Bottom Map Controls (Clean, Non-overlapping, RTL-friendly)
-              // A. Property Count Badge (Bottom-Right in RTL)
-              if (!_isListView)
-                Positioned(
-                  bottom: _selectedProperty != null ? 360 : 70,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade300),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(20),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.apartment_rounded,
-                          size: 15,
-                          color: Color(0xFF0D6EFD),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${filteredProperties.length} عقار متاح',
-                          style: GoogleFonts.cairo(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+              // 6. Floating Bottom Map Controls
+              // Stacked vertically on one RTL-aware side:
+              //   list-toggle FAB (bottom) -> count badge -> satellite -> draw (top)
+              // `PositionedDirectional` flips start/end so controls sit on the
+              //   trailing edge (right in LTR, left in RTL), matching the
+              //   dashboard FAB alignment.
+              if (settings.assetCountVisibility == 'always' ||
+                  filteredProperties.isNotEmpty)
+                PositionedDirectional(
+                  end: 16,
+                  bottom: _selectedProperty != null ? 420 : 76,
+                  child: _buildCountBadge(filteredProperties),
                 ),
 
-              // B. Layers / Satellite Toggle Button (Bottom-Left in RTL)
               if (!_isListView)
-                Positioned(
-                  bottom: _selectedProperty != null ? 360 : 70,
-                  left: 16,
+                PositionedDirectional(
+                  end: 16,
+                  bottom: _selectedProperty != null ? 480 : 136,
                   child: FloatingActionButton.small(
                     heroTag: 'map_layers_toggle',
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF0F172A),
+                    backgroundColor: AppColors.surfaceVariant,
+                    foregroundColor: AppColors.primaryInk,
                     elevation: 3,
-                    tooltip: _isSatellite ? 'تبديل إلى خريطة الشوارع' : 'تبديل إلى قمر صناعي',
+                    tooltip: _isSatellite
+                        ? context.l10n.map_switch_to_streets
+                        : context.l10n.map_switch_to_satellite,
                     onPressed: () {
                       setState(() {
                         _isSatellite = !_isSatellite;
@@ -1625,56 +1355,67 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                     child: Icon(
                       _isSatellite ? Icons.map_rounded : Icons.satellite_alt_rounded,
                       size: 20,
-                      color: _isSatellite ? const Color(0xFF0D6EFD) : const Color(0xFF0F172A),
                     ),
                   ),
                 ),
 
-              // C. Primary Center Toggle: "عرض القائمة" / "عرض الخريطة"
-              Positioned(
-                bottom: _selectedProperty != null ? 360 : 16,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: ElevatedButton.icon(
-                    key: const ValueKey('map_list_toggle'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F172A),
-                      foregroundColor: Colors.white,
-                      elevation: 4,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 11,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    icon: Icon(
-                      _isListView
-                          ? Icons.map_rounded
-                          : Icons.format_list_bulleted_rounded,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                    label: Text(
-                      _isListView
-                          ? 'عرض الخريطة'
-                          : 'عرض القائمة',
-                      style: GoogleFonts.cairo(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
+              if (!_isListView)
+                PositionedDirectional(
+                  end: 16,
+                  bottom: _selectedProperty != null ? 540 : 196,
+                  child: FloatingActionButton.small(
+                    heroTag: 'map_draw_area',
+                    backgroundColor: _isDrawingMode
+                        ? AppColors.primaryInk // bright teal in dark mode
+                        : AppColors.surfaceVariant,
+                    foregroundColor: _isDrawingMode
+                        ? Colors.white
+                        : AppColors.primaryInk,
+                    elevation: 3,
+                    tooltip: _isDrawingMode
+                        ? context.l10n.map_cancel_draw
+                        : context.l10n.map_draw_search_area,
                     onPressed: () {
                       setState(() {
-                        _isListView = !_isListView;
+                        _isDrawingMode = !_isDrawingMode;
+                        if (!_isDrawingMode) _drawnPolygon.clear();
                       });
                     },
+                    child: const Icon(Icons.draw_rounded, size: 20),
                   ),
                 ),
-              ),
 
+              // C. Primary list <-> map toggle — same extended teal FAB as the
+              //    search view (matches the new map/list screen).
+              PositionedDirectional(
+                end: 16,
+                bottom: _selectedProperty != null ? 360 : 16,
+                child: FloatingActionButton.extended(
+                  key: const ValueKey('map_list_toggle'),
+                  heroTag: 'map_list_toggle',
+                  backgroundColor: const Color(0xFF0F766E),
+                  foregroundColor: Colors.white,
+                  elevation: 6,
+                  icon: Icon(
+                    _isListView ? Icons.map_rounded : Icons.format_list_bulleted_rounded,
+                    size: 18,
+                  ),
+                  label: Text(
+                    _isListView
+                        ? context.l10n.map_show_map
+                        : context.l10n.map_show_list,
+                    style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isListView = !_isListView;
+                    });
+                  },
+                ),
+              ),
               // 8. Selected Property Card
               if (_selectedProperty != null && !_isListView)
                 Positioned(
@@ -1703,17 +1444,18 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 const Icon(Icons.error_outline, size: 48, color: Colors.red),
                 const SizedBox(height: 12),
                 Text(
-                  'تعذر تحميل الخريطة. يمكنك استخدام العرض البديل.',
+                  context.l10n.map_load_error,
                   style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: () => ref.refresh(allMapPropertiesProvider),
-                  child: const Text('إعادة المحاولة'),
+                  child: Text(context.l10n.map_retry),
                 ),
               ],
             ),
           ),
+        ),
         ),
       ),
     );
@@ -1721,8 +1463,6 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   // Unified Map Header & Filter Bar (RTL, Responsive, High Contrast)
   Widget _buildMapHeader() {
-    final authState = ref.watch(authProvider);
-
     final hasActiveFilters = _selectedTypeId != null ||
         _minBedrooms != null ||
         _selectedGovName != null ||
@@ -1732,472 +1472,269 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         _onlyExactCoordinates ||
         _selectedDealType.isNotEmpty;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade300, width: 1.0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Top Title Badge
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 6, 14, 2),
-              child: Row(
-                children: [
-                  const Icon(Icons.location_on, size: 14, color: Color(0xFF0D6EFD)),
-                  const SizedBox(width: 4),
-                  Text(
-                    'خريطة اليمن',
-                    style: GoogleFonts.cairo(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0D6EFD),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'العقارات المتاحة للبيع والإيجار',
-                    style: GoogleFonts.cairo(
-                      fontSize: 10,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(50),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
               ),
-            ),
-
-            // Row 1: Back Button + Search Input + Menu + User Account
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 4, 10, 6),
-              child: Row(
-                children: [
-                  // Back Button (Returns to Home)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: AppColors.primary,
-                      size: 24,
-                    ),
-                    tooltip: 'العودة للرئيسية',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    onPressed: () {
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/');
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 4),
-
-                  // Search Field (Independent from buttons)
-                  Expanded(
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Colors.grey.shade300,
-                          width: 1.0,
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(26),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                color: AppColors.surface,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Search Row: back + pill search + menu
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.search_rounded,
-                            color: AppColors.primary,
-                            size: 19,
+                          _mapHeaderCircleButton(
+                            icon: Icons.arrow_back_rounded,
+                            tooltip: context.l10n.map_back_home,
+                            onPressed: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/');
+                              }
+                            },
                           ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              style: GoogleFonts.cairo(
-                                fontSize: 12.5,
-                                color: AppColors.textPrimary,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'ابحث بالمحافظة، الحي، أو اسم العقار...',
-                                hintStyle: GoogleFonts.cairo(
-                                  fontSize: 11.5,
-                                  color: AppColors.textSecondary,
-                                ),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              onChanged: (val) => setState(() {}),
-                            ),
-                          ),
-                          if (_searchController.text.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _searchController.clear();
-                                  _selectedGovName = null;
-                                  _selectedDistrict = null;
-                                });
-                              },
-                              child: const Icon(
-                                Icons.close_rounded,
-                                color: Colors.grey,
-                                size: 18,
+                          const SizedBox(width: 8),
+                          Expanded(child: _mapHeaderSearchField()),
+                          const SizedBox(width: 8),
+                          if (!Responsive.isDesktop(context))
+                            Builder(
+                              builder: (btnCtx) => _mapHeaderCircleButton(
+                                icon: Icons.menu_rounded,
+                                tooltip: context.l10n.map_main_menu,
+                                onPressed: () =>
+                                    Scaffold.of(btnCtx).openDrawer(),
                               ),
                             ),
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Menu / Drawer Button
-                  Builder(
-                    builder: (btnCtx) => IconButton(
-                      icon: const Icon(
-                        Icons.menu_rounded,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                      tooltip: 'القائمة الرئيسية',
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                      onPressed: () => Scaffold.of(btnCtx).openDrawer(),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-
-                  // User Avatar / Login
-                  GestureDetector(
-                    onTap: () {
-                      if (authState.isAuthenticated) {
-                        context.push('/profile');
-                      } else {
-                        context.push('/login');
-                      }
-                    },
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: authState.isAuthenticated
-                            ? AppColors.primary
-                            : AppColors.surfaceVariant,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: authState.isAuthenticated
-                              ? AppColors.primary
-                              : Colors.grey.shade400,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: authState.isAuthenticated
-                          ? Text(
-                              authState.user?.fullName.isNotEmpty == true
-                                  ? authState.user!.fullName.substring(0, 1)
-                                  : 'ح',
-                              style: GoogleFonts.cairo(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.person_outline_rounded,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Row 2: شريط الفلاتر والتصنيفات — قابل للتمرير بدون تداخل
-            SizedBox(
-              height: 44,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                children: [
-                  // 1. زر الفلاتر الشاملة
+                    const SizedBox(height: 8),
+                    // Filter Chips Row: filter button opens the bottom sheet;
+                    // any active filter is shown as a chip right beside it.
+                    SizedBox(
+                      height: 42,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        children: [
+                  // زر الفلاتر الشاملة — يفتح شريحة الفلاتر السفلية
                   _buildFilterBarBtn(
-                    label: hasActiveFilters ? 'الفلاتر ✓' : 'الفلاتر',
+                    label: hasActiveFilters
+                        ? context.l10n.map_filters_active
+                        : context.l10n.map_filters,
                     icon: Icons.tune,
                     isActive: hasActiveFilters,
                     onTap: _showFilterModal,
                   ),
-                  const SizedBox(width: 6),
-
-                  // 2. نوع المعاملة
-                  _buildDealTypeDropdown(),
-                  const SizedBox(width: 6),
-
-                  // 3. نوع العقار
-                  _buildPropertyTypeDropdown(),
-                  const SizedBox(width: 6),
-
-                  // 4. رسم المنطقة
-                  _buildFilterBarBtn(
-                    label: _drawnPolygon.isNotEmpty ? 'مسح الرسم' : 'رسم منطقة',
-                    icon: _drawnPolygon.isNotEmpty ? Icons.close_rounded : Icons.draw_rounded,
-                    isActive: _isDrawingMode || _drawnPolygon.isNotEmpty,
-                    onTap: () {
-                      if (_drawnPolygon.isNotEmpty) {
-                        setState(() {
-                          _drawnPolygon.clear();
-                          _isDrawingMode = false;
-                        });
-                      } else {
-                        setState(() {
-                          _isDrawingMode = !_isDrawingMode;
-                        });
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 6),
-
-                  // 5. خريطة اليمن الرسمية
-                  _buildFilterBarBtn(
-                    label: 'خريطة اليمن 🇾🇪',
-                    icon: Icons.map_rounded,
-                    isActive: false,
-                    onTap: _showOfflineMapDialog,
-                  ),
-                  const SizedBox(width: 6),
-
-                  // فاصل عمودي
-                  Container(
-                    width: 1,
-                    margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
-                    color: Colors.grey.shade300,
-                  ),
-                  const SizedBox(width: 6),
-
-                  // 5. جميع المحافظات
-                  _buildGovernorateChip(
-                    label: 'كافة المحافظات 🇾🇪',
-                    isSelected: _selectedGovName == null,
-                    onTap: () => _selectGovernorate(null),
-                  ),
-
-                  // 6. المحافظات
-                  for (final gov in _governorates) ...[  
-                    const SizedBox(width: 5),
-                    _buildGovernorateChip(
-                      label: gov.name,
-                      isSelected: _selectedGovName == gov.name,
-                      onTap: () => _selectGovernorate(gov),
-                    ),
-                  ],
+                  const SizedBox(width: 8),
+                  // الفلاتر المختارة تظهر كشيكات صغيرة بجوار زر الفلاتر
+                  ..._activeFilterChips(),
                 ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 2),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDealTypeDropdown() {
-    final label = _selectedDealType == AppConstants.dealSale
-        ? 'للبيع'
-        : _selectedDealType == AppConstants.dealRent
-            ? 'للإيجار'
-            : 'الكل (بيع/إيجار)';
-    final isFiltered = _selectedDealType.isNotEmpty;
-
-    return PopupMenuButton<String>(
-      onSelected: (val) {
-        setState(() {
-          _selectedDealType = val;
-        });
-      },
-      itemBuilder: (ctx) => [
-        PopupMenuItem(
-          value: '',
-          child: Text('الكل (بيع وإيجار)', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-        PopupMenuItem(
-          value: AppConstants.dealSale,
-          child: Text('للبيع فقط', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-        PopupMenuItem(
-          value: AppConstants.dealRent,
-          child: Text('للإيجار فقط', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-      ],
-      child: Container(
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: isFiltered ? const Color(0xFF0D6EFD).withAlpha(25) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isFiltered ? const Color(0xFF0D6EFD) : Colors.grey.shade300,
-            width: isFiltered ? 1.5 : 1.0,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: GoogleFonts.cairo(
-                fontSize: 11.5,
-                fontWeight: FontWeight.bold,
-                color: isFiltered ? const Color(0xFF0D6EFD) : AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 3),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 16,
-              color: isFiltered ? const Color(0xFF0D6EFD) : Colors.grey.shade600,
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildPropertyTypeDropdown() {
-    final typeName = _selectedTypeId == null
-        ? 'نوع العقار'
-        : _selectedTypeId == 'apartment'
-            ? 'شقق سكنية'
-            : _selectedTypeId == 'villa'
-                ? 'فلل ومنازل'
-                : _selectedTypeId == 'shop'
-                    ? 'محلات تجارية'
-                    : _selectedTypeId == 'land'
-                        ? 'أراضٍ'
-                        : _selectedTypeId == 'building'
-                            ? 'عمارات ومباني'
-                            : _selectedTypeId == 'office'
-                                ? 'مكاتب تجارية'
-                                : 'نوع العقار';
-    final isFiltered = _selectedTypeId != null;
-
-    return PopupMenuButton<String?>(
-      onSelected: (val) {
-        setState(() {
-          _selectedTypeId = val;
-        });
-      },
-      itemBuilder: (ctx) => [
-        PopupMenuItem(
-          value: null,
-          child: Text('كافة أنواع العقارات', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-        PopupMenuItem(
-          value: 'apartment',
-          child: Text('شقق سكنية', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-        PopupMenuItem(
-          value: 'villa',
-          child: Text('فلل ومنازل', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-        PopupMenuItem(
-          value: 'shop',
-          child: Text('محلات تجارية', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-        PopupMenuItem(
-          value: 'land',
-          child: Text('أراضٍ', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-        PopupMenuItem(
-          value: 'building',
-          child: Text('عمارات ومباني', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-        PopupMenuItem(
-          value: 'office',
-          child: Text('مكاتب تجارية', style: GoogleFonts.cairo(fontSize: 12)),
-        ),
-      ],
-      child: Container(
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: isFiltered ? const Color(0xFF0D6EFD).withAlpha(25) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isFiltered ? const Color(0xFF0D6EFD) : Colors.grey.shade300,
-            width: isFiltered ? 1.5 : 1.0,
+  Widget _mapHeaderSearchField() {
+    return Container(
+      height: 46,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(23),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(
+        children: [
+          Icon(Icons.search_rounded, color: AppColors.primaryInk, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              style: GoogleFonts.cairo(
+                fontSize: 13.5,
+                color: AppColors.textPrimary,
+              ),
+              decoration: InputDecoration(
+                hintText: context.l10n.map_search_hint,
+                hintStyle: GoogleFonts.cairo(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: (val) => setState(() {}),
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              typeName,
-              style: GoogleFonts.cairo(
-                fontSize: 11.5,
-                fontWeight: FontWeight.bold,
-                color: isFiltered ? const Color(0xFF0D6EFD) : AppColors.textPrimary,
+          if (_searchController.text.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _searchController.clear();
+                  _selectedGovName = null;
+                  _selectedDistrict = null;
+                });
+              },
+              child: Icon(
+                Icons.close_rounded,
+                color: AppColors.textSecondary,
+                size: 19,
               ),
             ),
-            const SizedBox(width: 3),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 16,
-              color: isFiltered ? const Color(0xFF0D6EFD) : Colors.grey.shade600,
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildGovernorateChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
+  Widget _mapHeaderCircleButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 6),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF0D6EFD) : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF0D6EFD) : Colors.grey.shade300,
-            ),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.cairo(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : AppColors.textPrimary,
-            ),
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: AppColors.surfaceVariant,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(
+            width: 46,
+            height: 46,
+            child: Icon(icon, color: AppColors.primaryInk, size: 22),
           ),
         ),
       ),
     );
+  }
+
+  /// الفلاتر المختارة تظهر كشيكات صغيرة بجوار زر الفلاتر في شريط الرأس.
+  List<Widget> _activeFilterChips() {
+    final chips = <Widget>[];
+
+    if (_selectedDealType.isNotEmpty) {
+      chips.add(_buildSelectedFilterChip(
+        _selectedDealType == AppConstants.dealSale
+            ? context.l10n.map_for_sale
+            : context.l10n.map_for_rent,
+        onRemoved: () => setState(() => _selectedDealType = ''),
+      ));
+    }
+
+    if (_selectedTypeId != null && _selectedTypeId!.isNotEmpty) {
+      chips.add(_buildSelectedFilterChip(
+        _propertyTypeLabel(_selectedTypeId!),
+        onRemoved: () => setState(() => _selectedTypeId = null),
+      ));
+    }
+
+    if (_selectedGovName != null && _selectedGovName!.isNotEmpty) {
+      chips.add(_buildSelectedFilterChip(
+        _selectedGovName!,
+        onRemoved: () => setState(() => _selectedGovName = null),
+      ));
+    }
+
+    if (_minBedrooms != null) {
+      chips.add(_buildSelectedFilterChip(
+        '$_minBedrooms ${context.l10n.map_bedrooms}',
+        onRemoved: () => setState(() => _minBedrooms = null),
+      ));
+    }
+
+    if (_minPrice != null || _maxPrice != null) {
+      chips.add(_buildSelectedFilterChip(
+        '${_minPrice ?? 0} - ${_maxPrice ?? 0}',
+        onRemoved: () => setState(() {
+          _minPrice = null;
+          _maxPrice = null;
+        }),
+      ));
+    }
+
+    if (_onlyExactCoordinates) {
+      chips.add(_buildSelectedFilterChip(
+        context.l10n.map_exact_gps_only,
+        onRemoved: () => setState(() => _onlyExactCoordinates = false),
+      ));
+    }
+
+    return chips;
+  }
+
+  Widget _buildSelectedFilterChip(String label,
+      {required VoidCallback onRemoved}) {
+    return Chip(
+      deleteIcon: const Icon(Icons.close_rounded, size: 16),
+      onDeleted: onRemoved,
+      label: Text(
+        label,
+        style: GoogleFonts.cairo(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      backgroundColor: AppColors.surfaceVariant,
+      side: BorderSide.none,
+      shape: const StadiumBorder(),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+    );
+  }
+
+  String _propertyTypeLabel(String typeId) {
+    switch (typeId) {
+      case 'apartment':
+        return context.l10n.map_type_apartment;
+      case 'villa':
+        return context.l10n.map_type_villa;
+      case 'shop':
+        return context.l10n.map_type_shop;
+      case 'land':
+        return context.l10n.map_type_land;
+      case 'building':
+        return context.l10n.map_type_building;
+      case 'office':
+        return context.l10n.map_type_office;
+      default:
+        return context.l10n.map_property_type;
+    }
   }
 
   /// زر شريط الفلاتر العلوي — موحد ومنظم
@@ -2210,32 +1747,23 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 34,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF0D6EFD) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive ? const Color(0xFF0D6EFD) : Colors.grey.shade300,
-            width: isActive ? 1.5 : 1.0,
-          ),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF0D6EFD).withAlpha(40),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
+          color: isActive
+              ? (AppColors.isDark
+                  ? AppColors.primaryMuted.withAlpha(140)
+                  : AppColors.primaryMuted)
+              : AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 14,
-              color: isActive ? Colors.white : AppColors.textPrimary,
+              size: 15,
+              color: isActive ? AppColors.primaryInk : AppColors.textSecondary,
             ),
             const SizedBox(width: 5),
             Text(
@@ -2243,7 +1771,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               style: GoogleFonts.cairo(
                 fontSize: 11.5,
                 fontWeight: FontWeight.bold,
-                color: isActive ? Colors.white : AppColors.textPrimary,
+                color: isActive ? AppColors.primaryInk : AppColors.textPrimary,
               ),
             ),
           ],
@@ -2278,188 +1806,6 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     );
   }
 
-  // Google Maps–style circular cluster badge
-  Widget _buildYemenPortalClusterBadge({required int count}) {
-    final double size = count >= 100 ? 56 : (count >= 10 ? 50 : 44);
-    final Color inner = count >= 50
-        ? const Color(0xFFD32F2F)
-        : count >= 10
-            ? const Color(0xFF1565C0)
-            : const Color(0xFF0D6EFD);
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: inner.withAlpha(40),
-        border: Border.all(color: inner.withAlpha(90), width: 1),
-      ),
-      child: Center(
-        child: Container(
-          width: size - 12,
-          height: size - 12,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: inner,
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: inner.withAlpha(130),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              count >= 1000 ? '${(count / 1000).toStringAsFixed(1)}k' : '$count',
-              style: GoogleFonts.cairo(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: count >= 100 ? 11 : 13,
-                height: 1.1,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Google Maps–style teardrop location pin with price badge
-  Widget _buildPropertyPriceMarker({
-    required String priceText,
-    required bool isSelected,
-    required bool isRent,
-    bool hasExact = true,
-  }) {
-    // Pin head colour: selected = amber, rent = blue, sale = teal
-    final Color pinColor = isSelected
-        ? const Color(0xFFD97706)
-        : (isRent ? const Color(0xFF1565C0) : const Color(0xFF0F766E));
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Price badge above the pin
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFD97706) : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: pinColor,
-              width: isSelected ? 0 : 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(50),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Text(
-            priceText,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.cairo(
-              fontSize: isSelected ? 11 : 10,
-              fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : pinColor,
-              height: 1.1,
-            ),
-          ),
-        ),
-        const SizedBox(height: 1),
-        // Google Maps teardrop pin
-        CustomPaint(
-          size: Size(isSelected ? 28 : 24, isSelected ? 36 : 30),
-          painter: _GooglePinPainter(
-            color: pinColor,
-            isSelected: isSelected,
-            isApproximate: !hasExact,
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showClusterPropertiesBottomSheet(List<Property> props) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return Container(
-          height: MediaQuery.of(ctx).size.height * 0.65,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 6),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.apartment_rounded, color: Color(0xFF0D6EFD)),
-                    const SizedBox(width: 8),
-                    Text(
-                      'عقارات هذا الموقع (${props.length} عقار)',
-                      style: GoogleFonts.cairo(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: props.length,
-                  itemBuilder: (context, index) {
-                    final p = props[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildSelectedPropertyCard(
-                        p,
-                        onSelectOnMap: () {
-                          Navigator.pop(ctx);
-                          setState(() {
-                            _selectedProperty = p;
-                            _activeCardImageIndex = 0;
-                          });
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildEmptyAreaView() {
     return Center(
       child: Padding(
@@ -2467,14 +1813,14 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.location_off_outlined,
               size: 56,
               color: AppColors.textMuted,
             ),
             const SizedBox(height: 14),
             Text(
-              'لا توجد عقارات مطابقة في هذا النطاق',
+              context.l10n.map_no_properties_in_area,
               style: GoogleFonts.cairo(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -2483,28 +1829,52 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             ),
             const SizedBox(height: 6),
             Text(
-              'يرجى تغيير نطاق البحث أو مسح الفلاتر لعرض العقارات المتوفرة في بقية محافظات اليمن.',
+              context.l10n.map_no_properties_area_hint,
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D6EFD),
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.refresh, size: 16),
-              label: Text(
-                'عرض كافة المحافظات اليمنية',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-              ),
-              onPressed: () => _selectGovernorate(null),
-            ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Property count badge — capsule with the same height (40 dp) and
+  // fully-rounded shape as the draw / satellite buttons beside it.
+  Widget _buildCountBadge(List<Property> properties) {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(AppColors.isDark ? 70 : 20),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.apartment_rounded, size: 16, color: AppColors.primaryInk),
+          const SizedBox(width: 8),
+          Text(
+            '${properties.length} ${context.l10n.map_properties_available}',
+            style: GoogleFonts.cairo(
+              fontSize: 12.5,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
       ),
     );
   }
@@ -2530,7 +1900,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -2571,7 +1941,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           ),
                           errorWidget: (context, url, err) => Container(
                             color: AppColors.surfaceVariant,
-                            child: const Icon(
+                            child: Icon(
                               Icons.apartment,
                               size: 40,
                               color: AppColors.textMuted,
@@ -2622,11 +1992,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0D6EFD), // Portal Blue
+                            color: AppColors.primary, // Portal Blue
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            isRent ? 'خصم خاص للإيجار' : 'خصم خاص للبيع',
+                            isRent ? context.l10n.map_rent_discount : context.l10n.map_sale_discount,
                             style: GoogleFonts.cairo(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -2644,13 +2014,13 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(240),
+                              color: AppColors.surfaceVariant,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              '${prop.bedrooms} غرف نوم',
+                              '${prop.bedrooms} ${context.l10n.map_bedrooms}',
                               style: GoogleFonts.cairo(
-                                color: Colors.black87,
+                                color: AppColors.textPrimary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 10.5,
                               ),
@@ -2730,11 +2100,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${Formatters.formatCurrency(prop.price, prop.currency)} ${isRent ? 'فأكثر' : ''}',
+                                '${Formatters.formatCurrency(prop.price, prop.currency)} ${isRent ? context.l10n.map_or_more : ''}',
                                 style: GoogleFonts.cairo(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w900,
-                                  color: Colors.black87,
+                                  color: AppColors.textPrimary,
                                   height: 1.1,
                                 ),
                               ),
@@ -2742,18 +2112,18 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                               // Subtitle link: "السعر الشهري الإجمالي" with blue checkmark
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.check_circle,
-                                    color: Color(0xFF0D6EFD),
+                                    color: AppColors.primaryInk,
                                     size: 14,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     isRent
-                                        ? 'السعر الشهري الإجمالي'
-                                        : 'سعر الشراء النهائي المعتمد',
+                                        ? context.l10n.map_total_monthly_price
+                                        : context.l10n.map_final_purchase_price,
                                     style: GoogleFonts.cairo(
-                                      color: const Color(0xFF0D6EFD),
+                                      color: AppColors.primaryInk,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -2766,9 +2136,9 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.more_horiz,
-                            color: Colors.black54,
+                            color: AppColors.textMuted,
                           ),
                           onPressed: () {
                             context.push('/property/${prop.id}');
@@ -2783,7 +2153,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       '${prop.title} — ${prop.city}، ${prop.district}',
                       style: GoogleFonts.cairo(
                         fontSize: 12,
-                        color: Colors.black87,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -2812,8 +2182,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             const SizedBox(width: 4),
                             Text(
                               hasExactGps
-                                  ? 'موقع محدد بدقة على الخريطة'
-                                  : 'موقع تقديري بناءً على مركز ${prop.city}',
+                                  ? context.l10n.map_exact_location
+                                  : '${context.l10n.map_approximate_location_prefix} ${prop.city}',
                               style: GoogleFonts.cairo(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
@@ -2835,13 +2205,13 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       children: [
                         if (prop.bedrooms > 0)
                           _buildUnitBadge(
-                            'غرفة نوم واحدة ${Formatters.formatCurrency(prop.price, prop.currency)}',
+                            '${context.l10n.map_one_bedroom} ${Formatters.formatCurrency(prop.price, prop.currency)}',
                           ),
                         if (prop.bedrooms > 1)
                           _buildUnitBadge(
-                            'غرفتا نوم ${(prop.price * 1.25).toStringAsFixed(0)} ${prop.currency}',
+                            '${context.l10n.map_two_bedrooms} ${(prop.price * 1.25).toStringAsFixed(0)} ${prop.currency}',
                           ),
-                        _buildUnitBadge('${prop.areaSqm.toInt()} م² مساحة'),
+                        _buildUnitBadge('${prop.areaSqm.toInt()} ${context.l10n.map_area_sqm}'),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -2852,8 +2222,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         // زر الاتصال
                         _buildCircleActionBtn(
                           icon: Icons.phone,
-                          color: const Color(0xFF0D6EFD),
-                          tooltip: 'اتصال',
+                          color: AppColors.primary,
+                          tooltip: context.l10n.map_call,
                           onTap: () => _makeCall(prop.contactPhone),
                         ),
                         const SizedBox(width: 6),
@@ -2864,7 +2234,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           _buildCircleActionBtn(
                             icon: Icons.chat,
                             color: Colors.green.shade600,
-                            tooltip: 'واتساب',
+                            tooltip: context.l10n.map_whatsapp,
                             onTap: () => _openWhatsApp(
                               prop.contactWhatsapp!,
                               prop.title,
@@ -2877,7 +2247,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         _buildCircleActionBtn(
                           icon: Icons.directions_rounded,
                           color: Colors.green.shade700,
-                          tooltip: 'الوصول إلى العقار',
+                          tooltip: context.l10n.map_directions,
                           onTap: () => _openGoogleMapsNavigation(prop),
                         ),
                         const SizedBox(width: 6),
@@ -2888,7 +2258,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             height: 40,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0D6EFD),
+                                backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
@@ -2904,7 +2274,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                 }
                               },
                               child: Text(
-                                isRent ? 'تحقق من التوافر' : 'عرض التفاصيل',
+                                isRent ? context.l10n.map_check_availability : context.l10n.map_view_details,
                                 style: GoogleFonts.cairo(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -2935,7 +2305,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           ),
                           icon: Icon(Icons.directions_rounded, size: 18, color: Colors.green.shade700),
                           label: Text(
-                            'الوصول إلى العقار عبر Google Maps',
+                            context.l10n.map_directions_google_maps,
                             style: GoogleFonts.cairo(
                               fontSize: 12.5,
                               fontWeight: FontWeight.bold,
@@ -2960,15 +2330,15 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Text(
         text,
         style: GoogleFonts.cairo(
           fontSize: 10.5,
-          color: Colors.black87,
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -2976,88 +2346,4 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   }
 }
 
-/// Draws a Google Maps–style teardrop pin
-class _GooglePinPainter extends CustomPainter {
-  final Color color;
-  final bool isSelected;
-  final bool isApproximate;
 
-  const _GooglePinPainter({
-    required this.color,
-    this.isSelected = false,
-    this.isApproximate = false,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final cx = w / 2;
-    final r = w / 2; // head radius
-    final headY = r; // centre of head circle
-
-    // --- Drop shadow ---
-    final shadowPaint = Paint()
-      ..color = Colors.black.withAlpha(60)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    final shadowPath = Path()
-      ..addOval(Rect.fromCircle(center: Offset(cx + 1, headY + 2), radius: r))
-      ..moveTo(cx - 1, headY + r - 2)
-      ..lineTo(cx + 1, h + 2)
-      ..lineTo(cx + 3, headY + r - 2);
-    canvas.drawPath(shadowPath, shadowPaint);
-
-    // --- Teardrop body ---
-    final fillPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final bodyPath = Path()
-      ..addOval(Rect.fromCircle(center: Offset(cx, headY), radius: r))
-      ..moveTo(cx - r * 0.35, headY + r * 0.65)
-      ..quadraticBezierTo(cx, h, cx + r * 0.35, headY + r * 0.65);
-    canvas.drawPath(bodyPath, fillPaint);
-
-    // Actual teardrop using a path
-    final pinPath = Path();
-    pinPath.moveTo(cx, h); // tip
-    pinPath.cubicTo(cx - r * 0.3, headY + r * 0.9, cx - r, headY + r * 0.5, cx - r, headY);
-    pinPath.arcTo(Rect.fromCircle(center: Offset(cx, headY), radius: r), math.pi, math.pi, false);
-    pinPath.cubicTo(cx + r, headY + r * 0.5, cx + r * 0.3, headY + r * 0.9, cx, h);
-    pinPath.close();
-    canvas.drawPath(pinPath, fillPaint);
-
-    // --- White border stroke ---
-    final strokePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = isSelected ? 2.5 : 1.8;
-    canvas.drawPath(pinPath, strokePaint);
-
-    // --- Inner white dot (GPS crosshair) ---
-    final dotPaint = Paint()
-      ..color = isApproximate ? Colors.white.withAlpha(160) : Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(cx, headY), r * 0.32, dotPaint);
-
-    // Dashed ring for approximate location
-    if (isApproximate) {
-      final dashPaint = Paint()
-        ..color = Colors.white.withAlpha(180)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
-      for (int i = 0; i < 8; i++) {
-        final angle = (i / 8) * 2 * math.pi;
-        final x1 = cx + (r * 0.5) * math.cos(angle);
-        final y1 = headY + (r * 0.5) * math.sin(angle);
-        final x2 = cx + (r * 0.72) * math.cos(angle);
-        final y2 = headY + (r * 0.72) * math.sin(angle);
-        canvas.drawLine(Offset(x1, y1), Offset(x2, y2), dashPaint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _GooglePinPainter old) =>
-      old.color != color || old.isSelected != isSelected || old.isApproximate != isApproximate;
-}

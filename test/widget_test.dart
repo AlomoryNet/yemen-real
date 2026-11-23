@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:yemen_real_estate_portal/l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yemen_real_estate_portal/core/constants/app_constants.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/app_logo.dart';
@@ -11,7 +12,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: AppLogo(size: 40))),
+      const MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Scaffold(body: AppLogo(size: 40))),
     );
 
     expect(find.text(AppConstants.appNameAr), findsOneWidget);
@@ -23,7 +24,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
+        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Scaffold(
           body: Column(
             children: [
               StatusBadge.dealType(AppConstants.dealSale),
@@ -46,7 +47,7 @@ void main() {
     bool clicked = false;
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
+        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Scaffold(
           body: EmptyStateView(
             title: 'لا توجد نتائج',
             description: 'يرجى المحاولة لاحقاً',
@@ -70,7 +71,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(body: LoadingView(message: 'جاري التحميل...')),
+        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Scaffold(body: LoadingView(message: 'جاري التحميل...')),
       ),
     );
 

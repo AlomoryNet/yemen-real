@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/external_communication_service.dart';
 
@@ -37,14 +38,14 @@ class ExternalContactButtons extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.info_outline,
               size: 18,
               color: AppColors.textMuted,
             ),
             const SizedBox(width: 8),
             Text(
-              'بيانات التواصل المباشر غير متوفرة لهذا الإعلان حالياً',
+              context.l10n.sh_contact_unavailable,
               style: GoogleFonts.cairo(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -71,7 +72,7 @@ class ExternalContactButtons extends StatelessWidget {
               ),
               icon: const Icon(Icons.chat_bubble_outline, size: 20),
               label: Text(
-                'تواصل عبر واتساب',
+                context.l10n.sh_contact_whatsapp,
                 style: GoogleFonts.cairo(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -87,7 +88,7 @@ class ExternalContactButtons extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'تعذر فتح تطبيق واتساب. يرجى التأكد من تثبيته أو الاتصال هاتفياً.',
+                        context.l10n.sh_contact_whatsapp_error,
                         style: GoogleFonts.cairo(),
                       ),
                     ),
@@ -104,8 +105,8 @@ class ExternalContactButtons extends StatelessWidget {
           Expanded(
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                foregroundColor: AppColors.primaryInk,
+                side: BorderSide(color: AppColors.primaryInk, width: 1.5),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -113,7 +114,7 @@ class ExternalContactButtons extends StatelessWidget {
               ),
               icon: const Icon(Icons.phone_outlined, size: 20),
               label: Text(
-                'اتصال هاتفي',
+                context.l10n.sh_contact_call,
                 style: GoogleFonts.cairo(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -128,7 +129,7 @@ class ExternalContactButtons extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'تعذر بدء الاتصال الهاتفي. رقم الهاتف: $contactPhone',
+                        '${context.l10n.sh_contact_call_error_prefix} $contactPhone',
                         style: GoogleFonts.cairo(),
                       ),
                     ),

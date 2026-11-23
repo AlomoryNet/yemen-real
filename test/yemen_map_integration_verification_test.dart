@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:yemen_real_estate_portal/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,53 +27,36 @@ void main() {
   });
 
   group('Yemen Map & Header Integration Verification Tests', () {
-    testWidgets('1. AppHeader displays "الخريطة" button next to "إضافة"',
-        (tester) async {
+    testWidgets('1. AppHeader shows menu + app name only', (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      bool navigatedToMap = false;
-
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(
-            path: '/',
-            builder: (context, state) => const Scaffold(
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: Locale('ar', 'YE'),
+            home: Scaffold(
               appBar: AppHeader(),
               body: Center(child: Text('Home Screen')),
             ),
-          ),
-          GoRoute(
-            path: '/map',
-            builder: (context, state) {
-              navigatedToMap = true;
-              return const Scaffold(body: Text('Yemen Map Route'));
-            },
-          ),
-        ],
-      );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp.router(
-            routerConfig: router,
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      // Find both buttons in AppHeader
-      expect(find.text('الخريطة'), findsOneWidget);
-      expect(find.text('إضافة'), findsOneWidget);
-
-      // Tap "الخريطة" button
-      await tester.tap(find.text('الخريطة'));
-      await tester.pumpAndSettle();
-
-      expect(navigatedToMap, isTrue);
-      expect(find.text('Yemen Map Route'), findsOneWidget);
+      // The bar is intentionally quiet: drawer menu + app name only.
+      expect(find.byKey(const ValueKey('app_header_menu_button')),
+          findsOneWidget);
+      expect(find.text('البوابة العقارية'), findsOneWidget);
+      expect(find.byKey(const ValueKey('header_add_property_button')),
+          findsNothing);
+      expect(find.byKey(const ValueKey('header_settings_button')),
+          findsNothing);
+      expect(find.text('أضف عقارك'), findsNothing);
+      expect(find.text('الخريطة'), findsNothing);
     });
 
     test('2. Offline GeoJSON assets contain all 22 Yemeni governorates',
@@ -165,7 +149,7 @@ void main() {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
-            home: YemenMapScreen(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: YemenMapScreen(),
           ),
         ),
       );
@@ -173,21 +157,17 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      // Verify presence of title badge, offline map chip, and list view toggle
-      expect(find.text('خريطة اليمن'), findsWidgets);
-      expect(find.text('خريطة اليمن 🇾🇪'), findsOneWidget);
+      // Verify presence of the floating search pill, filters button and map/list toggle
+      expect(find.text('ابحث بالمحافظة، الحي، أو اسم العقار...'), findsWidgets);
       expect(find.text('عرض القائمة'), findsOneWidget);
       expect(find.byIcon(Icons.tune), findsOneWidget);
     });
 
-    testWidgets(
-        '6. AppBottomNavBar displays "الخريطة" center button and navigates to "/map"',
+    testWidgets('6. AppBottomNavBar has exactly 2 tabs and no map/search tab',
         (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
-
-      bool navigatedToMap = false;
 
       final router = GoRouter(
         initialLocation: '/',
@@ -199,31 +179,23 @@ void main() {
               bottomNavigationBar: AppBottomNavBar(currentRoute: '/'),
             ),
           ),
-          GoRoute(
-            path: '/map',
-            builder: (context, state) {
-              navigatedToMap = true;
-              return const Scaffold(body: Text('Yemen Map Route'));
-            },
-          ),
         ],
       );
 
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp.router(
-            routerConfig: router,
+            localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), routerConfig: router,
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('الخريطة'), findsOneWidget);
-      await tester.tap(find.text('الخريطة'));
-      await tester.pumpAndSettle();
-
-      expect(navigatedToMap, isTrue);
-      expect(find.text('Yemen Map Route'), findsOneWidget);
+      // 2-tab navigation: الرئيسية + ممتلكاتي. Map/Search live outside the bar.
+      expect(find.text('الرئيسية'), findsOneWidget);
+      expect(find.text('ممتلكاتي'), findsOneWidget);
+      expect(find.text('الخريطة'), findsNothing);
+      expect(find.text('البحث'), findsNothing);
     });
   });
 }

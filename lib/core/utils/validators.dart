@@ -1,50 +1,51 @@
+import '../l10n/app_strings.dart';
 class Validators {
   static String? requiredField(String? value, [String? fieldName]) {
     if (value == null || value.trim().isEmpty) {
-      return fieldName != null ? 'يرجى إدخال $fieldName' : 'هذا الحقل مطلوب';
+      return fieldName != null ? tr.sys_required_field(fieldName) : tr.sys_required;
     }
     return null;
   }
 
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'يرجى إدخال البريد الإلكتروني';
+      return tr.sys_enter_email;
     }
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(value.trim())) {
-      return 'صيغة البريد الإلكتروني غير صحيحة';
+      return tr.sys_invalid_email;
     }
     return null;
   }
 
   static String? password(String? value) {
     if (value == null || value.isEmpty) {
-      return 'يرجى إدخال كلمة المرور';
+      return tr.sys_enter_password;
     }
     if (value.length < 8) {
-      return 'يجب أن لا تقل كلمة المرور عن 8 أحرف أو أرقام لضمان حماية حسابك';
+      return tr.sys_weak_password_long;
     }
     return null;
   }
 
   static String? phone(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'يرجى إدخال رقم الهاتف للتواصل';
+      return tr.sys_enter_phone;
     }
     final clean = value.replaceAll(RegExp(r'[^0-9]'), '');
     if (clean.length < 9 || clean.length > 14) {
-      return 'رقم الهاتف غير صحيح (مثال: 770000000)';
+      return tr.sys_invalid_phone;
     }
     return null;
   }
 
   static String? positiveNumber(String? value, [String? fieldName]) {
     if (value == null || value.trim().isEmpty) {
-      return fieldName != null ? 'يرجى إدخال $fieldName' : 'هذا الحقل مطلوب';
+      return fieldName != null ? tr.sys_required_field(fieldName) : tr.sys_required;
     }
     final numValue = num.tryParse(value.trim());
     if (numValue == null || numValue <= 0) {
-      return 'يرجى إدخال رقم موجب صحيح';
+      return tr.sys_positive_number;
     }
     return null;
   }
@@ -55,7 +56,7 @@ class Validators {
     }
     final numValue = num.tryParse(value.trim());
     if (numValue == null || numValue < 0) {
-      return 'يرجى إدخال رقم صحيح (0 أو أكثر)';
+      return tr.sys_non_negative_number;
     }
     return null;
   }

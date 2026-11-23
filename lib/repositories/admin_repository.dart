@@ -8,6 +8,7 @@ import '../models/property.dart';
 import '../models/rental_request.dart';
 import '../models/user_profile.dart';
 import '../services/supabase_service.dart';
+import '../core/l10n/app_strings.dart';
 
 class AdminDashboardStats {
   final int totalProperties;
@@ -148,18 +149,18 @@ class AdminRepository {
   String exportPropertiesToCsv(List<Property> properties) {
     List<List<dynamic>> rows = [
       [
-        'المعرف',
-        'عنوان العقار',
-        'نوع العملية',
-        'نوع العقار',
-        'المدينة',
-        'المنطقة',
-        'السعر',
-        'العملة',
-        'المساحة (م²)',
-        'الحالة',
-        'تاريخ النشر',
-        'هاتف التواصل',
+        tr.csv_id,
+        tr.csv_property_title,
+        tr.csv_deal_type,
+        tr.csv_property_type,
+        tr.csv_city,
+        tr.csv_district,
+        tr.csv_price,
+        tr.csv_currency,
+        tr.csv_area,
+        tr.csv_status,
+        tr.csv_publish_date,
+        tr.csv_contact_phone,
       ],
     ];
 
@@ -187,14 +188,14 @@ class AdminRepository {
   String exportRentalRequestsToCsv(List<RentalRequest> requests) {
     List<List<dynamic>> rows = [
       [
-        'رقم الطلب',
-        'عنوان العقار',
-        'اسم المستأجر',
-        'رقم الهاتف',
-        'تاريخ البدء المطلوب',
-        'الحالة',
-        'ملاحظات الإدارة',
-        'تاريخ الطلب',
+        tr.csv_request_number,
+        tr.csv_property_title,
+        tr.csv_tenant_name,
+        tr.csv_phone,
+        tr.csv_requested_start,
+        tr.csv_status,
+        tr.csv_admin_notes,
+        tr.csv_request_date,
       ],
     ];
 
@@ -218,17 +219,17 @@ class AdminRepository {
   String exportCommissionsToCsv(List<Commission> commissions) {
     List<List<dynamic>> rows = [
       [
-        'المعرف',
-        'عنوان العقار',
-        'الطرف المتحمل',
-        'مبلغ البائع',
-        'مبلغ المشتري',
-        'إجمالي العمولة',
-        'العملة',
-        'حالة التسوية',
-        'طريقة التسوية',
-        'تاريخ التسجيل',
-        'الملاحظات',
+        tr.csv_id,
+        tr.csv_property_title,
+        tr.csv_liable_party,
+        tr.csv_seller_amount,
+        tr.csv_buyer_amount,
+        tr.csv_total_commission,
+        tr.csv_currency,
+        tr.csv_settlement_status,
+        tr.csv_settlement_method,
+        tr.csv_registration_date,
+        tr.csv_notes,
       ],
     ];
 

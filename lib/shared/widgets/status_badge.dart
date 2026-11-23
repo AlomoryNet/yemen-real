@@ -22,7 +22,10 @@ class StatusBadge extends StatelessWidget {
     return StatusBadge(
       text: AppConstants.getDealTypeNameAr(dealType),
       backgroundColor: isRent ? AppColors.infoMuted : AppColors.primaryMuted,
-      textColor: isRent ? AppColors.info : AppColors.primary,
+      // primaryInk stays readable in dark mode (bright teal vs. deep teal).
+      textColor: isRent
+          ? (AppColors.isDark ? const Color(0xFF38BDF8) : AppColors.info)
+          : AppColors.primaryInk,
       icon: isRent ? Icons.key_outlined : Icons.sell_outlined,
     );
   }

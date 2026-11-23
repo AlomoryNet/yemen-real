@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import 'app_logo.dart';
@@ -10,6 +12,9 @@ class AppFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Footer is desktop-only. On mobile/tablet the drawer + bottom nav carry
+    // navigation, so the footer is hidden entirely (no dead space/links).
+    if (!Responsive.isDesktop(context)) return const SizedBox.shrink();
     return Container(
       color: AppColors.primaryDark,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -40,7 +45,7 @@ class AppFooter extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'الجمهورية اليمنية',
+                    context.l10n.sh_footer_republic,
                     style: GoogleFonts.cairo(
                       color: AppColors.textLight.withAlpha(200),
                       fontSize: 12,
@@ -69,7 +74,7 @@ class AppFooter extends StatelessWidget {
               const AppLogo(size: 38, isDark: true),
               const SizedBox(height: 14),
               Text(
-                'المنصة الوطنية الرائدة لخدمات بيع وشراء وتأجير العقارات في كافة المحافظات اليمنية، بطرق موثوقة ومباشرة بين المعلن والباحث.',
+                context.l10n.sh_footer_tagline_desktop,
                 style: GoogleFonts.cairo(
                   color: AppColors.textLight.withAlpha(190),
                   fontSize: 13,
@@ -87,7 +92,7 @@ class AppFooter extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'روابط سريعة',
+                context.l10n.sh_footer_quick_links,
                 style: GoogleFonts.cairo(
                   color: Colors.white,
                   fontSize: 15,
@@ -95,21 +100,37 @@ class AppFooter extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildFooterLink('عقارات للبيع'),
-              _buildFooterLink('عقارات للإيجار'),
-              _buildFooterLink('أضف إعلانك مجاناً'),
-              _buildFooterLink('العقارات المميزة'),
+              _buildFooterLink(
+                context,
+                context.l10n.sh_footer_properties_sale,
+                '/map',
+              ),
+              _buildFooterLink(
+                context,
+                context.l10n.sh_footer_properties_rent,
+                '/map',
+              ),
+              _buildFooterLink(
+                context,
+                context.l10n.sh_footer_add_listing,
+                '/add-property',
+              ),
+              _buildFooterLink(
+                context,
+                context.l10n.sh_drawer_map_title,
+                '/map',
+              ),
             ],
           ),
         ),
 
-        // Column 3: Legal & Trust
+        // Column 3: Account links
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'الأمان والسياسات',
+                context.l10n.sh_footer_my_account,
                 style: GoogleFonts.cairo(
                   color: Colors.white,
                   fontSize: 15,
@@ -117,10 +138,22 @@ class AppFooter extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildFooterLink('شروط الاستخدام'),
-              _buildFooterLink('سياسة الخصوصية'),
-              _buildFooterLink('آلية مراجعة ونشر الإعلانات'),
-              _buildFooterLink('سياسة احتساب العمولة الإدارية'),
+              _buildFooterLink(context, context.l10n.sh_drawer_profile, '/profile'),
+              _buildFooterLink(
+                context,
+                context.l10n.sh_footer_my_listings,
+                '/my-properties',
+              ),
+              _buildFooterLink(
+                context,
+                context.l10n.sh_drawer_my_requests,
+                '/my-requests',
+              ),
+              _buildFooterLink(
+                context,
+                context.l10n.sh_drawer_favorites,
+                '/favorites',
+              ),
             ],
           ),
         ),
@@ -131,7 +164,7 @@ class AppFooter extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'تواصل معنا',
+                context.l10n.sh_footer_contact,
                 style: GoogleFonts.cairo(
                   color: Colors.white,
                   fontSize: 15,
@@ -188,7 +221,7 @@ class AppFooter extends StatelessWidget {
         const AppLogo(size: 36, isDark: true),
         const SizedBox(height: 12),
         Text(
-          'بوابة اليمن العقارية — منصتك الموثوقة لاستئجار وشراء وبيع العقارات في اليمن.',
+          context.l10n.sh_footer_tagline_mobile,
           style: GoogleFonts.cairo(
             color: AppColors.textLight.withAlpha(190),
             fontSize: 13,
@@ -200,24 +233,44 @@ class AppFooter extends StatelessWidget {
           spacing: 16,
           runSpacing: 8,
           children: [
-            _buildFooterLink('عقارات للبيع'),
-            _buildFooterLink('عقارات للإيجار'),
-            _buildFooterLink('الشروط والأحكام'),
-            _buildFooterLink('سياسة الخصوصية'),
+            _buildFooterLink(
+              context,
+              context.l10n.sh_footer_properties_sale,
+              '/map',
+            ),
+            _buildFooterLink(
+              context,
+              context.l10n.sh_footer_properties_rent,
+              '/map',
+            ),
+            _buildFooterLink(context, context.l10n.sh_drawer_map_title, '/map'),
+            _buildFooterLink(
+              context,
+              context.l10n.sh_footer_my_account,
+              '/profile',
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildFooterLink(String title) {
+  Widget _buildFooterLink(BuildContext context, String title, String route) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        title,
-        style: GoogleFonts.cairo(
-          color: AppColors.textLight.withAlpha(200),
-          fontSize: 13,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: () => context.push(route),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+          child: Text(
+            title,
+            style: GoogleFonts.cairo(
+              color: AppColors.textLight.withAlpha(220),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
@@ -57,15 +58,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
             title: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.mark_email_unread_outlined,
-                  color: AppColors.primary,
+                  color: AppColors.primaryInk,
                   size: 26,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'تأكيد وتفعيل الحساب',
+                    context.l10n.register_confirm_title,
                     style: GoogleFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -79,7 +80,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'تم إرسال رسالة تأكيد إلى بريدك الإلكتروني. يرجى مراجعة صندوق الوارد والضغط على رابط التأكيد لإكمال إنشاء حسابك.',
+                  context.l10n.register_confirm_message,
                   style: GoogleFonts.cairo(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -102,9 +103,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.email,
-                        color: AppColors.primary,
+                        color: AppColors.primaryInk,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -123,7 +124,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'يرجى فتح صندوق الوارد في بريدك الإلكتروني والنقر على رابط التفعيل المرسل لإكمال التحقق وتفعيل حسابك.',
+                  context.l10n.register_open_inbox,
                   style: GoogleFonts.cairo(
                     fontSize: 12,
                     height: 1.5,
@@ -149,7 +150,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'تنبيه: لن يتم تسجيل دخولك أو تفعيل الصلاحيات إلا بعد الضغط على الرابط في بريدك.',
+                          context.l10n.register_warning,
                           style: GoogleFonts.cairo(
                             fontSize: 11,
                             color: Colors.amber.shade900,
@@ -168,6 +169,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ? null
                         : () async {
                             final messenger = ScaffoldMessenger.of(context);
+                            final l10n = context.l10n;
                             setDialogState(() => isResending = true);
                             final resent = await ref
                                 .read(authProvider.notifier)
@@ -177,9 +179,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               SnackBar(
                                 content: Text(
                                   resent
-                                      ? 'تمت إعادة إرسال رابط التأكيد بنجاح إلى بريدك'
+                                      ? l10n.register_resend_success
                                       : (ref.read(authProvider).errorMessage ??
-                                            'تعذر إعادة الإرسال حالياً'),
+                                            l10n.register_resend_failed),
                                   style: GoogleFonts.cairo(),
                                 ),
                                 backgroundColor: resent
@@ -194,19 +196,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.refresh,
                             size: 18,
-                            color: AppColors.primary,
+                            color: AppColors.primaryInk,
                           ),
                     label: Text(
                       isResending
-                          ? 'جارٍ إعادة الإرسال...'
-                          : 'لم تصلك الرسالة؟ إعادة إرسال رابط التفعيل',
+                          ? context.l10n.register_resending
+                          : context.l10n.register_resend_prompt,
                       style: GoogleFonts.cairo(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: AppColors.primaryInk,
                       ),
                     ),
                   ),
@@ -220,7 +222,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   context.go('/');
                 },
                 child: Text(
-                  'تصفح كزائر',
+                  context.l10n.register_browse_guest,
                   style: GoogleFonts.cairo(color: Colors.grey.shade700),
                 ),
               ),
@@ -243,7 +245,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   context.go(uri.toString());
                 },
                 child: Text(
-                  'الانتقال لتسجيل الدخول',
+                  context.l10n.register_go_login,
                   style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -268,7 +270,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: const BorderSide(color: AppColors.divider),
+                side: BorderSide(color: AppColors.divider),
               ),
               elevation: 2,
               child: Padding(
@@ -280,7 +282,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'إنشاء حساب جديد',
+                        context.l10n.register_title,
                         style: GoogleFonts.cairo(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -289,7 +291,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'انضم إلى مجتمع العقارات الأول في اليمن مجاناً',
+                        context.l10n.register_subtitle,
                         style: GoogleFonts.cairo(
                           fontSize: 13,
                           color: AppColors.textSecondary,
@@ -317,9 +319,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.info_outline,
-                                  color: AppColors.primary,
+                                  color: AppColors.primaryInk,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 8),
@@ -387,11 +389,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     onPressed: () => context.go('/login'),
                                     icon: const Icon(Icons.login, size: 18),
                                     label: Text(
-                                      'الانتقال لتسجيل الدخول الآن',
+                                      context.l10n.register_go_login_now,
                                       style: GoogleFonts.cairo(
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.bold,
-                                        color: AppColors.primary,
+                                        color: AppColors.primaryInk,
                                       ),
                                     ),
                                   ),
@@ -405,7 +407,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                       // Full Name
                       Text(
-                        'الاسم الكامل *',
+                        context.l10n.register_full_name_required,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -415,9 +417,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       TextFormField(
                         controller: _nameController,
                         validator: (val) =>
-                            Validators.requiredField(val, 'الاسم الكامل'),
-                        decoration: const InputDecoration(
-                          hintText: 'أدخل اسمك الثلاثي أو الرباعي',
+                            Validators.requiredField(val, context.l10n.register_full_name),
+                        decoration: InputDecoration(
+                          hintText: context.l10n.register_name_hint,
                           prefixIcon: Icon(Icons.person_outline),
                         ),
                       ),
@@ -425,7 +427,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                       // Email
                       Text(
-                        'البريد الإلكتروني *',
+                        context.l10n.register_email_required,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -445,7 +447,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                       // Phone
                       Text(
-                        'رقم الهاتف للتواصل *',
+                        context.l10n.register_phone_required,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -456,8 +458,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         validator: Validators.phone,
-                        decoration: const InputDecoration(
-                          hintText: 'مثال: 770000000',
+                        decoration: InputDecoration(
+                          hintText: context.l10n.register_phone_hint,
                           prefixIcon: Icon(Icons.phone_outlined),
                         ),
                       ),
@@ -465,7 +467,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                       // Password
                       Text(
-                        'كلمة المرور *',
+                        context.l10n.register_password_required,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -478,7 +480,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         validator: Validators.password,
                         decoration: InputDecoration(
                           hintText:
-                              'لا تقل عن 8 خانات (أرقام وحروف لضمان الحماية)',
+                              context.l10n.register_password_hint,
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -513,7 +515,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   ),
                                 )
                               : Text(
-                                  'تسجيل حساب جديد',
+                                  context.l10n.register_submit,
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
@@ -528,7 +530,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'لديك حساب بالفعل؟',
+                            context.l10n.register_have_account,
                             style: GoogleFonts.cairo(
                               fontSize: 13,
                               color: AppColors.textSecondary,
@@ -537,11 +539,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           TextButton(
                             onPressed: () => context.push('/login'),
                             child: Text(
-                              'تسجيل الدخول',
+                              context.l10n.register_login_link,
                               style: GoogleFonts.cairo(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                                color: AppColors.primaryInk,
                               ),
                             ),
                           ),

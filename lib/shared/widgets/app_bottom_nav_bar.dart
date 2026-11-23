@@ -2,22 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import 'auth_prompt_dialog.dart';
 
+/// Material 3 Expressive bottom navigation bar:
+/// - 2 tabs: الرئيسية (Dashboard) + ممتلكاتي (My Properties)
+/// - 72dp tall tonal surface, no hairline shadow
+/// - Pill-shaped active indicator (64×32) that stretches in, filled icons
+/// - Always-visible labels
 class AppBottomNavBar extends ConsumerWidget {
   final String currentRoute;
 
   const AppBottomNavBar({super.key, required this.currentRoute});
 
   int _getIndex() {
-    if (currentRoute == '/') return 0;                                           // الرئيسية
-    if (currentRoute.startsWith('/search')) return 1;                           // البحث
-    if (currentRoute.startsWith('/map')) return 2;                              // الخريطة
-    if (currentRoute.startsWith('/my-properties')) return 3;                    // عقاراتي
-    if (currentRoute.startsWith('/profile') || currentRoute.startsWith('/login')) return 4; // الدخول / حسابي
-    return -1;
+    if (currentRoute == '/' || currentRoute.startsWith('/map')) {
+      return 0; // الرئيسية (dashboard is the landing tab)
+    }
+    if (currentRoute.startsWith('/my-properties')) return 1; // عقاراتي
+    return 0;
   }
 
   @override
@@ -25,89 +30,43 @@ class AppBottomNavBar extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final currentIndex = _getIndex();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(14),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+    return Material(
+      color: AppColors.surface,
+      elevation: 0,
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 60,
+          height: 68,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // 0 — الرئيسية (أقصى اليمين في RTL)
-              _NavItem(
-                icon: Icons.home_outlined,
-                selectedIcon: Icons.home_rounded,
-                label: 'الرئيسية',
-                isSelected: currentIndex == 0,
-                onTap: () {
-                  if (currentIndex == 0) return;
-                  context.go('/');
-                },
+              Expanded(
+                child: _NavDestination(
+                  icon: Icons.home_outlined,
+                  selectedIcon: Icons.home_rounded,
+                  label: context.l10n.sh_nav_home,
+                  isSelected: currentIndex == 0,
+                  onTap: () => _go(context, currentIndex, 0, '/'),
+                ),
               ),
-              // 1 — البحث
-              _NavItem(
-                icon: Icons.search_rounded,
-                selectedIcon: Icons.search_rounded,
-                label: 'البحث',
-                isSelected: currentIndex == 1,
-                onTap: () {
-                  if (currentIndex == 1) return;
-                  context.go('/search');
-                },
-              ),
-              // 2 — الخريطة (زر تفاعلي مميز في الوسط)
-              _NavItemCenter(
-                icon: Icons.map_rounded,
-                label: 'الخريطة',
-                isSelected: currentIndex == 2,
-                onTap: () {
-                  if (currentIndex == 2) return;
-                  context.go('/map');
-                },
-              ),
-              // 3 — عقاراتي
-              _NavItem(
-                icon: Icons.apartment_outlined,
-                selectedIcon: Icons.apartment_rounded,
-                label: 'عقاراتي',
-                isSelected: currentIndex == 3,
-                onTap: () {
-                  if (currentIndex == 3) return;
-                  if (!authState.isAuthenticated) {
-                    AuthPromptDialog.show(
-                      context,
-                      message: 'لإدارة عقاراتك، يرجى تسجيل الدخول أولاً.',
-                      redirectTo: '/my-properties',
-                    );
-                  } else {
-                    context.go('/my-properties');
-                  }
-                },
-              ),
-              // 4 — الدخول / حسابي (أقصى اليسار في RTL)
-              _NavItem(
-                icon: Icons.person_outline_rounded,
-                selectedIcon: Icons.person_rounded,
-                label: authState.isAuthenticated ? 'حسابي' : 'الدخول',
-                isSelected: currentIndex == 4,
-                onTap: () {
-                  if (currentIndex == 4) return;
-                  if (!authState.isAuthenticated) {
-                    context.go('/login');
-                  } else {
-                    context.go('/profile');
-                  }
-                },
+              Expanded(
+                child: _NavDestination(
+                  icon: Icons.apartment_outlined,
+                  selectedIcon: Icons.apartment_rounded,
+                  label: context.l10n.sh_nav_my_properties,
+                  isSelected: currentIndex == 1,
+                  onTap: () {
+                    if (currentIndex == 1) return;
+                    if (!authState.isAuthenticated) {
+                      AuthPromptDialog.show(
+                        context,
+                        message: context.l10n.sh_manage_properties_prompt,
+                        redirectTo: '/my-properties',
+                      );
+                    } else {
+                      context.go('/my-properties');
+                    }
+                  },
+                ),
               ),
             ],
           ),
@@ -115,17 +74,21 @@ class AppBottomNavBar extends ConsumerWidget {
       ),
     );
   }
+
+  void _go(BuildContext context, int currentIndex, int target, String route) {
+    if (currentIndex == target) return;
+    context.go(route);
+  }
 }
 
-// ─── زر تنقل عادي ─────────────────────────────────────────────────────────────
-class _NavItem extends StatelessWidget {
+class _NavDestination extends StatelessWidget {
   final IconData icon;
   final IconData selectedIcon;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _NavItem({
+  const _NavDestination({
     required this.icon,
     required this.selectedIcon,
     required this.label,
@@ -135,97 +98,52 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? AppColors.primary : const Color(0xFF94A3B8);
+    final isDark = AppColors.isDark;
+    final activeColor = AppColors.primaryInk; // bright teal in dark mode
+    final inactiveColor = isDark
+        ? AppColors.textMuted // lighter muted gray on dark surface
+        : const Color(0xFF667085);
+    final pillFill = isDark
+        ? AppColors.primaryMuted.withAlpha(120) // lighter in dark
+        : AppColors.primaryMuted;
 
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        splashColor: AppColors.primaryMuted,
-        highlightColor: Colors.transparent,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                isSelected ? selectedIcon : icon,
-                key: ValueKey(isSelected),
-                size: 22,
-                color: color,
-              ),
+    return InkResponse(
+      onTap: onTap,
+      radius: 34,
+      splashColor: AppColors.primaryMuted.withAlpha(160),
+      highlightColor: Colors.transparent,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // M3 Expressive pill indicator — stretches horizontally when active
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            width: isSelected ? 62 : 34,
+            height: 32,
+            decoration: BoxDecoration(
+              color: isSelected ? pillFill : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: GoogleFonts.cairo(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: color,
-              ),
+            child: Icon(
+              isSelected ? selectedIcon : icon,
+              size: 23,
+              color: isSelected ? activeColor : inactiveColor,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── زر الخريطة المميز في الوسط ───────────────────────────────────────────────
-class _NavItemCenter extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _NavItemCenter({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.primaryMuted,
-                shape: BoxShape.circle,
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primary.withAlpha(80),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: isSelected ? Colors.white : AppColors.primary,
-              ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.cairo(
+              fontSize: 11.5,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? activeColor : inactiveColor,
+              height: 1.15,
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.cairo(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? AppColors.primary : const Color(0xFF94A3B8),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

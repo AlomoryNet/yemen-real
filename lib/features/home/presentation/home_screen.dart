@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart' as latlong;
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../models/property.dart';
@@ -17,6 +19,8 @@ import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/property_card.dart';
+import '../../../data/demo_properties_generator.dart';
+import '../../../services/device_location_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -31,10 +35,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _selectedTypeId;
   String? _selectedGovernorate;
 
+  // Location-first dashboard state
+  latlong.LatLng _userCenter = DeviceLocationService.ibbCenter;
+  final List<Property> _nearbyProperties = DemoPropertiesGenerator.generateAllDemoProperties().take(4).toList();
+  bool _locationResolved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _resolveLocation());
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resolveLocation() async {
+    // Simplified: use Ibb center as default, no location permission request
+    setState(() {
+      _userCenter = DeviceLocationService.ibbCenter;
+      _locationResolved = true;
+    });
   }
 
   void _onSearchSubmit() {
@@ -253,6 +276,97 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildNearbySection(BuildContext context) {
+    final shown = _nearbyProperties.take(4).toList();
+    final usingFallback = _userCenter.latitude ==
+            DeviceLocationService.ibbCenter.latitude &&
+        _userCenter.longitude == DeviceLocationService.ibbCenter.longitude;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double cardWidth = screenWidth < 768 ? screenWidth - 68 : 240;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMuted,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(Icons.near_me_rounded,
+                    color: AppColors.primaryInk, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.dash_nearby_title,
+                      style: GoogleFonts.cairo(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      usingFallback
+                          ? '${_nearbyProperties.length} ${context.l10n.dash_nearby_fallback_count}'
+                          : '${_nearbyProperties.length} ${context.l10n.dash_nearby_in_range_count}',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => context.push('/map', extra: true),
+                icon: const Icon(Icons.map_rounded, size: 17),
+                label: Text(context.l10n.dash_view_all),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (!_locationResolved)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (shown.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Text(
+                context.l10n.dash_no_nearby_properties,
+                style: GoogleFonts.cairo(color: AppColors.textSecondary),
+              ),
+            )
+          else
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: shown
+                  .map((property) => SizedBox(
+                        width: cardWidth,
+                        child: PropertyCard(property: property),
+                      ))
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final typesAsync = ref.watch(propertyTypesProvider);
@@ -264,12 +378,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: const AppHeader(),
       drawer: const AppDrawer(),
       bottomNavigationBar: const AppBottomNavBar(currentRoute: '/'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            key: const ValueKey('dashboard_map_fab'),
+            heroTag: 'dashboard_map_fab',
+            backgroundColor: const Color(0xFF0F766E),
+            foregroundColor: Colors.white,
+            elevation: 6,
+            icon: const Icon(Icons.map_rounded, size: 18),
+            label: Text(context.l10n.dash_view_map),
+            onPressed: () => context.push('/map', extra: false),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Hero Search Section
             _buildHeroSection(typesAsync),
 
+            const SizedBox(height: 24),
+
+            // Properties Near You Section
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildNearbySection(context),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
 
             // Content Container
             Center(
@@ -530,7 +674,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(
+                                  Icon(
                                     Icons.keyboard_arrow_down,
                                     size: 16,
                                     color: AppColors.textSecondary,
@@ -587,7 +731,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   color: AppColors.border,
                                 ),
                               ),

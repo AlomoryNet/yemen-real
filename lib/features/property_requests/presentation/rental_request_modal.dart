@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../../models/property.dart';
@@ -93,7 +94,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'حدث خطأ: ${e.toString()}',
+              '${context.l10n.req_error_prefix} ${e.toString()}',
               style: GoogleFonts.cairo(),
             ),
             backgroundColor: AppColors.error,
@@ -106,7 +107,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -142,7 +143,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
         ),
         const SizedBox(height: 16),
         Text(
-          'تم استلام طلب الاستئجار بنجاح',
+          context.l10n.req_success,
           style: GoogleFonts.cairo(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -157,11 +158,11 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            'رقم الطلب المرجعي: ${req.requestNumber}',
+            '${context.l10n.req_reference_number} ${req.requestNumber}',
             style: GoogleFonts.cairo(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: AppColors.primaryInk,
             ),
           ),
         ),
@@ -182,7 +183,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'ملاحظة: هذا الطلب يعد استفساراً ورغبة استئجار مبدئية فقط، ولا يعتبر عقداً رسمياً أو حجزاً نهائياً.',
+                  context.l10n.req_success_note,
                   style: GoogleFonts.cairo(
                     fontSize: 12,
                     color: AppColors.textPrimary,
@@ -199,7 +200,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
             Expanded(
               child: OutlinedButton(
                 onPressed: () => context.pop(),
-                child: const Text('إغلاق'),
+                child: Text(context.l10n.req_close),
               ),
             ),
             const SizedBox(width: 12),
@@ -209,7 +210,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                   context.pop();
                   context.push('/my-requests');
                 },
-                child: const Text('متابعة طلباتي'),
+                child: Text(context.l10n.req_follow_my_requests),
               ),
             ),
           ],
@@ -229,7 +230,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'طلب استئجار عقار',
+                context.l10n.req_form_title,
                 style: GoogleFonts.cairo(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -258,23 +259,24 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
 
           // Full Name
           Text(
-            'الاسم الكامل *',
+            context.l10n.req_full_name_required,
             style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _nameController,
-            validator: (val) => Validators.requiredField(val, 'الاسم الكامل'),
-            decoration: const InputDecoration(
-              hintText: 'أدخل اسمك الثلاثي أو الرباعي',
-              prefixIcon: Icon(Icons.person_outline),
+            validator: (val) =>
+                Validators.requiredField(val, context.l10n.req_full_name),
+            decoration: InputDecoration(
+              hintText: context.l10n.req_full_name_hint,
+              prefixIcon: const Icon(Icons.person_outline),
             ),
           ),
           const SizedBox(height: 14),
 
           // Phone Number
           Text(
-            'رقم الهاتف للتواصل *',
+            context.l10n.req_phone_required,
             style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
@@ -282,16 +284,16 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             validator: Validators.phone,
-            decoration: const InputDecoration(
-              hintText: 'مثال: 770000000',
-              prefixIcon: Icon(Icons.phone_outlined),
+            decoration: InputDecoration(
+              hintText: '${context.l10n.req_phone_example_prefix} 770000000',
+              prefixIcon: const Icon(Icons.phone_outlined),
             ),
           ),
           const SizedBox(height: 14),
 
           // Desired Start Date
           Text(
-            'تاريخ الاستئجار المطلوب (اختياري)',
+            context.l10n.req_desired_start_date,
             style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
@@ -319,7 +321,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                   Text(
                     _selectedDate != null
                         ? Formatters.formatDate(_selectedDate)
-                        : 'حدد التاريخ المتوقع لبدء الإيجار',
+                        : context.l10n.req_pick_date_hint,
                     style: GoogleFonts.cairo(
                       color: _selectedDate != null
                           ? AppColors.textPrimary
@@ -327,7 +329,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                       fontSize: 14,
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.calendar_today_outlined,
                     size: 18,
                     color: AppColors.textMuted,
@@ -340,16 +342,15 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
 
           // Notes
           Text(
-            'ملاحظات إضافية أو شروط خاصة',
+            context.l10n.req_notes_label,
             style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _notesController,
             maxLines: 3,
-            decoration: const InputDecoration(
-              hintText:
-                  'أذكر أي استفسارات، مدة الإيجار المرغوبة، أو عدد أفراد الأسرة...',
+            decoration: InputDecoration(
+              hintText: context.l10n.req_notes_hint,
             ),
           ),
           const SizedBox(height: 20),
@@ -368,7 +369,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text('إرسال طلب الاستئجار الآن'),
+                  : Text(context.l10n.req_submit),
             ),
           ),
         ],

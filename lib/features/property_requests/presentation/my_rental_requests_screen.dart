@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/responsive.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/rental_request_provider.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
@@ -23,20 +27,23 @@ class MyRentalRequestsScreen extends ConsumerWidget {
 
     if (!authState.isAuthenticated) {
       return Scaffold(
-        appBar: const AppHeader(),
-        body: Center(
-          child: EmptyStateView(
+        appBar: const AppHeader(title: 'طلبات الاستئجار', showBack: true),
+        drawer: Responsive.isDesktop(context)
+            ? null
+            : const AppDrawer(),
+        body: AppPageBody(
+          child: Center(
+            child: EmptyStateView(
             icon: Icons.assignment_outlined,
-            title: 'تسجيل الدخول مطلوب',
-            description:
-                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
-            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            title: context.l10n.req_login_required,
+            description: context.l10n.req_signup_prompt,
+            actionText: context.l10n.req_signup_or_login,
             onAction: () => AuthPromptDialog.show(
               context,
-              message:
-                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              message: context.l10n.req_signup_prompt,
               redirectTo: '/my-requests',
             ),
+          ),
           ),
         ),
       );
@@ -45,9 +52,13 @@ class MyRentalRequestsScreen extends ConsumerWidget {
     final requestsAsync = ref.watch(userRentalRequestsProvider);
 
     return Scaffold(
-      appBar: const AppHeader(),
-      body: SingleChildScrollView(
-        child: Column(
+      appBar: const AppHeader(title: 'طلبات الاستئجار', showBack: true),
+      drawer: Responsive.isDesktop(context)
+          ? null
+          : const AppDrawer(),
+      body: AppPageBody(
+        child: SingleChildScrollView(
+          child: Column(
           children: [
             Center(
               child: ConstrainedBox(
@@ -61,7 +72,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'طلبات الاستئجار الخاصة بي',
+                        context.l10n.req_title,
                         style: GoogleFonts.cairo(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -70,7 +81,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'تابع حالة طلباتك واستفساراتك المقدمة للعقارات المعروضة للإيجار.',
+                        context.l10n.req_subtitle,
                         style: GoogleFonts.cairo(
                           fontSize: 13,
                           color: AppColors.textSecondary,
@@ -83,11 +94,10 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                           if (requests.isEmpty) {
                             return EmptyStateView(
                               icon: Icons.assignment_outlined,
-                              title: 'لا توجد طلبات استئجار سابقة',
-                              description:
-                                  'تصفح العقارات المتاحة للإيجار وأرسل طلب استئجار مبدئي',
-                              actionText: 'تصفح عقارات الإيجار',
-                              onAction: () => context.push('/search'),
+                              title: context.l10n.req_empty_title,
+                              description: context.l10n.req_empty_desc,
+                              actionText: context.l10n.req_empty_action,
+                              onAction: () => context.push('/map'),
                             );
                           }
 
@@ -102,7 +112,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                               return Card(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  side: const BorderSide(
+                                  side: BorderSide(
                                     color: AppColors.divider,
                                   ),
                                 ),
@@ -131,7 +141,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                               style: GoogleFonts.cairo(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.bold,
-                                                color: AppColors.primary,
+                                                color: AppColors.primaryInk,
                                               ),
                                             ),
                                           ),
@@ -140,7 +150,8 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
-                                        req.propertyTitle ?? 'عقار للإيجار',
+                                        req.propertyTitle ??
+                                            context.l10n.req_property_fallback,
                                         style: GoogleFonts.cairo(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -150,14 +161,14 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                       const SizedBox(height: 8),
                                       Row(
                                         children: [
-                                          const Icon(
+                                          Icon(
                                             Icons.calendar_today_outlined,
                                             size: 14,
                                             color: AppColors.textMuted,
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            'تاريخ البدء المطلوب: ${req.requestedStartDate != null ? Formatters.formatDate(req.requestedStartDate) : 'غير محدد'}',
+                                            '${context.l10n.req_requested_start} ${req.requestedStartDate != null ? Formatters.formatDate(req.requestedStartDate) : context.l10n.req_not_specified}',
                                             style: GoogleFonts.cairo(
                                               fontSize: 12,
                                               color: AppColors.textSecondary,
@@ -169,7 +180,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                           req.notes!.isNotEmpty) ...[
                                         const SizedBox(height: 8),
                                         Text(
-                                          'ملاحظاتك: ${req.notes}',
+                                          '${context.l10n.req_your_notes} ${req.notes}',
                                           style: GoogleFonts.cairo(
                                             fontSize: 12,
                                             color: AppColors.textSecondary,
@@ -197,7 +208,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                               const SizedBox(width: 8),
                                               Expanded(
                                                 child: Text(
-                                                  'رد المالك/الإدارة: ${req.adminNotes}',
+                                                  '${context.l10n.req_owner_admin_reply} ${req.adminNotes}',
                                                   style: GoogleFonts.cairo(
                                                     fontSize: 12,
                                                     color: AppColors.info,
@@ -216,7 +227,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                             MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            'تاريخ الإرسال: ${Formatters.formatDateTime(req.createdAt)}',
+                                            '${context.l10n.req_sent_on} ${Formatters.formatDateTime(req.createdAt)}',
                                             style: GoogleFonts.cairo(
                                               fontSize: 11,
                                               color: AppColors.textMuted,
@@ -226,7 +237,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                             onPressed: () => context.push(
                                               '/property/${req.propertyId}',
                                             ),
-                                            child: const Text('عرض العقار'),
+                                            child: Text(context.l10n.req_view_property),
                                           ),
                                         ],
                                       ),
@@ -238,7 +249,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                           );
                         },
                         loading: () =>
-                            const LoadingView(message: 'جاري تحميل طلباتك...'),
+                            LoadingView(message: context.l10n.req_loading),
                         error: (err, _) => ErrorView(
                           message: err.toString(),
                           onRetry: () =>
@@ -252,6 +263,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
             ),
             const AppFooter(),
           ],
+        ),
         ),
       ),
     );

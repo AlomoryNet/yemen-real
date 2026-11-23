@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/supabase_service.dart';
@@ -33,7 +34,11 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
   @override
   void initState() {
     super.initState();
-    _processCallback();
+    // Localizations are inherited widgets, so they are not available until
+    // after the first build. Defer callback processing by one frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _processCallback(context);
+    });
   }
 
   @override
@@ -44,7 +49,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
     super.dispose();
   }
 
-  void _processCallback() {
+  void _processCallback(BuildContext context) {
     // 1. Check incoming URL query params and fragment for explicit error codes
     final params = widget.queryParams ?? {};
     final frag = widget.fragment ?? '';
@@ -60,14 +65,14 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
       setState(() {
         _status = CallbackStatus.expired;
         _errorMessage =
-            'رابط التفعيل منتهي الصلاحية أو تم استخدامه مسبقاً. يرجى طلب رابط جديد للمتابعة.';
+            context.l10n.callback_expired_message;
       });
       return;
     } else if (errorCode != null || errorDesc != null) {
       setState(() {
         _status = CallbackStatus.error;
         _errorMessage =
-            errorDesc ?? 'تعذر إتمام التحقق من الرابط، يرجى المحاولة لاحقاً.';
+            errorDesc ?? context.l10n.callback_link_error;
       });
       return;
     }
@@ -148,7 +153,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'يرجى إدخال البريد الإلكتروني أولاً',
+            context.l10n.callback_enter_email_first,
             style: GoogleFonts.cairo(),
           ),
         ),
@@ -167,9 +172,9 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
         SnackBar(
           content: Text(
             sent
-                ? 'تم إرسال رابط تفعيل جديد بنجاح إلى بريدك'
+                ? context.l10n.callback_resend_success
                 : (ref.read(authProvider).errorMessage ??
-                      'تعذر إعادة الإرسال حالياً'),
+                      context.l10n.callback_resend_failed),
             style: GoogleFonts.cairo(),
           ),
           backgroundColor: sent ? AppColors.success : AppColors.error,
@@ -194,12 +199,12 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             child: Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: const BorderSide(color: AppColors.divider),
+                side: BorderSide(color: AppColors.divider),
               ),
               elevation: 3,
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: _buildContent(),
+                child: _buildContent(context),
               ),
             ),
           ),
@@ -208,7 +213,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     switch (_status) {
       case CallbackStatus.verifying:
         return Column(
@@ -222,7 +227,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'جارٍ التحقق من تفعيل البريد الإلكتروني...',
+              context.l10n.callback_verifying,
               style: GoogleFonts.cairo(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -232,7 +237,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'يرجى الانتظار بضع ثوانٍ بينما نؤكد حسابك لدى خوادم بوابة اليمن العقارية.',
+              context.l10n.callback_waiting,
               style: GoogleFonts.cairo(
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -262,7 +267,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'تم تفعيل بريدك الإلكتروني بنجاح!',
+              context.l10n.callback_success_title,
               style: GoogleFonts.cairo(
                 fontSize: 21,
                 fontWeight: FontWeight.bold,
@@ -272,7 +277,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'أهلاً بك في بوابة اليمن العقارية. تم تأكيد ملكية بريدك الإلكتروني بنجاح وأصبح حسابك نشطاً بالكامل الآن.',
+              context.l10n.callback_success_message,
               style: GoogleFonts.cairo(
                 fontSize: 13.5,
                 color: AppColors.textSecondary,
@@ -294,10 +299,10 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.email_outlined,
                       size: 18,
-                      color: AppColors.primary,
+                      color: AppColors.primaryInk,
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -338,8 +343,8 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                         ),
                         label: Text(
                           hasTarget
-                              ? 'المتابعة لإكمال عمليتك'
-                              : 'المتابعة إلى الصفحة الرئيسية',
+                              ? context.l10n.callback_continue_operation
+                              : context.l10n.callback_continue_home,
                           style: GoogleFonts.cairo(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -363,8 +368,8 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                         ),
                         label: Text(
                           hasTarget
-                              ? 'الذهاب إلى الصفحة الرئيسية'
-                              : 'تسجيل الدخول بالبريد وكلمة المرور',
+                              ? context.l10n.callback_go_home
+                              : context.l10n.callback_login_credentials,
                           style: GoogleFonts.cairo(fontSize: 13),
                         ),
                       ),
@@ -400,8 +405,8 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             const SizedBox(height: 20),
             Text(
               isExpired
-                  ? 'رابط التفعيل منتهي أو مستخدم مسبقاً'
-                  : 'تعذر تأكيد الرابط',
+                  ? context.l10n.callback_expired_title
+                  : context.l10n.callback_cannot_confirm,
               style: GoogleFonts.cairo(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -413,8 +418,8 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             Text(
               _errorMessage ??
                   (isExpired
-                      ? 'انتهت صلاحية هذا الرابط أو تم تأكيد الحساب به بالفعل. يمكنك تجربة تسجيل الدخول أو طلب رابط تفعيل جديد.'
-                      : 'حدث خطأ أثناء معالجة رابط التفعيل، يرجى إعادة المحاولة.'),
+                      ? context.l10n.callback_expired_fallback
+                      : context.l10n.callback_error_fallback),
               style: GoogleFonts.cairo(
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -427,7 +432,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
               controller: _resendEmailController,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
-                labelText: 'البريد الإلكتروني لإعادة الإرسال',
+                labelText: context.l10n.callback_resend_email_label,
                 labelStyle: GoogleFonts.cairo(fontSize: 12.5),
                 prefixIcon: const Icon(Icons.email_outlined),
                 border: OutlineInputBorder(
@@ -463,7 +468,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                       )
                     : const Icon(Icons.send_rounded, size: 18),
                 label: Text(
-                  _isResending ? 'جارٍ الإرسال...' : 'إرسال رابط تفعيل جديد',
+                  _isResending ? context.l10n.callback_sending : context.l10n.callback_send_new_link,
                   style: GoogleFonts.cairo(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -475,10 +480,10 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             TextButton(
               onPressed: () => context.go('/login'),
               child: Text(
-                'العودة إلى صفحة تسجيل الدخول',
+                context.l10n.callback_back_login,
                 style: GoogleFonts.cairo(
                   fontSize: 13,
-                  color: AppColors.primary,
+                  color: AppColors.primaryInk,
                   fontWeight: FontWeight.w600,
                 ),
               ),

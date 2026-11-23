@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yemen_real_estate_portal/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -230,7 +231,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        const ProviderScope(child: MaterialApp(home: AuthCallbackScreen())),
+        const ProviderScope(child: MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: AuthCallbackScreen())),
       );
 
       await tester.pumpAndSettle();
@@ -246,7 +247,7 @@ void main() {
         await tester.pumpWidget(
           const ProviderScope(
             child: MaterialApp(
-              home: AuthCallbackScreen(
+              localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: AuthCallbackScreen(
                 queryParams: {'redirectTo': '/add-property'},
               ),
             ),
@@ -267,7 +268,7 @@ void main() {
         await tester.pumpWidget(
           const ProviderScope(
             child: MaterialApp(
-              home: AuthCallbackScreen(
+              localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: AuthCallbackScreen(
                 queryParams: {'error_code': 'otp_expired'},
               ),
             ),
@@ -292,7 +293,7 @@ void main() {
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            home: Builder(
+            localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Builder(
               builder: (context) => ElevatedButton(
                 onPressed: () => AuthPromptDialog.show(
                   context,

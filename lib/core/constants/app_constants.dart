@@ -1,6 +1,9 @@
 // Yemen Real Estate Portal — بوابة اليمن العقارية
 // Core Constants
 
+import '../l10n/app_labels_en.dart';
+import '../l10n/app_locale.dart';
+
 class AppConstants {
   static const String appNameAr = 'بوابة اليمن العقارية';
   static const String appNameEn = 'Yemen Real Estate Portal';
@@ -27,6 +30,7 @@ class AppConstants {
   ];
 
   static String getCurrencyNameAr(String code) {
+    if (!AppLocale.isArabic) return AppLabelsEn.currency[code.toUpperCase()] ?? code;
     switch (code.toUpperCase()) {
       case currencyYer:
         return 'ريال يمني';
@@ -44,6 +48,7 @@ class AppConstants {
   static const String dealRent = 'rent';
 
   static String getDealTypeNameAr(String dealType) {
+    if (!AppLocale.isArabic) return AppLabelsEn.dealType[dealType] ?? dealType;
     switch (dealType) {
       case dealSale:
         return 'للبيع';
@@ -63,6 +68,7 @@ class AppConstants {
   static const String statusRejected = 'rejected';
 
   static String getPropertyStatusNameAr(String status) {
+    if (!AppLocale.isArabic) return AppLabelsEn.propertyStatus[status] ?? status;
     switch (status) {
       case statusDraft:
         return 'مسودة';
@@ -91,6 +97,7 @@ class AppConstants {
   static const String reqStatusCompleted = 'completed';
 
   static String getRentalRequestStatusNameAr(String status) {
+    if (!AppLocale.isArabic) return AppLabelsEn.rentalRequestStatus[status] ?? status;
     switch (status) {
       case reqStatusNew:
         return 'جديد';
@@ -117,6 +124,7 @@ class AppConstants {
   static const String liableBoth = 'both';
 
   static String getLiablePartyNameAr(String party) {
+    if (!AppLocale.isArabic) return AppLabelsEn.liableParty[party] ?? party;
     switch (party) {
       case liableSeller:
         return 'البائع';
@@ -135,6 +143,7 @@ class AppConstants {
   static const String commStatusCancelled = 'cancelled';
 
   static String getCommissionStatusNameAr(String status) {
+    if (!AppLocale.isArabic) return AppLabelsEn.commissionStatus[status] ?? status;
     switch (status) {
       case commStatusDue:
         return 'مستحق';

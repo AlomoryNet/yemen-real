@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/property.dart';
@@ -33,10 +34,8 @@ class PropertyCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.divider, width: 1),
+        borderRadius: BorderRadius.circular(18),
       ),
-      elevation: 1,
       child: InkWell(
         onTap: onTap ?? () => context.push('/property/${property.id}'),
         child: Column(
@@ -64,9 +63,9 @@ class PropertyCard extends ConsumerWidget {
                             ),
                           ),
                           errorWidget: (context, url, error) =>
-                              _buildPlaceholder(),
+                              _buildPlaceholder(context),
                         )
-                      : _buildPlaceholder(),
+                      : _buildPlaceholder(context),
                 ),
 
                 // Deal Type Badge
@@ -91,7 +90,7 @@ class PropertyCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'مميز',
+                        context.l10n.sh_property_featured,
                         style: GoogleFonts.cairo(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -123,8 +122,7 @@ class PropertyCard extends ConsumerWidget {
                         if (!auth.isAuthenticated) {
                           AuthPromptDialog.show(
                             context,
-                            message:
-                                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+                            message: context.l10n.sh_auth_prompt_message,
                             redirectTo: '/property/${property.id}',
                           );
                           return;
@@ -152,7 +150,7 @@ class PropertyCard extends ConsumerWidget {
                     style: GoogleFonts.cairo(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: AppColors.primaryInk,
                       height: 1.2,
                     ),
                   ),
@@ -175,7 +173,7 @@ class PropertyCard extends ConsumerWidget {
                   // Location
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on_outlined,
                         size: 15,
                         color: AppColors.textMuted,
@@ -195,27 +193,27 @@ class PropertyCard extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Divider(height: 1, color: AppColors.divider),
+                  Divider(height: 1, color: AppColors.divider),
                   const SizedBox(height: 10),
 
-                  // Specs (Area, Rooms, Bathrooms)
+                  // Specs (Area, Rooms, Bathrooms) as tonal chips
                   Wrap(
-                    spacing: 12,
-                    runSpacing: 4,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
-                      _buildSpecItem(
-                        Icons.straighten_outlined,
+                      _buildSpecChip(
+                        Icons.straighten_rounded,
                         Formatters.formatArea(property.areaSqm),
                       ),
                       if (property.bedrooms > 0)
-                        _buildSpecItem(
-                          Icons.bed_outlined,
-                          '${property.bedrooms} غرف',
+                        _buildSpecChip(
+                          Icons.bed_rounded,
+                          '${property.bedrooms} ${context.l10n.sh_property_rooms}',
                         ),
                       if (property.bathrooms > 0)
-                        _buildSpecItem(
-                          Icons.bathtub_outlined,
-                          '${property.bathrooms} حمام',
+                        _buildSpecChip(
+                          Icons.bathtub_rounded,
+                          '${property.bathrooms} ${context.l10n.sh_property_bathrooms}',
                         ),
                     ],
                   ),
@@ -228,35 +226,42 @@ class PropertyCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildSpecItem(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: AppColors.textMuted),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: GoogleFonts.cairo(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
+  Widget _buildSpecChip(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.primaryInk),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: GoogleFonts.cairo(
+              fontSize: 11.5,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(BuildContext context) {
     return Container(
       color: AppColors.surfaceVariant,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.apartment, size: 44, color: AppColors.textMuted),
+            Icon(Icons.apartment, size: 44, color: AppColors.textMuted),
             const SizedBox(height: 6),
             Text(
-              'بوابة اليمن العقارية',
+              context.l10n.sh_brand_name,
               style: GoogleFonts.cairo(
                 fontSize: 11,
                 color: AppColors.textMuted,

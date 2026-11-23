@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthException;
+import '../l10n/app_strings.dart';
 
 class AppException implements Exception {
   final String message;
@@ -31,7 +32,7 @@ class AppException implements Exception {
         rawMessage.contains('too many requests') ||
         rawMessage.contains('429')) {
       return AppException(
-        'تم إرسال عدة طلبات مؤخراً. يرجى الانتظار دقيقة واحدة قبل طلب إعادة الإرسال لمنع الحظر.',
+        tr.sys_rate_limit,
         code: 'rate_limit',
       );
     }
@@ -41,7 +42,7 @@ class AppException implements Exception {
         rawMessage.contains('email not confirmed') ||
         rawMessage.contains('email_not_confirmed')) {
       return AppException(
-        'البريد الإلكتروني لم يتم تأكيده بعد. يرجى فتح بريدك الإلكتروني والضغط على رابط التفعيل للمتابعة.',
+        tr.sys_email_not_confirmed,
         code: 'email_not_confirmed',
       );
     }
@@ -55,7 +56,7 @@ class AppException implements Exception {
         rawMessage.contains('flow_state_not_found') ||
         rawMessage.contains('expired')) {
       return AppException(
-        'رابط التفعيل منتهي الصلاحية أو تم استخدامه مسبقاً. يرجى طلب رابط جديد.',
+        tr.sys_link_expired,
         code: 'link_expired',
       );
     }
@@ -66,7 +67,7 @@ class AppException implements Exception {
         rawMessage.contains('user_already_exists') ||
         rawMessage.contains('already exists')) {
       return AppException(
-        'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد.',
+        tr.sys_user_exists,
         code: 'user_already_exists',
       );
     }
@@ -76,7 +77,7 @@ class AppException implements Exception {
         rawMessage.contains('invalid login credentials') ||
         rawMessage.contains('invalid_credentials')) {
       return AppException(
-        'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+        tr.sys_invalid_credentials,
         code: 'invalid_credentials',
       );
     }
@@ -88,7 +89,7 @@ class AppException implements Exception {
                 rawMessage.contains('weak') ||
                 rawMessage.contains('short')))) {
       return AppException(
-        'كلمة المرور يجب ألا تقل عن 8 خانات.',
+        tr.sys_weak_password,
         code: 'weak_password',
       );
     }
@@ -102,7 +103,7 @@ class AppException implements Exception {
         rawMessage.contains('handshake') ||
         rawMessage.contains('connection timed out')) {
       return AppException(
-        'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.',
+        tr.sys_network_error,
         code: 'network_error',
       );
     }
@@ -110,7 +111,7 @@ class AppException implements Exception {
     // 8. Session expired
     if (rawMessage.contains('jwt') || rawMessage.contains('token expired')) {
       return AppException(
-        'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى.',
+        tr.sys_session_expired,
         code: 'session_expired',
       );
     }
@@ -119,13 +120,13 @@ class AppException implements Exception {
     if (rawMessage.contains('permission denied') ||
         rawMessage.contains('row-level security')) {
       return AppException(
-        'ليس لديك الصلاحية الكافية لتنفيذ هذا الإجراء.',
+        tr.sys_permission_denied,
         code: 'permission_denied',
       );
     }
 
     return AppException(
-      'حدث خطأ أثناء معالجة الطلب، يرجى المحاولة لاحقاً.',
+      tr.sys_unknown_error,
       code: 'unknown_error',
       details: error,
     );

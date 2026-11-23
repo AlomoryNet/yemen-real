@@ -3,13 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 
@@ -62,7 +66,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            success ? 'تم تحديث البيانات بنجاح' : 'تعذر تحديث البيانات',
+            success
+                ? context.l10n.prof_update_success
+                : context.l10n.prof_update_failure,
             style: GoogleFonts.cairo(),
           ),
           backgroundColor: success ? AppColors.success : AppColors.error,
@@ -78,20 +84,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (!authState.isAuthenticated) {
       return Scaffold(
         appBar: const AppHeader(),
-        bottomNavigationBar: const AppBottomNavBar(currentRoute: '/profile'),
-        body: Center(
-          child: EmptyStateView(
+        drawer: Responsive.isDesktop(context)
+            ? null
+            : const AppDrawer(),
+        bottomNavigationBar: Responsive.isDesktop(context)
+            ? null
+            : const AppBottomNavBar(currentRoute: '/profile'),
+        body: AppPageBody(
+          child: Center(
+            child: EmptyStateView(
             icon: Icons.person_off_outlined,
-            title: 'تسجيل الدخول مطلوب',
-            description:
-                'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
-            actionText: 'إنشاء حساب أو تسجيل الدخول',
+            title: context.l10n.prof_login_required,
+            description: context.l10n.prof_signup_prompt,
+            actionText: context.l10n.prof_signup_or_login,
             onAction: () => AuthPromptDialog.show(
               context,
-              message:
-                  'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.',
+              message: context.l10n.prof_signup_prompt,
               redirectTo: '/profile',
             ),
+          ),
           ),
         ),
       );
@@ -101,9 +112,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       appBar: const AppHeader(),
-      bottomNavigationBar: const AppBottomNavBar(currentRoute: '/profile'),
-      body: SingleChildScrollView(
-        child: Column(
+      drawer: Responsive.isDesktop(context)
+          ? null
+          : const AppDrawer(),
+      bottomNavigationBar: Responsive.isDesktop(context)
+          ? null
+          : const AppBottomNavBar(currentRoute: '/profile'),
+      body: AppPageBody(
+        child: SingleChildScrollView(
+          child: Column(
           children: [
             Center(
               child: ConstrainedBox(
@@ -120,7 +137,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Card(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
-                          side: const BorderSide(color: AppColors.divider),
+                          side: BorderSide(color: AppColors.divider),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(24),
@@ -136,7 +153,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   style: GoogleFonts.cairo(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
+                                    color: AppColors.primaryInk,
                                   ),
                                 ),
                               ),
@@ -171,8 +188,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                               user.role ==
                                                       AppConstants
                                                           .roleSuperAdmin
-                                                  ? 'مدير عام'
-                                                  : 'مدير',
+                                                  ? context.l10n.prof_super_admin
+                                                  : context.l10n.prof_admin,
                                               style: GoogleFonts.cairo(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.bold,
@@ -185,7 +202,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      user.phone ?? 'لم يتم تعيين رقم هاتف',
+                                      user.phone ??
+                                          context.l10n.prof_no_phone,
                                       style: GoogleFonts.cairo(
                                         fontSize: 13,
                                         color: AppColors.textSecondary,
@@ -193,7 +211,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      'عضو منذ: ${Formatters.formatDate(user.createdAt)}',
+                                      '${context.l10n.prof_member_since} ${Formatters.formatDate(user.createdAt)}',
                                       style: GoogleFonts.cairo(
                                         fontSize: 11,
                                         color: AppColors.textMuted,
@@ -222,7 +240,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Card(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
-                            side: const BorderSide(color: AppColors.divider),
+                            side: BorderSide(color: AppColors.divider),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(20),
@@ -232,7 +250,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'تعديل بيانات الحساب',
+                                    context.l10n.prof_edit_account,
                                     style: GoogleFonts.cairo(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -241,7 +259,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                   const SizedBox(height: 14),
                                   Text(
-                                    'الاسم الكامل *',
+                                    context.l10n.prof_full_name_required,
                                     style: GoogleFonts.cairo(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
@@ -253,15 +271,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     validator: (val) =>
                                         Validators.requiredField(
                                           val,
-                                          'الاسم الكامل',
+                                          context.l10n.prof_full_name,
                                         ),
-                                    decoration: const InputDecoration(
-                                      hintText: 'أدخل اسمك الكامل',
+                                    decoration: InputDecoration(
+                                      hintText: context.l10n.prof_full_name_hint,
                                     ),
                                   ),
                                   const SizedBox(height: 14),
                                   Text(
-                                    'رقم الهاتف للتواصل *',
+                                    context.l10n.prof_phone_required,
                                     style: GoogleFonts.cairo(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
@@ -292,13 +310,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                                       strokeWidth: 2,
                                                     ),
                                               )
-                                            : const Text('حفظ التعديلات'),
+                                            : Text(context.l10n.prof_save_changes),
                                       ),
                                       const SizedBox(width: 10),
                                       OutlinedButton(
                                         onPressed: () =>
                                             setState(() => _isEditing = false),
-                                        child: const Text('إلغاء'),
+                                        child: Text(context.l10n.prof_cancel),
                                       ),
                                     ],
                                   ),
@@ -313,7 +331,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                       // Account Shortcuts
                       Text(
-                        'إدارة نشاطاتي العقارية',
+                        context.l10n.prof_manage_activities,
                         style: GoogleFonts.cairo(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -324,25 +342,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                       _buildShortcutTile(
                         icon: Icons.apartment,
-                        title: 'عقاراتي المعلنة',
+                        title: context.l10n.prof_my_listings_title,
                         subtitle:
-                            'استعراض الإعلانات المنشورة والمسودات وتعديلها أو إخفائها',
+                            context.l10n.prof_my_listings_subtitle,
                         onTap: () => context.push('/my-properties'),
                       ),
                       const SizedBox(height: 10),
                       _buildShortcutTile(
                         icon: Icons.assignment_outlined,
-                        title: 'طلبات الاستئجار المقدمة',
+                        title: context.l10n.prof_my_requests_title,
                         subtitle:
-                            'متابعة حالة وتفاصيل طلبات الاستئجار المرسلة للملاك',
+                            context.l10n.prof_my_requests_subtitle,
                         onTap: () => context.push('/my-requests'),
                       ),
                       const SizedBox(height: 10),
                       _buildShortcutTile(
                         icon: Icons.favorite_border,
-                        title: 'قائمة العقارات المفضلة',
+                        title: context.l10n.prof_favorites_title,
                         subtitle:
-                            'الوصول السريع إلى العقارات التي حفظتها سابقاً',
+                            context.l10n.prof_favorites_subtitle,
                         onTap: () => context.push('/favorites'),
                       ),
 
@@ -350,9 +368,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(height: 10),
                         _buildShortcutTile(
                           icon: Icons.admin_panel_settings_outlined,
-                          title: 'لوحة الإدارة والتحكم',
+                          title: context.l10n.prof_admin_title,
                           subtitle:
-                              'إدارة العقارات، المستخدمين، العمولات، والبلاغات',
+                              context.l10n.prof_admin_subtitle,
                           isAccent: true,
                           onTap: () => context.push('/admin'),
                         ),
@@ -371,7 +389,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                         icon: const Icon(Icons.logout, size: 18),
-                        label: const Text('تسجيل الخروج من الحساب'),
+                        label: Text(context.l10n.prof_sign_out),
                         onPressed: () {
                           ref.read(authProvider.notifier).signOut();
                           context.go('/');
@@ -384,6 +402,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const AppFooter(),
           ],
+        ),
         ),
       ),
     );
@@ -435,7 +454,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             color: AppColors.textSecondary,
           ),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.arrow_forward_ios,
           size: 14,
           color: AppColors.textMuted,

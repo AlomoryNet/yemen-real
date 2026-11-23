@@ -11,28 +11,59 @@ import '../features/favorites/presentation/favorites_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/profile/presentation/my_properties_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/settings/presentation/settings_screen.dart';
 import '../features/properties/presentation/add_edit_property_screen.dart';
 import '../features/properties/presentation/property_detail_screen.dart';
 import '../features/property_requests/presentation/my_rental_requests_screen.dart';
 import '../features/map/presentation/yemen_map_screen.dart';
-import '../features/search/presentation/search_screen.dart';
 import '../features/contracts/presentation/contract_preview_screen.dart';
+import '../core/l10n/context_l10n.dart';
 import '../models/property.dart';
 import '../shared/widgets/empty_state_view.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Fade-through page used for bottom-nav / rail destinations.
+///
+/// Sliding in from the side would imply a hierarchical push, which is wrong
+/// for peer tab destinations (Material 3 switches destinations with a fast
+/// fade-through instead). Keeping this subtle avoids the "web page" feel.
+CustomTransitionPage<void> _tabPage(
+  BuildContext context,
+  GoRouterState state,
+  Widget child,
+) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 150),
+    reverseTransitionDuration: const Duration(milliseconds: 150),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+      final fadeOut =
+          CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeIn);
+      return FadeTransition(
+        opacity: fade.drive(Tween<double>(begin: 0.25, end: 1)),
+        child: FadeTransition(
+          opacity: fadeOut.drive(Tween<double>(begin: 1, end: 0.25)),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: '/',
   errorBuilder: (context, state) => Scaffold(
-    appBar: AppBar(title: const Text('الصفحة غير موجودة')),
+    appBar: AppBar(title: Text(context.l10n.sh_router_not_found)),
     body: Center(
       child: EmptyStateView(
         icon: Icons.error_outline,
-        title: 'عفواً، الصفحة المطلوبة غير موجودة (404)',
-        description: 'تأكد من صحة الرابط أو عد إلى الصفحة الرئيسية',
-        actionText: 'العودة للرئيسية',
+        title: context.l10n.sh_router_404_title,
+        description: context.l10n.sh_router_404_description,
+        actionText: context.l10n.sh_router_404_action,
         onAction: () => context.go('/'),
       ),
     ),
@@ -41,17 +72,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/',
       name: 'home',
-      builder: (context, state) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: '/search',
-      name: 'search',
-      builder: (context, state) => const SearchScreen(),
+      pageBuilder: (context, state) => _tabPage(context, state, const HomeScreen()),
     ),
     GoRoute(
       path: '/map',
       name: 'map',
-      builder: (context, state) => const YemenMapScreen(),
+      pageBuilder: (context, state) => _tabPage(
+        context,
+        state,
+        YemenMapScreen(
+          initialListView: state.extra is bool ? state.extra as bool : false,
+        ),
+      ),
     ),
     GoRoute(
       path: '/property/:id',
@@ -78,15 +110,16 @@ final GoRouter appRouter = GoRouter(
         if (extra is Property) {
           return ContractPreviewScreen(property: extra);
         }
-        return const Scaffold(
-          body: Center(child: Text('يرجى تحديد العقار أولاً')),
+        return Scaffold(
+          body: Center(child: Text(context.l10n.sh_router_select_property)),
         );
       },
     ),
     GoRoute(
       path: '/my-properties',
       name: 'my-properties',
-      builder: (context, state) => const MyPropertiesScreen(),
+      pageBuilder: (context, state) =>
+          _tabPage(context, state, const MyPropertiesScreen()),
     ),
     GoRoute(
       path: '/my-requests',
@@ -102,6 +135,11 @@ final GoRouter appRouter = GoRouter(
       path: '/profile',
       name: 'profile',
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      name: 'settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
       path: '/login',
@@ -153,21 +191,18 @@ class GlobalAppBackHandler extends StatefulWidget {
   State<GlobalAppBackHandler> createState() => _GlobalAppBackHandlerState();
 }
 
-class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler>
-    with WidgetsBindingObserver {
+class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
   DateTime? _lastBackPressTime;
   final List<String> _navigationHistory = ['/'];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     appRouter.routerDelegate.addListener(_onRouteChanged);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     appRouter.routerDelegate.removeListener(_onRouteChanged);
     super.dispose();
   }
@@ -182,11 +217,6 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler>
         }
       }
     } catch (_) {}
-  }
-
-  @override
-  Future<bool> didPopRoute() async {
-    return await _handleBackPress();
   }
 
   Future<bool> _handleBackPress() async {
@@ -240,7 +270,7 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler>
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              'اضغط مرة أخرى للخروج من التطبيق',
+              ctx.l10n.sh_back_exit_snackbar,
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: 13,
@@ -275,96 +305,4 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler>
   }
 }
 
-/// موزع زر الرجوع الجذري للتطبيق (Root Back Button Dispatcher)
-/// يعترض ضغطات زر الرجوع الصلبة والبرمجية من نظام أندرويد على مستوى نظام التشغيل
-class AppRootBackButtonDispatcher extends RootBackButtonDispatcher {
-  DateTime? _lastBackPressTime;
-  final List<String> _history = ['/'];
-
-  AppRootBackButtonDispatcher() {
-    appRouter.routerDelegate.addListener(_onRouteChanged);
-  }
-
-  void _onRouteChanged() {
-    try {
-      final loc = appRouter.routerDelegate.currentConfiguration.uri.toString();
-      if (_history.isEmpty || _history.last != loc) {
-        _history.add(loc);
-        if (_history.length > 50) _history.removeAt(0);
-      }
-    } catch (_) {}
-  }
-
-  @override
-  Future<bool> didPopRoute() async {
-    // 1. فحص وجود حوار منبثق أو شاشة فرعية يمكن إغلاقها بـ pop
-    final nav = rootNavigatorKey.currentState;
-    if (nav != null && nav.canPop()) {
-      nav.pop();
-      return true;
-    }
-
-    // 2. فحص مسار الشاشة الحالية
-    String loc = '/';
-    try {
-      loc = appRouter.routerDelegate.currentConfiguration.uri.toString();
-    } catch (_) {}
-
-    // 3. إذا لم تكن في الصفحة الرئيسية، عد خطوة واحدة إلى الخلف!
-    if (loc != '/' && loc.isNotEmpty) {
-      while (_history.isNotEmpty && _history.last == loc) {
-        _history.removeLast();
-      }
-      if (_history.isNotEmpty && _history.last != loc) {
-        final target = _history.removeLast();
-        appRouter.go(target);
-      } else {
-        appRouter.go('/');
-      }
-      return true;
-    }
-
-    // 4. في الصفحة الرئيسية ('/'): ضغط مزدوج للخروج
-    final now = DateTime.now();
-    final isDouble = _lastBackPressTime != null &&
-        now.difference(_lastBackPressTime!) < const Duration(seconds: 2);
-
-    if (isDouble) {
-      await SystemNavigator.pop();
-      return true;
-    } else {
-      _lastBackPressTime = now;
-      final ctx = rootNavigatorKey.currentContext;
-      if (ctx != null) {
-        final messenger = ScaffoldMessenger.maybeOf(ctx);
-        if (messenger != null) {
-          messenger.removeCurrentSnackBar();
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                'اضغط مرة أخرى للخروج من التطبيق',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.cairo(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: const Color(0xFF134E4A),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            ),
-          );
-        }
-      }
-      return true;
-    }
-  }
-}
-
-final AppRootBackButtonDispatcher appBackButtonDispatcher = AppRootBackButtonDispatcher();
 

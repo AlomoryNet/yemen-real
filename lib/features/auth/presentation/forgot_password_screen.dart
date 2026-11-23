@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
@@ -53,12 +54,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             child: Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: const BorderSide(color: AppColors.divider),
+                side: BorderSide(color: AppColors.divider),
               ),
               elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(28),
-                child: _sent ? _buildSentView() : _buildFormView(),
+                child: _sent ? _buildSentView(context) : _buildFormView(context),
               ),
             ),
           ),
@@ -67,7 +68,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildSentView() {
+  Widget _buildSentView(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -78,12 +79,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'تم إرسال رابط الاستعادة',
+          context.l10n.forgot_link_sent,
           style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
-          'تحقق من صندوق الوارد في بريدك الإلكتروني واتبع التعليمات لتعيين كلمة مرور جديدة.',
+          context.l10n.forgot_check_inbox,
           textAlign: TextAlign.center,
           style: GoogleFonts.cairo(
             fontSize: 13,
@@ -95,14 +96,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () => context.go('/login'),
-            child: const Text('العودة لتسجيل الدخول'),
+            child: Text(context.l10n.forgot_back_to_login),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFormView() {
+  Widget _buildFormView(BuildContext context) {
     return Form(
       key: _formKey,
       child: Column(
@@ -110,7 +111,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'استعادة كلمة المرور',
+            context.l10n.forgot_title,
             style: GoogleFonts.cairo(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -119,7 +120,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'أدخل بريدك الإلكتروني المسجل وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.',
+            context.l10n.forgot_instructions,
             style: GoogleFonts.cairo(
               fontSize: 13,
               color: AppColors.textSecondary,
@@ -128,7 +129,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 24),
 
           Text(
-            'البريد الإلكتروني',
+            context.l10n.forgot_email,
             style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 6),
@@ -160,7 +161,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text('إرسال رابط الاستعادة'),
+                  : Text(context.l10n.forgot_send_link),
             ),
           ),
           const SizedBox(height: 16),
@@ -168,7 +169,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Center(
             child: TextButton(
               onPressed: () => context.pop(),
-              child: const Text('الرجوع لتسجيل الدخول'),
+              child: Text(context.l10n.forgot_return_to_login),
             ),
           ),
         ],

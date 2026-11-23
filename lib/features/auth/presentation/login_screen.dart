@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
@@ -63,7 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'يرجى كتابة البريد الإلكتروني أولاً',
+            context.l10n.login_enter_email_first,
             style: GoogleFonts.cairo(),
           ),
         ),
@@ -80,9 +81,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         SnackBar(
           content: Text(
             sent
-                ? 'تم إرسال رابط تأكيد جديد إلى بريدك بنجاح. يرجى مراجعة صندوق الوارد.'
+                ? context.l10n.login_verification_resent
                 : (ref.read(authProvider).errorMessage ??
-                      'تعذر إعادة الإرسال حالياً'),
+                      context.l10n.login_resend_failed),
             style: GoogleFonts.cairo(),
           ),
           backgroundColor: sent ? AppColors.success : AppColors.error,
@@ -132,7 +133,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'تمت كتابة بريد المدير العام فقط. يرجى إدخال كلمة المرور يدوياً للمتابعة بأمان',
+          context.l10n.login_demo_admin_filled,
           style: GoogleFonts.cairo(),
         ),
         backgroundColor: AppColors.primaryDark,
@@ -147,7 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'تمت كتابة بريد المستخدم التجريبي. يرجى إدخال كلمة المرور للمتابعة',
+          context.l10n.login_demo_user_filled,
           style: GoogleFonts.cairo(),
         ),
         duration: const Duration(seconds: 3),
@@ -169,7 +170,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: const BorderSide(color: AppColors.divider),
+                side: BorderSide(color: AppColors.divider),
               ),
               elevation: 2,
               child: Padding(
@@ -181,7 +182,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'تسجيل الدخول',
+                        context.l10n.login_title,
                         style: GoogleFonts.cairo(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -190,7 +191,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'أهلاً بك مجدداً في بوابة اليمن العقارية',
+                        context.l10n.login_subtitle,
                         style: GoogleFonts.cairo(
                           fontSize: 13,
                           color: AppColors.textSecondary,
@@ -218,9 +219,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.info_outline,
-                                  color: AppColors.primary,
+                                  color: AppColors.primaryInk,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 8),
@@ -336,8 +337,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               ),
                                         label: Text(
                                           _isResending
-                                              ? 'جارٍ الإرسال...'
-                                              : 'إعادة إرسال رابط التفعيل الآن إلى البريد',
+                                              ? context.l10n.login_sending
+                                              : context.l10n.login_resend_now,
                                           style: GoogleFonts.cairo(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
@@ -357,7 +358,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       // Email Field
                       Text(
-                        'البريد الإلكتروني',
+                        context.l10n.login_email,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -377,7 +378,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       // Password Field
                       Text(
-                        'كلمة المرور',
+                        context.l10n.login_password,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -419,7 +420,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 setState(() => _rememberMe = val ?? false),
                           ),
                           Text(
-                            'تذكر البريد',
+                            context.l10n.login_remember_me,
                             style: GoogleFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -429,10 +430,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           TextButton(
                             onPressed: () => context.push('/forgot-password'),
                             child: Text(
-                              'نسيت كلمة المرور؟',
+                              context.l10n.login_forgot_password,
                               style: GoogleFonts.cairo(
                                 fontSize: 12,
-                                color: AppColors.primary,
+                                color: AppColors.primaryInk,
                               ),
                             ),
                           ),
@@ -458,7 +459,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                 )
                               : Text(
-                                  'تسجيل الدخول',
+                                  context.l10n.login_submit,
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
@@ -473,7 +474,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'ليس لديك حساب؟',
+                            context.l10n.login_no_account,
                             style: GoogleFonts.cairo(
                               fontSize: 13,
                               color: AppColors.textSecondary,
@@ -498,11 +499,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               context.push(uri.toString());
                             },
                             child: Text(
-                              'إنشاء حساب جديد',
+                              context.l10n.login_create_account,
                               style: GoogleFonts.cairo(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                                color: AppColors.primaryInk,
                               ),
                             ),
                           ),
@@ -519,7 +520,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             size: 16,
                           ),
                           label: Text(
-                            'لم يصلك رابط التفعيل؟ إعادة الإرسال إلى البريد',
+                            context.l10n.login_resend_prompt,
                             style: GoogleFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -532,7 +533,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       // Demo Quick Fill Helpers
                       Text(
-                        'تسجيل دخول سريع بحسابات النظام:',
+                        context.l10n.login_quick_demo,
                         style: GoogleFonts.cairo(
                           fontSize: 11,
                           color: AppColors.textMuted,
@@ -550,7 +551,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               onPressed: _fillDemoAdmin,
                               child: Text(
-                                'المدير العام (إيميل فقط)',
+                                context.l10n.login_demo_admin,
                                 style: GoogleFonts.cairo(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -568,7 +569,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               onPressed: _fillDemoUser,
                               child: Text(
-                                'حساب معلن (إيميل فقط)',
+                                context.l10n.login_demo_user,
                                 style: GoogleFonts.cairo(fontSize: 11),
                               ),
                             ),

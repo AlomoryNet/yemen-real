@@ -8,7 +8,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../../core/constants/app_constants.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../providers/admin_provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -21,6 +23,8 @@ import '../../../repositories/rental_request_repository.dart';
 import '../../../repositories/report_repository.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
@@ -58,15 +62,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     // Security check: Only admins can access this screen
     if (!authState.isAuthenticated || !authState.isAdmin) {
       return Scaffold(
-        appBar: const AppHeader(),
-        body: Center(
-          child: EmptyStateView(
+        appBar: const AppHeader(title: 'لوحة الإدارة', showBack: true),
+        drawer: Responsive.isDesktop(context)
+            ? null
+            : const AppDrawer(),
+        body: AppPageBody(
+          child: Center(
+            child: EmptyStateView(
             icon: Icons.gpp_bad_outlined,
-            title: 'منطقة إدارية محمية',
+            title: context.l10n.admin_restricted_title,
             description:
-                'هذه الصفحة مخصصة لمديري بوابة اليمن العقارية فقط، وليس لديك الصلاحية الكافية لدخولها.',
-            actionText: 'العودة للرئيسية',
+                context.l10n.admin_restricted_desc,
+            actionText: context.l10n.admin_back_home,
             onAction: () => context.go('/'),
+          ),
           ),
         ),
       );
@@ -75,9 +84,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final statsAsync = ref.watch(adminStatsProvider);
 
     return Scaffold(
-      appBar: const AppHeader(),
-      body: SingleChildScrollView(
-        child: Column(
+      appBar: const AppHeader(title: 'لوحة الإدارة', showBack: true),
+      drawer: Responsive.isDesktop(context)
+          ? null
+          : const AppDrawer(),
+      body: AppPageBody(
+        child: SingleChildScrollView(
+          child: Column(
           children: [
             Center(
               child: ConstrainedBox(
@@ -99,14 +112,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             children: [
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.admin_panel_settings,
-                                    color: AppColors.primary,
+                                    color: AppColors.primaryInk,
                                     size: 28,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'لوحة الإدارة والتحكم',
+                                    context.l10n.admin_title,
                                     style: GoogleFonts.cairo(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
@@ -117,7 +130,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'إدارة المنصة، العقارات، طلبات الاستئجار، وسجلات العمولات اليدوية.',
+                                context.l10n.admin_subtitle,
                                 style: GoogleFonts.cairo(
                                   fontSize: 13,
                                   color: AppColors.textSecondary,
@@ -135,7 +148,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'المسؤول العام: محمد السقاف',
+                              context.l10n.admin_general_manager,
                               style: GoogleFonts.cairo(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -150,8 +163,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       // Statistics Overview Grid
                       statsAsync.when(
                         data: (stats) => _buildStatsGrid(context, stats),
-                        loading: () => const LoadingView(
-                          message: 'جاري تحميل الإحصائيات...',
+                        loading: () => LoadingView(
+                          message: context.l10n.admin_loading_stats,
                         ),
                         error: (err, _) => ErrorView(
                           message: err.toString(),
@@ -182,33 +195,33 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               controller: _tabController,
                               isScrollable: true,
                               tabAlignment: TabAlignment.start,
-                              labelColor: AppColors.primary,
+                              labelColor: AppColors.primaryInk,
                               unselectedLabelColor: AppColors.textSecondary,
                               indicatorColor: AppColors.primary,
                               labelStyle: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13.5,
                               ),
-                              tabs: const [
+                              tabs: [
                                 Tab(
                                   icon: Icon(Icons.apartment, size: 18),
-                                  text: 'إدارة العقارات',
+                                  text: context.l10n.admin_tab_properties,
                                 ),
                                 Tab(
                                   icon: Icon(Icons.assignment, size: 18),
-                                  text: 'طلبات الاستئجار',
+                                  text: context.l10n.admin_tab_requests,
                                 ),
                                 Tab(
                                   icon: Icon(Icons.monetization_on, size: 18),
-                                  text: 'سجلات العمولات',
+                                  text: context.l10n.admin_tab_commissions,
                                 ),
                                 Tab(
                                   icon: Icon(Icons.flag, size: 18),
-                                  text: 'بلاغات المخالفات',
+                                  text: context.l10n.admin_tab_reports,
                                 ),
                                 Tab(
                                   icon: Icon(Icons.people, size: 18),
-                                  text: 'المستخدمين (مشفر)',
+                                  text: context.l10n.admin_tab_users,
                                 ),
                               ],
                             ),
@@ -226,10 +239,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               ),
                               elevation: 2,
                             ),
-                            onPressed: _exportCurrentSectionToPdf,
+                            onPressed: () => _exportCurrentSectionToPdf(context),
                             icon: const Icon(Icons.picture_as_pdf, size: 18),
                             label: Text(
-                              'طباعة تقرير شامل PDF للقسم',
+                              context.l10n.admin_print_pdf,
                               style: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -262,6 +275,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             const AppFooter(),
           ],
         ),
+        ),
       ),
     );
   }
@@ -285,31 +299,31 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           childAspectRatio: 1.8,
           children: [
             _buildStatCard(
-              'إجمالي العقارات',
+              context.l10n.admin_total_properties,
               '${stats.totalProperties}',
               Icons.apartment,
               AppColors.primary,
             ),
             _buildStatCard(
-              'العقارات المنشورة',
+              context.l10n.admin_published_properties,
               '${stats.publishedProperties}',
               Icons.check_circle_outline,
               AppColors.success,
             ),
             _buildStatCard(
-              'معلقة للمراجعة',
+              context.l10n.admin_pending_review,
               '${stats.pendingProperties}',
               Icons.rate_review_outlined,
               Colors.amber.shade800,
             ),
             _buildStatCard(
-              'إجمالي المستخدمين',
+              context.l10n.admin_total_users,
               '${stats.totalUsers}',
               Icons.people_outline,
               AppColors.primaryDark,
             ),
             _buildStatCard(
-              'سجلات العمولات',
+              context.l10n.admin_commission_records,
               '${stats.totalCommissions}',
               Icons.receipt_long,
               AppColors.accent,
@@ -329,7 +343,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.divider),
+        side: BorderSide(color: AppColors.divider),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -415,7 +429,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       Row(
                         children: [
                           Text(
-                            'طلبات العقارات بانتظار الموافقة',
+                            context.l10n.admin_pending_title,
                             style: GoogleFonts.cairo(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -437,8 +451,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               ),
                               child: Text(
                                 list.isNotEmpty
-                                    ? '${list.length} بانتظار المراجعة'
-                                    : 'مكتمل ومراجع',
+                                    ? '${list.length} ${context.l10n.admin_awaiting_review}'
+                                    : context.l10n.admin_review_complete,
                                 style: GoogleFonts.cairo(
                                   color: Colors.white,
                                   fontSize: 11,
@@ -451,7 +465,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         ],
                       ),
                       Text(
-                        'مراجعة العقارات المضافة من قبل المستخدمين واعتماد نشرها للعامة على الخريطة وقائمة البحث.',
+                        context.l10n.admin_pending_desc,
                         style: GoogleFonts.cairo(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -461,8 +475,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ),
                 ),
                 IconButton(
-                  tooltip: 'تحديث قائمة الطلبات',
-                  icon: const Icon(Icons.refresh, color: AppColors.primary),
+                  tooltip: context.l10n.admin_refresh_requests,
+                  icon: Icon(Icons.refresh, color: AppColors.primaryInk),
                   onPressed: () {
                     ref.refresh(pendingPropertiesProvider);
                     ref.refresh(adminStatsProvider);
@@ -498,7 +512,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'لا توجد عقارات بانتظار الموافقة حالياً — كافة طلبات النشر تم مراجعتها واعتمادها.',
+                          context.l10n.admin_no_pending,
                           style: GoogleFonts.cairo(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -521,11 +535,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   },
                 );
               },
-              loading: () => const Center(
+              loading: () => Center(
                 child: Padding(
                   padding: EdgeInsets.all(24),
                   child: LoadingView(
-                    message: 'جاري جلب طلبات النشر المعلقة...',
+                    message: context.l10n.admin_loading_pending,
                   ),
                 ),
               ),
@@ -576,7 +590,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: AppColors.surfaceVariant,
-                      child: const Icon(
+                      child: Icon(
                         Icons.apartment,
                         size: 32,
                         color: AppColors.textMuted,
@@ -604,7 +618,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            isRent ? 'للإيجار' : 'للبيع',
+                            isRent ? context.l10n.admin_for_rent : context.l10n.admin_for_sale,
                             style: GoogleFonts.cairo(
                               color: Colors.white,
                               fontSize: 10.5,
@@ -637,7 +651,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           style: GoogleFonts.cairo(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            color: AppColors.primaryInk,
                           ),
                         ),
                       ],
@@ -654,7 +668,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.location_on,
                           size: 15,
                           color: AppColors.textSecondary,
@@ -668,14 +682,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(
+                        Icon(
                           Icons.square_foot,
                           size: 15,
                           color: AppColors.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${p.areaSqm} م²',
+                          '${p.areaSqm} ${context.l10n.admin_sqm}',
                           style: GoogleFonts.cairo(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -684,7 +698,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         if (p.bedrooms > 0) ...[
                           const SizedBox(width: 8),
                           Text(
-                            '• ${p.bedrooms} غرف',
+                            '• ${p.bedrooms} ${context.l10n.admin_rooms}',
                             style: GoogleFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -713,14 +727,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 Expanded(
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person,
                         size: 16,
-                        color: AppColors.primary,
+                        color: AppColors.primaryInk,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'صاحب الإعلان: ${p.owner?.fullName ?? 'مستخدم المنصة'}',
+                        '${context.l10n.admin_listing_owner}: ${p.owner?.fullName ?? context.l10n.admin_platform_user}',
                         style: GoogleFonts.cairo(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -732,10 +746,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 Expanded(
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.phone,
                         size: 16,
-                        color: AppColors.primary,
+                        color: AppColors.primaryInk,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -750,7 +764,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 Expanded(
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_today,
                         size: 15,
                         color: AppColors.textMuted,
@@ -789,13 +803,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 ),
                 icon: const Icon(Icons.check_circle, size: 18),
                 label: Text(
-                  'موافقة ونشر الإعلان',
+                  context.l10n.admin_approve_publish,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
                   ),
                 ),
-                onPressed: () => _handleApproveProperty(p),
+                onPressed: () => _handleApproveProperty(context, p),
               ),
               const SizedBox(width: 10),
               OutlinedButton.icon(
@@ -812,19 +826,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 ),
                 icon: const Icon(Icons.cancel_outlined, size: 18),
                 label: Text(
-                  'رفض الطلب',
+                  context.l10n.admin_reject_request,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
                   ),
                 ),
-                onPressed: () => _handleRejectPropertyDialog(p),
+                onPressed: () => _handleRejectPropertyDialog(context, p),
               ),
               const Spacer(),
               TextButton.icon(
                 icon: const Icon(Icons.visibility_outlined, size: 18),
                 label: Text(
-                  'عرض التفاصيل الكاملة',
+                  context.l10n.admin_view_full_details,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
@@ -839,7 +853,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-  Future<void> _handleApproveProperty(Property prop) async {
+  Future<void> _handleApproveProperty(BuildContext context, Property prop) async {
     try {
       final repo = ref.read(propertyRepositoryProvider);
       await repo.approvePropertyPublishing(prop.id);
@@ -850,11 +864,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       ref.refresh(propertiesForSaleProvider);
       ref.refresh(propertiesForRentProvider);
 
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'تمت الموافقة على نشر عقار "${prop.title}" بنجاح، وأصبح ظاهراً للعامة في البحث والخريطة.',
+              '${context.l10n.admin_approved_prefix}${prop.title}${context.l10n.admin_approved_suffix}',
               style: GoogleFonts.cairo(),
             ),
             backgroundColor: const Color(0xFF059669),
@@ -862,11 +876,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'فشل اعتماد نشر العقار: ${e.toString()}',
+              '${context.l10n.admin_approve_failed}: ${e.toString()}',
               style: GoogleFonts.cairo(),
             ),
             backgroundColor: AppColors.error,
@@ -876,9 +890,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     }
   }
 
-  Future<void> _handleRejectPropertyDialog(Property prop) async {
+  Future<void> _handleRejectPropertyDialog(BuildContext context, Property prop) async {
     final reasonController = TextEditingController(
-      text: 'المعلومات غير مكتملة أو غير مطابقة لسياسة النشر في المنصة.',
+      text: context.l10n.admin_default_reject_reason,
     );
 
     final confirmed = await showDialog<bool>(
@@ -890,7 +904,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             const Icon(Icons.cancel, color: Color(0xFFDC2626)),
             const SizedBox(width: 8),
             Text(
-              'رفض طلب نشر العقار',
+              context.l10n.admin_reject_dialog_title,
               style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
             ),
           ],
@@ -900,7 +914,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'يرجى كتابة سبب رفض الإعلان ليتم إبلاغ صاحب العقار به:',
+              context.l10n.admin_reject_reason_prompt,
               style: GoogleFonts.cairo(fontSize: 13),
             ),
             const SizedBox(height: 10),
@@ -908,8 +922,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               controller: reasonController,
               maxLines: 3,
               style: GoogleFonts.cairo(fontSize: 13),
-              decoration: const InputDecoration(
-                hintText: 'اكتب سبب الرفض هنا...',
+              decoration: InputDecoration(
+                hintText: context.l10n.admin_reject_hint,
                 border: OutlineInputBorder(),
               ),
             ),
@@ -918,7 +932,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.admin_cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -926,7 +940,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('تأكيد الرفض'),
+            child: Text(context.l10n.admin_confirm_reject),
           ),
         ],
       ),
@@ -944,11 +958,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         ref.refresh(searchPropertiesProvider);
         ref.refresh(allMapPropertiesProvider);
 
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'تم تسجيل رفض الإعلان وحفظ السبب بنجاح.',
+                context.l10n.admin_reject_saved,
                 style: GoogleFonts.cairo(),
               ),
               backgroundColor: const Color(0xFFDC2626),
@@ -956,10 +970,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           );
         }
       } catch (e) {
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('فشل تسجيل الرفض: ${e.toString()}'),
+              content: Text('${context.l10n.admin_reject_failed}: ${e.toString()}'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -985,7 +999,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'قائمة العقارات والتحكم بالنشر',
+                  context.l10n.admin_properties_list_title,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -996,13 +1010,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     backgroundColor: AppColors.primary,
                   ),
                   icon: const Icon(Icons.download, size: 16),
-                  label: const Text('تصدير CSV'),
+                  label: Text(context.l10n.admin_export_csv),
                   onPressed: () {
                     final list = searchAsync.value ?? [];
                     final csvData = ref
                         .read(adminRepositoryProvider)
                         .exportPropertiesToCsv(list);
-                    _showCsvDialog(context, 'تصدير بيانات العقارات', csvData);
+                    _showCsvDialog(context, context.l10n.admin_export_properties_title, csvData);
                   },
                 ),
               ],
@@ -1014,7 +1028,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               child: searchAsync.when(
                 data: (properties) {
                   if (properties.isEmpty) {
-                    return const EmptyStateView(title: 'لا توجد عقارات حالياً');
+                    return EmptyStateView(title: context.l10n.admin_no_properties);
                   }
                   return ListView.separated(
                     itemCount: properties.length,
@@ -1026,7 +1040,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           backgroundColor: AppColors.primaryMuted,
                           child: Icon(
                             p.isForRent ? Icons.key : Icons.sell,
-                            color: AppColors.primary,
+                            color: AppColors.primaryInk,
                             size: 18,
                           ),
                         ),
@@ -1038,7 +1052,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           ),
                         ),
                         subtitle: Text(
-                          '${p.city} - ${p.district} • ${Formatters.formatCurrency(p.price, p.currency)} • الحالة: ${AppConstants.getPropertyStatusNameAr(p.status)}',
+                          '${p.city} - ${p.district} • ${Formatters.formatCurrency(p.price, p.currency)} • ${context.l10n.admin_status_label}: ${AppConstants.getPropertyStatusNameAr(p.status)}',
                           style: GoogleFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
@@ -1048,7 +1062,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             if (p.status == AppConstants.statusPending) ...[
                               const SizedBox(width: 4),
                               IconButton(
-                                tooltip: 'قبول ونشر الإعلان (محمد السقاف)',
+                                tooltip: context.l10n.admin_approve_tooltip,
                                 icon: const Icon(
                                   Icons.check_circle,
                                   color: AppColors.success,
@@ -1063,7 +1077,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          'تم قبول ونشر العقار بواسطة المسؤول: محمد السقاف',
+                                          context.l10n.admin_approved_by_admin,
                                           style: GoogleFonts.cairo(),
                                         ),
                                         backgroundColor: AppColors.success,
@@ -1073,7 +1087,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                 },
                               ),
                               IconButton(
-                                tooltip: 'رفض طلب النشر',
+                                tooltip: context.l10n.admin_reject_request,
                                 icon: const Icon(
                                   Icons.cancel,
                                   color: AppColors.error,
@@ -1083,7 +1097,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   final repo = PropertyRepository();
                                   await repo.rejectPropertyPublishing(
                                     p.id,
-                                    'مرفوض من قبل الإدارة بعد المراجعة',
+                                    context.l10n.admin_rejected_by_admin_review,
                                   );
                                   ref.refresh(searchPropertiesProvider);
                                   ref.refresh(adminStatsProvider);
@@ -1091,7 +1105,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          'تم رفض طلب النشر وتحديث الحالة',
+                                          context.l10n.admin_rejected_status_updated,
                                           style: GoogleFonts.cairo(),
                                         ),
                                         backgroundColor: AppColors.error,
@@ -1110,7 +1124,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                 } else if (action == 'reject') {
                                   await repo.rejectPropertyPublishing(
                                     p.id,
-                                    'مرفوض من قبل الإدارة بعد المراجعة',
+                                    context.l10n.admin_rejected_by_admin_review,
                                   );
                                 } else if (action == 'hide') {
                                   await repo.updatePropertyStatus(
@@ -1132,7 +1146,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               },
                               itemBuilder: (context) => [
                                 if (p.status == AppConstants.statusPending) ...[
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'approve',
                                     child: Row(
                                       children: [
@@ -1142,11 +1156,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                           size: 18,
                                         ),
                                         SizedBox(width: 8),
-                                        Text('قبول واعتماد النشر'),
+                                        Text(context.l10n.admin_approve_publish_menu),
                                       ],
                                     ),
                                   ),
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'reject',
                                     child: Row(
                                       children: [
@@ -1156,7 +1170,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                           size: 18,
                                         ),
                                         SizedBox(width: 8),
-                                        Text('رفض طلب النشر'),
+                                        Text(context.l10n.admin_reject_request),
                                       ],
                                     ),
                                   ),
@@ -1168,19 +1182,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                         : 'publish',
                                     child: Text(
                                       p.status == AppConstants.statusPublished
-                                          ? 'إخفاء الإعلان'
-                                          : 'إعادة نشر',
+                                          ? context.l10n.admin_hide_listing
+                                          : context.l10n.admin_republish,
                                     ),
                                   ),
                                 ],
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'archive',
-                                  child: Text('أرشفة'),
+                                  child: Text(context.l10n.admin_archive),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'delete',
                                   child: Text(
-                                    'حذف نهائي',
+                                    context.l10n.admin_delete_permanent,
                                     style: TextStyle(color: AppColors.error),
                                   ),
                                 ),
@@ -1218,7 +1232,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'طلبات الاستئجار والمتابعة',
+                  context.l10n.admin_requests_list_title,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -1229,13 +1243,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     backgroundColor: AppColors.primary,
                   ),
                   icon: const Icon(Icons.download, size: 16),
-                  label: const Text('تصدير CSV'),
+                  label: Text(context.l10n.admin_export_csv),
                   onPressed: () {
                     final list = requestsAsync.value ?? [];
                     final csvData = ref
                         .read(adminRepositoryProvider)
                         .exportRentalRequestsToCsv(list);
-                    _showCsvDialog(context, 'تصدير طلبات الاستئجار', csvData);
+                    _showCsvDialog(context, context.l10n.admin_export_requests_title, csvData);
                   },
                 ),
               ],
@@ -1247,8 +1261,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               child: requestsAsync.when(
                 data: (requests) {
                   if (requests.isEmpty) {
-                    return const EmptyStateView(
-                      title: 'لا توجد طلبات استئجار مسجلة',
+                    return EmptyStateView(
+                      title: context.l10n.admin_no_requests,
                     );
                   }
                   return ListView.separated(
@@ -1273,7 +1287,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           ),
                         ),
                         subtitle: Text(
-                          'هاتف: ${req.phone} • العقار: ${req.propertyTitle ?? req.propertyId}',
+                          '${context.l10n.admin_phone_label}: ${req.phone} • ${context.l10n.admin_property_label}: ${req.propertyTitle ?? req.propertyId}',
                           style: GoogleFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
@@ -1292,26 +1306,26 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                 ref.refresh(adminStatsProvider);
                               },
                               itemBuilder: (context) => [
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: AppConstants.reqStatusUnderReview,
-                                  child: Text('قيد المراجعة'),
+                                  child: Text(context.l10n.admin_status_under_review),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: AppConstants.reqStatusContacted,
-                                  child: Text('تم التواصل'),
+                                  child: Text(context.l10n.admin_status_contacted),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: AppConstants
                                       .reqStatusProvisionallyAccepted,
-                                  child: Text('مقبول مبدئياً'),
+                                  child: Text(context.l10n.admin_status_provisional),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: AppConstants.reqStatusRejected,
-                                  child: Text('مرفوض'),
+                                  child: Text(context.l10n.admin_status_rejected),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: AppConstants.reqStatusCompleted,
-                                  child: Text('مكتمل'),
+                                  child: Text(context.l10n.admin_status_completed),
                                 ),
                               ],
                             ),
@@ -1347,7 +1361,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'سجلات العمولة الإدارية (يدوية)',
+                  context.l10n.admin_commissions_list_title,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -1360,7 +1374,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         backgroundColor: AppColors.accent,
                       ),
                       icon: const Icon(Icons.add, size: 16),
-                      label: const Text('تسجيل عمولة'),
+                      label: Text(context.l10n.admin_add_commission),
                       onPressed: () => _showAddCommissionModal(context),
                     ),
                     const SizedBox(width: 8),
@@ -1374,7 +1388,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             .exportCommissionsToCsv(list);
                         _showCsvDialog(
                           context,
-                          'تصدير سجلات العمولات',
+                          context.l10n.admin_export_commissions_title,
                           csvData,
                         );
                       },
@@ -1390,11 +1404,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               child: commissionsAsync.when(
                 data: (commissions) {
                   if (commissions.isEmpty) {
-                    return const EmptyStateView(
+                    return EmptyStateView(
                       icon: Icons.receipt_long,
-                      title: 'لا توجد سجلات عمولة مسجلة',
-                      description:
-                          'سجل العمولات وفق القرارات المعتمدة (تسجيل يدوي بحسب الاتفاق)',
+                      title: context.l10n.admin_no_commissions,
+                      description: context.l10n.admin_commissions_desc,
                     );
                   }
                   return ListView.separated(
@@ -1412,14 +1425,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           ),
                         ),
                         title: Text(
-                          '${Formatters.formatCurrency(c.totalAmount, c.currency)} - ${c.propertyTitle ?? "عقار مسجل"}',
+                          '${Formatters.formatCurrency(c.totalAmount, c.currency)} - ${c.propertyTitle ?? context.l10n.admin_registered_property}',
                           style: GoogleFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
                         subtitle: Text(
-                          'المتحمل: ${AppConstants.getLiablePartyNameAr(c.liableParty)} • طريقة التسوية: ${c.settlementMethod ?? "بانتظار التحصيل"}',
+                          '${context.l10n.admin_liable_party}: ${AppConstants.getLiablePartyNameAr(c.liableParty)} • ${context.l10n.admin_settlement_method}: ${c.settlementMethod ?? context.l10n.admin_awaiting_collection}',
                           style: GoogleFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
@@ -1438,17 +1451,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                 ref.refresh(adminStatsProvider);
                               },
                               itemBuilder: (context) => [
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: AppConstants.commStatusPaid,
-                                  child: Text('تم السداد'),
+                                  child: Text(context.l10n.admin_status_paid),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: AppConstants.commStatusDue,
-                                  child: Text('مستحق'),
+                                  child: Text(context.l10n.admin_status_due),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: AppConstants.commStatusCancelled,
-                                  child: Text('ملغى'),
+                                  child: Text(context.l10n.admin_status_cancelled),
                                 ),
                               ],
                             ),
@@ -1482,7 +1495,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
           title: Text(
-            'تسجيل سجل عمولة يدوي',
+            context.l10n.admin_commission_modal_title,
             style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
           ),
           content: ConstrainedBox(
@@ -1493,7 +1506,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'عنوان العقار أو المعرف *',
+                    context.l10n.admin_commission_property_title,
                     style: GoogleFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -1502,14 +1515,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   const SizedBox(height: 6),
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(
-                      hintText: 'مثال: فيلا بيت بوس',
+                    decoration: InputDecoration(
+                      hintText: context.l10n.admin_commission_property_hint,
                     ),
                   ),
                   const SizedBox(height: 14),
 
                   Text(
-                    'الطرف المتحمل للعمولة *',
+                    context.l10n.admin_commission_liable,
                     style: GoogleFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -1518,18 +1531,18 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     value: liableParty,
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: AppConstants.liableBoth,
-                        child: Text('كلاهما (البائع والمشتري)'),
+                        child: Text(context.l10n.admin_liable_both),
                       ),
                       DropdownMenuItem(
                         value: AppConstants.liableSeller,
-                        child: Text('البائع فقط'),
+                        child: Text(context.l10n.admin_liable_seller),
                       ),
                       DropdownMenuItem(
                         value: AppConstants.liableBuyer,
-                        child: Text('المشتري فقط'),
+                        child: Text(context.l10n.admin_liable_buyer),
                       ),
                     ],
                     onChanged: (val) {
@@ -1545,7 +1558,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'مبلغ البائع',
+                              context.l10n.admin_seller_amount,
                               style: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -1565,7 +1578,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'مبلغ المشتري',
+                              context.l10n.admin_buyer_amount,
                               style: GoogleFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -1584,7 +1597,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   const SizedBox(height: 14),
 
                   Text(
-                    'العملة',
+                    context.l10n.admin_currency,
                     style: GoogleFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -1608,7 +1621,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   const SizedBox(height: 14),
 
                   Text(
-                    'سبب العمولة وملاحظات الاتفاق',
+                    context.l10n.admin_commission_notes,
                     style: GoogleFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -1623,7 +1636,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('إلغاء'),
+              child: Text(context.l10n.admin_cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -1638,7 +1651,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   propertyId: 'manual-prop',
                   propertyTitle: titleController.text.trim().isNotEmpty
                       ? titleController.text.trim()
-                      : 'عقار مسجل',
+                      : context.l10n.admin_registered_property,
                   liableParty: liableParty,
                   sellerAmount: sAmount,
                   buyerAmount: bAmount,
@@ -1652,7 +1665,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 ref.refresh(adminCommissionsProvider);
                 ref.refresh(adminStatsProvider);
               },
-              child: const Text('حفظ السجل'),
+              child: Text(context.l10n.admin_save_record),
             ),
           ],
         ),
@@ -1676,7 +1689,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'بلاغات الإعلانات المخالفة',
+                  context.l10n.admin_reports_list_title,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -1691,11 +1704,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               child: reportsAsync.when(
                 data: (reports) {
                   if (reports.isEmpty) {
-                    return const EmptyStateView(
+                    return EmptyStateView(
                       icon: Icons.check_circle_outline,
-                      title: 'لا توجد بلاغات مخالفة حالياً',
-                      description:
-                          'كافة الإعلانات المعلنة مطابقة ولم يتم الإبلاغ عن أي مخالفة.',
+                      title: context.l10n.admin_no_reports,
+                      description: context.l10n.admin_no_reports_desc,
                     );
                   }
                   return ListView.separated(
@@ -1720,7 +1732,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           ),
                         ),
                         subtitle: Text(
-                          'تفاصيل: ${rep.details ?? "لا يوجد"} • الحالة: ${rep.status}',
+                          '${context.l10n.admin_details_label}: ${rep.details ?? context.l10n.admin_none} • ${context.l10n.admin_status_label}: ${rep.status}',
                           style: GoogleFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
@@ -1732,13 +1744,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                 await ReportRepository().updateReportStatus(
                                   reportId: rep.id,
                                   status: 'resolved',
-                                  adminActionTaken: 'تم التحقق والإغلاق',
+                                  adminActionTaken: context.l10n.admin_verified_closed,
                                   adminId: authUser?.id,
                                 );
                                 ref.refresh(adminReportsProvider);
                                 ref.refresh(adminStatsProvider);
                               },
-                              child: const Text('معالجة'),
+                              child: Text(context.l10n.admin_process),
                             ),
                           ],
                         ),
@@ -1782,7 +1794,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'قسم مشفر ومحمي خاص بالمدير العام فقط',
+                  context.l10n.admin_encrypted_section_title,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -1791,7 +1803,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'وفقاً لسياسات الأمان والتشفير، بيانات المستخدمين لا تظهر إلا للمدير العام (م. محمد السقاف) لضمان الخصوصية التامة.',
+                  context.l10n.admin_encrypted_section_desc,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.cairo(
                     fontSize: 12,
@@ -1818,14 +1830,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.shield_outlined,
-                      color: AppColors.primary,
+                      color: AppColors.primaryInk,
                       size: 22,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'سجل حسابات المستخدمين (بيانات مشفرة ومحمية)',
+                      context.l10n.admin_users_list_title,
                       style: GoogleFonts.cairo(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -1849,7 +1861,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       const Icon(Icons.lock, size: 14, color: Colors.green),
                       const SizedBox(width: 4),
                       Text(
-                        'صلاحيات المدير العام',
+                        context.l10n.admin_gm_permissions,
                         style: GoogleFonts.cairo(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -1875,7 +1887,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'حماية البيانات: كلمات المرور والتفاصيل الحساسة مشفرة بنظام التشفير القياسي، ويظهر للمدير العام فقط اسم المستخدم وحسابه.',
+                      context.l10n.admin_data_protection,
                       style: GoogleFonts.cairo(
                         fontSize: 11,
                         color: Colors.green.shade900,
@@ -1908,7 +1920,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             u.fullName.isNotEmpty ? u.fullName[0] : 'U',
                             style: GoogleFonts.cairo(
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                              color: AppColors.primaryInk,
                             ),
                           ),
                         ),
@@ -1920,7 +1932,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           ),
                         ),
                         subtitle: Text(
-                          'الحساب: $accountEmail • تاريخ الإنشاء: ${u.createdAt.toString().split(' ').first}',
+                          '${context.l10n.admin_account_label}: $accountEmail • ${context.l10n.admin_created_at}: ${u.createdAt.toString().split(' ').first}',
                           style: GoogleFonts.cairo(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -1939,18 +1951,18 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.lock,
                                 size: 12,
-                                color: AppColors.primary,
+                                color: AppColors.primaryInk,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'مشفر ومحمي',
+                                context.l10n.admin_encrypted_protected,
                                 style: GoogleFonts.cairo(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
+                                  color: AppColors.primaryInk,
                                 ),
                               ),
                             ],
@@ -1973,14 +1985,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   // ===========================================================================
   // Section Comprehensive PDF Export with Full Sana'a Time & Date
   // ===========================================================================
-  Future<void> _exportCurrentSectionToPdf() async {
+  Future<void> _exportCurrentSectionToPdf(BuildContext context) async {
+    final l10n = context.l10n;
     final int currentTab = _tabController.index;
     final List<String> sectionTitles = [
-      'إدارة العقارات',
-      'طلبات الاستئجار',
-      'سجلات العمولات',
-      'بلاغات المخالفات',
-      'سجل المستخدمين',
+      context.l10n.admin_tab_properties,
+      context.l10n.admin_tab_requests,
+      context.l10n.admin_tab_commissions,
+      context.l10n.admin_tab_reports,
+      context.l10n.admin_section_users,
     ];
 
     final sectionTitle = sectionTitles[currentTab];
@@ -1988,7 +2001,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'جاري تجهيز وطباعة تقرير PDF شامل لقسم: $sectionTitle...',
+          '${context.l10n.admin_pdf_preparing} $sectionTitle...',
           style: GoogleFonts.cairo(),
         ),
         duration: const Duration(seconds: 2),
@@ -1999,30 +2012,31 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       final fontData = await rootBundle.load('assets/fonts/Cairo.ttf');
       final fontCairo = pw.Font.ttf(fontData);
       final fontCairoBold = pw.Font.ttf(fontData);
+      if (!context.mounted) return;
 
       final now = DateTime.now();
-      const arabicDays = [
-        'الإثنين',
-        'الثلاثاء',
-        'الأربعاء',
-        'الخميس',
-        'الجمعة',
-        'السبت',
-        'الأحد',
+      final arabicDays = [
+        context.l10n.admin_day_monday,
+        context.l10n.admin_day_tuesday,
+        context.l10n.admin_day_wednesday,
+        context.l10n.admin_day_thursday,
+        context.l10n.admin_day_friday,
+        context.l10n.admin_day_saturday,
+        context.l10n.admin_day_sunday,
       ];
-      const arabicMonths = [
-        'يناير',
-        'فبراير',
-        'مارس',
-        'أبريل',
-        'مايو',
-        'يونيو',
-        'يوليو',
-        'أغسطس',
-        'سبتمبر',
-        'أكتوبر',
-        'نوفمبر',
-        'ديسمبر',
+      final arabicMonths = [
+        context.l10n.admin_month_january,
+        context.l10n.admin_month_february,
+        context.l10n.admin_month_march,
+        context.l10n.admin_month_april,
+        context.l10n.admin_month_may,
+        context.l10n.admin_month_june,
+        context.l10n.admin_month_july,
+        context.l10n.admin_month_august,
+        context.l10n.admin_month_september,
+        context.l10n.admin_month_october,
+        context.l10n.admin_month_november,
+        context.l10n.admin_month_december,
       ];
 
       final dayName = arabicDays[now.weekday - 1];
@@ -2033,9 +2047,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       final int hour12 = rawHour > 12
           ? rawHour - 12
           : (rawHour == 0 ? 12 : rawHour);
-      final period = rawHour >= 12 ? 'مساءً' : 'صباحاً';
+      final period = rawHour >= 12 ? context.l10n.admin_pm : context.l10n.admin_am;
       final minute = now.minute.toString().padLeft(2, '0');
-      final timeFormatted = '$hour12:$minute $period (بتوقيت صنعاء)';
+      final timeFormatted = '$hour12:$minute $period ${context.l10n.admin_sanaa_time}';
 
       final pdf = pw.Document();
 
@@ -2047,12 +2061,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         case 0: // Properties
           final props = ref.read(searchPropertiesProvider).asData?.value ?? [];
           tableHeaders = [
-            'رقم العقار',
-            'العنوان',
-            'العملية',
-            'المدينة',
-            'السعر',
-            'الحالة',
+            context.l10n.admin_col_property_id,
+            context.l10n.admin_col_address,
+            context.l10n.admin_col_deal,
+            context.l10n.admin_col_city,
+            context.l10n.admin_col_price,
+            context.l10n.admin_status_label,
           ];
           tableData = props
               .map(
@@ -2071,12 +2085,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         case 1: // Rental Requests
           final reqs = ref.read(allRentalRequestsProvider).asData?.value ?? [];
           tableHeaders = [
-            'رقم الطلب',
-            'العقار',
-            'المستأجر',
-            'الهاتف',
-            'تاريخ البدء',
-            'الحالة',
+            context.l10n.admin_col_request_id,
+            context.l10n.admin_property_label,
+            context.l10n.admin_col_tenant,
+            context.l10n.admin_col_phone,
+            context.l10n.admin_col_start_date,
+            context.l10n.admin_status_label,
           ];
           tableData = reqs
               .map(
@@ -2096,12 +2110,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         case 2: // Commissions
           final comms = ref.read(adminCommissionsProvider).asData?.value ?? [];
           tableHeaders = [
-            'المعرف',
-            'العقار',
-            'الطرف المتحمل',
-            'المبلغ',
-            'العملة',
-            'حالة التسوية',
+            context.l10n.admin_col_id,
+            context.l10n.admin_property_label,
+            context.l10n.admin_liable_party,
+            context.l10n.admin_col_amount,
+            context.l10n.admin_currency,
+            context.l10n.admin_col_settlement_status,
           ];
           tableData = comms
               .map(
@@ -2120,11 +2134,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         case 3: // Reports
           final reps = ref.read(adminReportsProvider).asData?.value ?? [];
           tableHeaders = [
-            'المعرف',
-            'رقم العقار',
-            'سبب البلاغ',
-            'الحالة',
-            'تاريخ البلاغ',
+            context.l10n.admin_col_id,
+            context.l10n.admin_col_property_id,
+            context.l10n.admin_col_report_reason,
+            context.l10n.admin_status_label,
+            context.l10n.admin_col_report_date,
           ];
           tableData = reps
               .map(
@@ -2132,7 +2146,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   rp.id,
                   rp.propertyId,
                   rp.reason,
-                  rp.status == 'pending' ? 'قيد المراجعة' : 'محلول',
+                  rp.status == 'pending' ? context.l10n.admin_status_under_review : context.l10n.admin_status_resolved,
                   rp.createdAt.toIso8601String().split('T').first,
                 ],
               )
@@ -2143,11 +2157,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         default:
           final users = ref.read(allUsersProvider).asData?.value ?? [];
           tableHeaders = [
-            'الرقم',
-            'اسم المستخدم',
-            'الحساب (البريد)',
-            'حالة التشفير',
-            'تاريخ الإنشاء',
+            context.l10n.admin_col_number,
+            context.l10n.admin_col_username,
+            context.l10n.admin_col_account_email,
+            context.l10n.admin_col_encryption_status,
+            context.l10n.admin_created_at,
           ];
           tableData = users.asMap().entries.map((entry) {
             final u = entry.value;
@@ -2158,7 +2172,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               '${entry.key + 1}',
               u.fullName,
               account,
-              '🔒 مشفر ومحمي',
+              context.l10n.admin_encrypted_protected_pdf,
               u.createdAt.toString().split(' ').first,
             ];
           }).toList();
@@ -2184,12 +2198,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Text(
-                      'بسم الله الرحمن الرحيم',
+                      context.l10n.admin_pdf_bismillah,
                       style: pw.TextStyle(font: fontCairoBold, fontSize: 11),
                     ),
                     pw.SizedBox(height: 2),
                     pw.Text(
-                      'الجمهورية اليمنية — بوابة اليمن العقارية',
+                      context.l10n.admin_pdf_republic,
                       style: pw.TextStyle(
                         font: fontCairoBold,
                         fontSize: 13,
@@ -2198,7 +2212,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                     pw.SizedBox(height: 2),
                     pw.Text(
-                      'الإدارة العامة — تقرير رسمي شامل',
+                      context.l10n.admin_pdf_report_header,
                       style: pw.TextStyle(font: fontCairoBold, fontSize: 11),
                     ),
                     pw.Divider(thickness: 0.5, color: PdfColors.grey400),
@@ -2206,7 +2220,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text(
-                          'القسم: $sectionTitle',
+                          '${context.l10n.admin_pdf_section}: $sectionTitle',
                           style: pw.TextStyle(
                             font: fontCairoBold,
                             fontSize: 10,
@@ -2214,7 +2228,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           ),
                         ),
                         pw.Text(
-                          'المستخرج: المدير العام (م. محمد السقاف)',
+                          context.l10n.admin_pdf_issuer,
                           style: pw.TextStyle(font: fontCairo, fontSize: 9.5),
                         ),
                       ],
@@ -2234,35 +2248,35 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
                           pw.Text(
-                            'اليوم: $dayName',
+                            '${context.l10n.admin_pdf_day_label}: $dayName',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
                             ),
                           ),
                           pw.Text(
-                            'التاريخ: $dayNum',
+                            '${context.l10n.admin_pdf_date_label}: $dayNum',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
                             ),
                           ),
                           pw.Text(
-                            'الشهر: $monthName (${now.month})',
+                            '${context.l10n.admin_pdf_month_label}: $monthName (${now.month})',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
                             ),
                           ),
                           pw.Text(
-                            'السنة: $yearNum م',
+                            '${context.l10n.admin_pdf_year_label}: $yearNum ${context.l10n.admin_pdf_year_suffix}',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
                             ),
                           ),
                           pw.Text(
-                            'الوقت: $timeFormatted',
+                            '${context.l10n.admin_pdf_time_label}: $timeFormatted',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
@@ -2281,11 +2295,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'إجمالي عناصر القسم: ${tableData.length}',
+                    '${context.l10n.admin_pdf_total_items}: ${tableData.length}',
                     style: pw.TextStyle(font: fontCairoBold, fontSize: 10),
                   ),
                   pw.Text(
-                    'حالة البيانات: معتمدة ومحدثة لحظياً',
+                    context.l10n.admin_pdf_data_status,
                     style: pw.TextStyle(
                       font: fontCairo,
                       fontSize: 9,
@@ -2303,7 +2317,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ? [
                         List.generate(
                           tableHeaders.length,
-                          (_) => 'لا توجد بيانات مسجلة حالياً',
+                          (_) => context.l10n.admin_pdf_no_data,
                         ),
                       ]
                     : tableData,
@@ -2331,7 +2345,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'شركة هيبه سوفت (Hiba Soft) — جميع الحقوق محفوظة © 2026',
+                    context.l10n.admin_pdf_copyright,
                     style: pw.TextStyle(
                       font: fontCairo,
                       fontSize: 7.5,
@@ -2339,7 +2353,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                   ),
                   pw.Text(
-                    'وثيقة إدارية رسمية — مشفرة وموثقة',
+                    context.l10n.admin_pdf_doc_footer,
                     style: pw.TextStyle(
                       font: fontCairo,
                       fontSize: 7.5,
@@ -2372,11 +2386,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       }
 
       final filename =
-          'تقرير_${sectionTitle.replaceAll(" ", "_")}_${now.year}_${now.month}_${now.day}_${now.hour}${now.minute}.pdf';
+          '${l10n.admin_report_filename_prefix}${sectionTitle.replaceAll(" ", "_")}_${now.year}_${now.month}_${now.day}_${now.hour}${now.minute}.pdf';
       final file = File('${dir!.path}/$filename');
       await file.writeAsBytes(pdfBytes);
 
-      if (mounted) {
+      if (context.mounted) {
         showDialog(
           context: context,
           builder: (dialogCtx) => AlertDialog(
@@ -2385,15 +2399,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             ),
             title: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.picture_as_pdf,
-                  color: AppColors.primary,
+                  color: AppColors.primaryInk,
                   size: 26,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'تم تصدير تقرير الـ PDF بنجاح',
+                    context.l10n.admin_pdf_export_success,
                     style: GoogleFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -2407,7 +2421,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'تم حفظ التقرير الشامل لقسم "$sectionTitle" متضمناً تفاصيل اليوم والتاريخ والشهر والسنة والوقت الدقيق بتوقيت صنعاء.',
+                  '${context.l10n.admin_pdf_saved_prefix}$sectionTitle${context.l10n.admin_pdf_saved_suffix}',
                   style: GoogleFonts.cairo(fontSize: 13),
                 ),
                 const SizedBox(height: 12),
@@ -2422,7 +2436,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '📁 اسم الملف:',
+                        context.l10n.admin_pdf_file_name,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
@@ -2432,12 +2446,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         filename,
                         style: GoogleFonts.cairo(
                           fontSize: 11,
-                          color: AppColors.primary,
+                          color: AppColors.primaryInk,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '📍 مسار الحفظ بالجهاز:',
+                        context.l10n.admin_pdf_save_path,
                         style: GoogleFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
@@ -2458,13 +2472,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             actions: [
               TextButton.icon(
                 icon: const Icon(Icons.copy, size: 16),
-                label: Text('نسخ المسار', style: GoogleFonts.cairo()),
+                label: Text(context.l10n.admin_copy_path, style: GoogleFonts.cairo()),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: file.path));
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'تم نسخ مسار الملف إلى الحافظة',
+                        context.l10n.admin_path_copied,
                         style: GoogleFonts.cairo(),
                       ),
                       duration: const Duration(seconds: 2),
@@ -2475,7 +2489,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               ElevatedButton(
                 onPressed: () => Navigator.pop(dialogCtx),
                 child: Text(
-                  'حسناً',
+                  context.l10n.admin_ok,
                   style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -2484,10 +2498,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل تصدير التقرير: $e', style: GoogleFonts.cairo()),
+            content: Text('${context.l10n.admin_export_failed}: $e', style: GoogleFonts.cairo()),
             backgroundColor: AppColors.error,
           ),
         );
@@ -2515,13 +2529,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         actions: [
           TextButton.icon(
             icon: const Icon(Icons.copy, size: 18),
-            label: Text('نسخ البيانات', style: GoogleFonts.cairo()),
+            label: Text(context.l10n.admin_copy_data, style: GoogleFonts.cairo()),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: csvContent));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'تم نسخ بيانات CSV بنجاح إلى الحافظة',
+                    context.l10n.admin_csv_copied,
                     style: GoogleFonts.cairo(),
                   ),
                   backgroundColor: AppColors.success,
@@ -2532,7 +2546,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('إغلاق'),
+            child: Text(context.l10n.admin_close),
           ),
         ],
       ),

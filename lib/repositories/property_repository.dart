@@ -6,6 +6,7 @@ import '../models/property.dart';
 import '../models/property_image.dart';
 import '../models/property_type.dart';
 import '../services/supabase_service.dart';
+import '../core/l10n/app_strings.dart';
 
 class PropertyRepository {
   final SupabaseClient? _client = SupabaseService.client;
@@ -154,7 +155,7 @@ class PropertyRepository {
     if (EnvConfig.isDemoMode || _client == null) {
       final prop = SupabaseService.demoProperties.firstWhere(
         (p) => p.id == id,
-        orElse: () => throw AppException('العقار غير موجود'),
+        orElse: () => throw AppException(tr.sys_property_not_found),
       );
       return prop;
     }
