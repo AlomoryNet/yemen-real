@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -29,7 +29,7 @@ class GovernorateBoundary {
   });
 }
 
-/// Short price label used on map markers (e.g. Â«5.2 Ù… Ø±.ÙŠÂ», Â«850 Ø£Ù„Ù Ø±.ÙŠÂ»).
+/// Short price label used on map markers (e.g. «5.2 م ر.ي», «850 ألف ر.ي»).
 String formatMapPriceTag(BuildContext context, Property p) {
   final cur = p.currency == AppConstants.currencyYer
       ? context.l10n.map_currency_yer
@@ -51,7 +51,7 @@ String formatMapPriceTag(BuildContext context, Property p) {
 }
 
 /// Shared interactive map used by BOTH the /map tab and the search results
-/// listâ†”map toggle. Renders: OpenStreetMap / Esri satellite tiles, official
+/// list↔map toggle. Renders: OpenStreetMap / Esri satellite tiles, official
 /// Yemen governorate boundaries (from bundled GeoJSON), spatial clustering
 /// with price pin markers, and an optional freehand-drawn polygon.
 ///
@@ -110,28 +110,28 @@ class _PropertyMapViewState extends State<PropertyMapView>
   static Future<List<GovernorateBoundary>>? _loadingBoundaries;
 
   static const Map<String, String> _shapeNameToArabic = {
-    "SanÊ¿aÊ¾": "Ø£Ù…Ø§Ù†Ø© Ø§Ù„Ø¹Ø§ØµÙ…Ø©",
-    "SanÊ¿aÊ¾ Governorate": "ØµÙ†Ø¹Ø§Ø¡",
-    "Lahij Governorate": "Ù„Ø­Ø¬",
-    "â€˜Adan Governorate": "Ø¹Ø¯Ù†",
-    "Al Hudaydah Governorate": "Ø§Ù„Ø­Ø¯ÙŠØ¯Ø©",
-    "Ta'izz Governorate": "ØªØ¹Ø²",
-    "Shabwah Governorate": "Ø´Ø¨ÙˆØ©",
-    "Hadhramaut": "Ø­Ø¶Ø±Ù…ÙˆØª",
-    "Abyan Governorate": "Ø£Ø¨ÙŠÙ†",
-    "Al Jawf Governorate": "Ø§Ù„Ø¬ÙˆÙ",
-    "Ibb Governorate": "Ø¥Ø¨",
-    "Al Bayda' Governorate": "Ø§Ù„Ø¨ÙŠØ¶Ø§Ø¡",
-    "Ad Dali' Governorate": "Ø§Ù„Ø¶Ø§Ù„Ø¹",
-    "Al Mahwit Governorate": "Ø§Ù„Ù…Ø­ÙˆÙŠØª",
-    "Sa'dah Governorate": "ØµØ¹Ø¯Ø©",
-    "Hajjah Governorate": "Ø­Ø¬Ø©",
-    "Dhamar Governorate": "Ø°Ù…Ø§Ø±",
-    "'Amran Governorate": "Ø¹Ù…Ø±Ø§Ù†",
-    "Al Mahrah Governorate": "Ø§Ù„Ù…Ù‡Ø±Ø©",
-    "Ma'rib Governorate": "Ù…Ø£Ø±Ø¨",
-    "Raymah Governorate": "Ø±ÙŠÙ…Ø©",
-    "Socotra": "Ø³Ù‚Ø·Ø±Ù‰",
+    "Sanʿaʾ": "أمانة العاصمة",
+    "Sanʿaʾ Governorate": "صنعاء",
+    "Lahij Governorate": "لحج",
+    "‘Adan Governorate": "عدن",
+    "Al Hudaydah Governorate": "الحديدة",
+    "Ta'izz Governorate": "تعز",
+    "Shabwah Governorate": "شبوة",
+    "Hadhramaut": "حضرموت",
+    "Abyan Governorate": "أبين",
+    "Al Jawf Governorate": "الجوف",
+    "Ibb Governorate": "إب",
+    "Al Bayda' Governorate": "البيضاء",
+    "Ad Dali' Governorate": "الضالع",
+    "Al Mahwit Governorate": "المحويت",
+    "Sa'dah Governorate": "صعدة",
+    "Hajjah Governorate": "حجة",
+    "Dhamar Governorate": "ذمار",
+    "'Amran Governorate": "عمران",
+    "Al Mahrah Governorate": "المهرة",
+    "Ma'rib Governorate": "مأرب",
+    "Raymah Governorate": "ريمة",
+    "Socotra": "سقطرى",
   };
 
   static Future<List<GovernorateBoundary>> _loadBoundariesOnce() {
@@ -270,184 +270,18 @@ class _PropertyMapViewState extends State<PropertyMapView>
   }
 
   void _showClusterPropertiesSheet(List<Property> props) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) {
-        return Container(
-          height: MediaQuery.of(ctx).size.height * 0.6,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 4),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.infoMuted,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.apartment_rounded,
-                        color: AppColors.info,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '${context.l10n.map_cluster_properties_title} (${props.length} ${context.l10n.map_cluster_property_unit})',
-                        style: GoogleFonts.cairo(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      tooltip: context.l10n.map_close,
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: props.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final p = props[index];
-                    final imageUrl = p.images.isNotEmpty
-                        ? p.images.first.imageUrl
-                        : p.primaryImageUrl;
-
-                    Widget thumbnail() {
-                      final fallback = Container(
-                        color: AppColors.surfaceVariant,
-                        child: Icon(
-                          Icons.apartment,
-                          color: AppColors.textMuted,
-                        ),
-                      );
-                      if (imageUrl == null || imageUrl.isEmpty) {
-                        return fallback;
-                      }
-                      return CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
-                          color: AppColors.surfaceVariant,
-                          child: const Center(
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                        ),
-                        errorWidget: (_, __, ___) => fallback,
-                      );
-                    }
-
-                    return Material(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(16),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          Navigator.of(ctx).pop();
-                          final c =
-                              MapClusterService.getPropertyCoordinates(p);
-                          widget.onPropertyTap?.call(p, LatLng(c.$1, c.$2));
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: SizedBox(
-                                  width: 64,
-                                  height: 64,
-                                  child: thumbnail(),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      p.title,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textPrimary,
-                                        height: 1.25,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${p.city}${p.district.isNotEmpty ? ' - ${p.district}' : ''}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 11,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      formatMapPriceTag(context, p),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.primaryInk,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_left_rounded,
-                                color: AppColors.textMuted,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      showDragHandle: false,
+      builder: (_) => _ClusterPropertiesSheet(
+        properties: props,
+        onPropertySelected: (property) {
+          final coords = MapClusterService.getPropertyCoordinates(property);
+          widget.onPropertyTap?.call(property, LatLng(coords.$1, coords.$2));
+        },
+      ),
     );
   }
 
@@ -480,9 +314,13 @@ class _PropertyMapViewState extends State<PropertyMapView>
         TileLayer(
           urlTemplate: widget.isSatellite
               ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c'],
           userAgentPackageName: 'com.yemenreal.portal',
           maxZoom: 19,
+          errorTileCallback: (tile, error, stackTrace) {
+            debugPrint('Map tile failed to load: $error');
+          },
         ),
         if (widget.showBoundaries && _boundaries.isNotEmpty)
           PolygonLayer(
@@ -695,6 +533,412 @@ class _ClusterBadge extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Themed bottom sheet that lists the properties behind a map cluster.
+///
+/// Keeps the sheet connected to the map context: it is bottom-anchored, bounded
+/// on wide screens, safe-area/IME aware, and uses the app's semantic surface,
+/// divider and teal tokens instead of hardcoded light-theme colors.
+class _ClusterPropertiesSheet extends StatelessWidget {
+  const _ClusterPropertiesSheet({
+    required this.properties,
+    required this.onPropertySelected,
+  });
+
+  final List<Property> properties;
+  final ValueChanged<Property> onPropertySelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final onPrimary = Theme.of(context).colorScheme.onPrimary;
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 620,
+                maxHeight: MediaQuery.sizeOf(context).height * 0.78,
+              ),
+              child: Container(
+                width: double.maxFinite,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(60),
+                      blurRadius: 24,
+                      offset: const Offset(0, -8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 12),
+                    Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 12, 14),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryMuted,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(
+                              Icons.apartment_rounded,
+                              color: AppColors.primaryInk,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.map_cluster_properties_title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '${properties.length} ${l10n.map_cluster_property_unit}',
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Material(
+                            color: AppColors.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                            child: IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 20),
+                              color: AppColors.textSecondary,
+                              tooltip: l10n.map_close,
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Flexible(
+                      child: ListView.separated(
+                        physics: const BouncingScrollPhysics(),
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                        itemCount: properties.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) => _buildPropertyTile(
+                          context: context,
+                          property: properties[index],
+                          onPrimary: onPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPropertyTile({
+    required BuildContext context,
+    required Property property,
+    required Color onPrimary,
+  }) {
+    final l10n = context.l10n;
+    final isRent = property.dealType == AppConstants.dealRent;
+    final dealLabel = isRent ? l10n.map_for_rent : l10n.map_for_sale;
+    final dealColor = isRent ? AppColors.accent : AppColors.primary;
+    final imageUrl = property.images.isNotEmpty
+        ? property.images.first.imageUrl
+        : property.primaryImageUrl;
+    final location = property.district.isEmpty
+        ? property.city
+        : '${property.city} - ${property.district}';
+    final typeName = property.propertyType?.nameAr.trim();
+    final price = formatMapPriceTag(context, property);
+
+    return Semantics(
+      button: true,
+      label: '${property.title}? $price',
+      child: Material(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () {
+            Navigator.of(context).pop();
+            onPropertySelected(property);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                _buildThumbnail(
+                  imageUrl: imageUrl,
+                  dealLabel: dealLabel,
+                  dealColor: dealColor,
+                  onPrimary: onPrimary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        property.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.cairo(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.place_outlined,
+                            size: 13,
+                            color: AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              location,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.cairo(
+                                fontSize: 11.5,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if (typeName != null && typeName.isNotEmpty)
+                            _buildMetaChip(
+                              icon: Icons.home_outlined,
+                              label: typeName,
+                            ),
+                          if (property.bedrooms > 0)
+                            _buildMetaChip(
+                              icon: Icons.bed_outlined,
+                              label:
+                                  '${property.bedrooms} ${l10n.map_bedrooms}',
+                            ),
+                          if (property.areaSqm > 0)
+                            _buildMetaChip(
+                              icon: Icons.square_foot_outlined,
+                              label:
+                                  '${property.areaSqm.toStringAsFixed(0)} ${l10n.contract_sqm_unit}',
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.payments_outlined,
+                            size: 15,
+                            color: AppColors.primaryInk,
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              price,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.cairo(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryInk,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Icon(
+                    Icons.chevron_left_rounded,
+                    size: 18,
+                    color: AppColors.primaryInk,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnail({
+    required String? imageUrl,
+    required String dealLabel,
+    required Color dealColor,
+    required Color onPrimary,
+  }) {
+    final fallback = Container(
+      color: AppColors.surface,
+      child: Icon(
+        Icons.apartment_rounded,
+        color: AppColors.textMuted,
+        size: 30,
+      ),
+    );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        width: 76,
+        height: 82,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (imageUrl == null || imageUrl.isEmpty)
+              fallback
+            else
+              CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                memCacheWidth: 152,
+                placeholder: (_, __) => Container(
+                  color: AppColors.surface,
+                  child: Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                errorWidget: (_, __, ___) => fallback,
+              ),
+            Positioned(
+              right: 4,
+              bottom: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: dealColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  dealLabel,
+                  style: GoogleFonts.cairo(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                    color: onPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetaChip({
+    required IconData icon,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppColors.textMuted),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.cairo(
+              fontSize: 10.5,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,0 +1,4 @@
+{
+    "body":  "## Yemen Real Estate Portal v2.4.0\n\nA Flutter Arabic-first real-estate portal backed by Supabase.\n\n### Highlights\n- Full i18n (Arabic/English) across ~30 screens\n- Location-first dashboard: nearby properties filtered to user city (Ibb fallback)\n- Map zooms to user location\n- Screen-specific titles + back button in AppHeader\n- Footer hidden on mobile/tablet\n- Dark-theme readability fixes\n- Performance: demo properties generated once via late final\n- My Properties overflow fixed\n\n### Verification\n- flutter analyze: No issues found\n- flutter test: 56/56 passing\n\n### Download\nAndroid APK attached below (app-release.apk).",
+    "name":  "v2.4.0 - Yemen Real Estate Portal"
+}

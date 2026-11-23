@@ -1,0 +1,16 @@
+# Default context exclusions for OpenCode agents.
+# Read these only when a task explicitly requires them.
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.geojson
+assets/**
+docs/**
+build/**
+.dart_tool/**
+android/**
+ios/**
+web/icons/**

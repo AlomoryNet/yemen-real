@@ -783,9 +783,13 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    subdomains: const ['a', 'b', 'c'],
                     userAgentPackageName: 'com.yemenreal.portal',
                     maxZoom: 19,
+                    errorTileCallback: (tile, error, stackTrace) {
+                      debugPrint('Detail map tile failed to load: $error');
+                    },
                   ),
                   MarkerLayer(
                     markers: [
