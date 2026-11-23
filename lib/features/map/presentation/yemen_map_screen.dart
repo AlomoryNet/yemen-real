@@ -14,12 +14,15 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../models/property.dart';
+import '../../../models/property_type.dart';
 import '../../../providers/favorites_provider.dart';
+import '../../../providers/location_provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_page_body.dart';
+import '../../../shared/widgets/property_filter_sheet.dart';
 import '../../../data/demo_properties_generator.dart';
 import '../services/map_cluster_service.dart';
 import 'property_map_view.dart';
@@ -49,6 +52,7 @@ class MapScreenArgs {
   final String? dealType;
   final String? propertyTypeId;
   final String? city;
+  final String? district;
 
   const MapScreenArgs({
     this.initialListView = false,
@@ -56,6 +60,7 @@ class MapScreenArgs {
     this.dealType,
     this.propertyTypeId,
     this.city,
+    this.district,
   });
 }
 
@@ -278,6 +283,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       _selectedTypeId = incoming.propertyTypeId;
       _selectedGovName =
           (incoming.city == null || incoming.city!.isEmpty) ? null : incoming.city;
+      _selectedDistrict = (incoming.district == null ||
+              incoming.district!.isEmpty)
+          ? null
+          : incoming.district;
       if (_selectedGovName != null) {
         for (final gov in _governorates) {
           if (gov.name == _selectedGovName ||
@@ -582,470 +591,50 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     }
   }
 
-  void _showFilterModal() {
-    showModalBottomSheet(
+  Future<void> _showFilterModal() async {
+    final propertyTypes =
+        ref.read(propertyTypesProvider).value ?? const <PropertyType>[];
+    final result = await showPropertyFilterSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        String tempDeal = _selectedDealType;
-        String? tempType = _selectedTypeId;
-        String? tempGov = _selectedGovName;
-        String? tempDist = _selectedDistrict;
-        int? tempBeds = _minBedrooms;
-        double? tempMinPrice = _minPrice;
-        double? tempMaxPrice = _maxPrice;
-        bool tempExactGps = _onlyExactCoordinates;
-
-        final minController = TextEditingController(
-          text: _minPrice != null ? _minPrice!.toStringAsFixed(0) : '',
-        );
-        final maxController = TextEditingController(
-          text: _maxPrice != null ? _maxPrice!.toStringAsFixed(0) : '',
-        );
-
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final availableDistricts = tempGov != null
-                ? AppConstants.getDistrictsForGovernorate(tempGov)
-                : const <String>[];
-
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.tune_rounded, color: AppColors.primaryInk),
-                      const SizedBox(width: 8),
-                      Text(
-                        context.l10n.map_filter_title,
-                        style: GoogleFonts.cairo(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          setModalState(() {
-                            tempDeal = '';
-                            tempType = null;
-                            tempGov = null;
-                            tempDist = null;
-                            tempBeds = null;
-                            tempMinPrice = null;
-                            tempMaxPrice = null;
-                            tempExactGps = false;
-                            minController.clear();
-                            maxController.clear();
-                          });
-                        },
-                        child: Text(
-                          context.l10n.map_reset_filters,
-                          style: GoogleFonts.cairo(
-                            color: AppColors.error,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
-
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 1. Deal Type
-                          Text(
-                            context.l10n.map_deal_type,
-                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              _buildFilterOption(
-                                label: context.l10n.map_all,
-                                isSelected: tempDeal == '',
-                                onTap: () => setModalState(() => tempDeal = ''),
-                              ),
-                              const SizedBox(width: 8),
-                              _buildFilterOption(
-                                label: context.l10n.map_for_sale,
-                                isSelected: tempDeal == AppConstants.dealSale,
-                                onTap: () => setModalState(
-                                    () => tempDeal = AppConstants.dealSale),
-                              ),
-                              const SizedBox(width: 8),
-                              _buildFilterOption(
-                                label: context.l10n.map_for_rent,
-                                isSelected: tempDeal == AppConstants.dealRent,
-                                onTap: () => setModalState(
-                                    () => tempDeal = AppConstants.dealRent),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 2. Property Type
-                          Text(
-                            context.l10n.map_property_type,
-                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _buildFilterOption(
-                                label: context.l10n.map_all,
-                                isSelected: tempType == null,
-                                onTap: () => setModalState(() => tempType = null),
-                              ),
-                              _buildFilterOption(
-                                label: context.l10n.map_type_apartment,
-                                isSelected: tempType == 'apartment',
-                                onTap: () =>
-                                    setModalState(() => tempType = 'apartment'),
-                              ),
-                              _buildFilterOption(
-                                label: context.l10n.map_type_villa,
-                                isSelected: tempType == 'villa',
-                                onTap: () => setModalState(() => tempType = 'villa'),
-                              ),
-                              _buildFilterOption(
-                                label: context.l10n.map_type_shop,
-                                isSelected: tempType == 'shop',
-                                onTap: () => setModalState(() => tempType = 'shop'),
-                              ),
-                              _buildFilterOption(
-                                label: context.l10n.map_type_land,
-                                isSelected: tempType == 'land',
-                                onTap: () => setModalState(() => tempType = 'land'),
-                              ),
-                              _buildFilterOption(
-                                label: context.l10n.map_type_building,
-                                isSelected: tempType == 'building',
-                                onTap: () =>
-                                    setModalState(() => tempType = 'building'),
-                              ),
-                              _buildFilterOption(
-                                label: context.l10n.map_type_office,
-                                isSelected: tempType == 'office',
-                                onTap: () => setModalState(() => tempType = 'office'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 3. Governorate Selector
-                          Text(
-                            context.l10n.map_governorate,
-                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 38,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: [
-                                _buildFilterOption(
-                                  label: context.l10n.map_all_governorates,
-                                  isSelected: tempGov == null,
-                                  onTap: () => setModalState(() {
-                                    tempGov = null;
-                                    tempDist = null;
-                                  }),
-                                ),
-                                const SizedBox(width: 6),
-                                for (final gov in _governorates) ...[
-                                  _buildFilterOption(
-                                    label: gov.name,
-                                    isSelected: tempGov == gov.name,
-                                    onTap: () => setModalState(() {
-                                      tempGov = gov.name;
-                                      tempDist = null;
-                                    }),
-                                  ),
-                                  const SizedBox(width: 6),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 4. District Selector (Appears if governorate selected)
-                          if (tempGov != null && availableDistricts.isNotEmpty) ...[
-                            Text(
-                              '${context.l10n.map_district_in} $tempGov',
-                              style:
-                                  GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _buildFilterOption(
-                                  label: '${context.l10n.map_all_districts_in} $tempGov',
-                                  isSelected: tempDist == null,
-                                  onTap: () =>
-                                      setModalState(() => tempDist = null),
-                                ),
-                                for (final dist in availableDistricts)
-                                  _buildFilterOption(
-                                    label: dist,
-                                    isSelected: tempDist == dist,
-                                    onTap: () =>
-                                        setModalState(() => tempDist = dist),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-
-                          // 5. Price Range
-                          Text(
-                            context.l10n.map_price_range,
-                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: minController,
-                                  keyboardType: TextInputType.number,
-                                  style: GoogleFonts.cairo(fontSize: 13),
-                                  decoration: InputDecoration(
-                                    labelText: context.l10n.map_min_price,
-                                    labelStyle: GoogleFonts.cairo(fontSize: 12),
-                                    hintText: '0',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
-                                  ),
-                                  onChanged: (val) {
-                                    tempMinPrice = double.tryParse(val.trim());
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextField(
-                                  controller: maxController,
-                                  keyboardType: TextInputType.number,
-                                  style: GoogleFonts.cairo(fontSize: 13),
-                                  decoration: InputDecoration(
-                                    labelText: context.l10n.map_max_price,
-                                    labelStyle: GoogleFonts.cairo(fontSize: 12),
-                                    hintText: context.l10n.map_no_max,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
-                                  ),
-                                  onChanged: (val) {
-                                    tempMaxPrice = double.tryParse(val.trim());
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 6. Bedrooms
-                          Text(
-                            context.l10n.map_min_bedrooms,
-                            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              for (final b in [null, 1, 2, 3, 4, 5])
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 6),
-                                  child: _buildFilterOption(
-                                    label: b == null ? context.l10n.map_all : '$b+',
-                                    isSelected: tempBeds == b,
-                                    onTap: () => setModalState(() => tempBeds = b),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 7. Verified GPS Switch
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceVariant,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.divider),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.gps_fixed,
-                                  color: Color(0xFF0F766E),
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        context.l10n.map_exact_gps_only,
-                                        style: GoogleFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12.5,
-                                        ),
-                                      ),
-                                      Text(
-                                        context.l10n.map_hide_approximate,
-                                        style: GoogleFonts.cairo(
-                                          fontSize: 11,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Switch(
-                                  value: tempExactGps,
-                                  activeColor: AppColors.primary,
-                                  onChanged: (val) {
-                                    setModalState(() {
-                                      tempExactGps = val;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Submit Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _selectedDealType = tempDeal;
-                          _selectedTypeId = tempType;
-                          _selectedGovName = tempGov;
-                          _selectedDistrict = tempDist;
-                          _minBedrooms = tempBeds;
-                          _minPrice = tempMinPrice;
-                          _maxPrice = tempMaxPrice;
-                          _onlyExactCoordinates = tempExactGps;
-                          _selectedProperty = null;
-
-                          if (tempGov != null) {
-                            _searchController.text = tempGov!;
-                            final govCoord = _governorates.firstWhere(
-                              (g) => g.name == tempGov,
-                              orElse: () => _governorates.first,
-                            );
-                            _lastSearchCenter =
-                                LatLng(govCoord.latitude, govCoord.longitude);
-                            _currentZoom = govCoord.defaultZoom;
-                            _visibleBounds = null; // recalculated for new view
-                            _animatedMapMove(
-                              _lastSearchCenter!,
-                              govCoord.defaultZoom,
-                            );
-                          }
-                        });
-                        Navigator.pop(ctx);
-                      },
-                      child: Text(
-                        context.l10n.map_apply_filters,
-                        style: GoogleFonts.cairo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterOption({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.divider,
-          ),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.cairo(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
+      initial: PropertyFilterSelection(
+        dealType: _selectedDealType,
+        typeId: _selectedTypeId,
+        governorate: _selectedGovName,
+        district: _selectedDistrict,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        minBedrooms: _minBedrooms,
+        onlyExactCoordinates: _onlyExactCoordinates,
       ),
+      propertyTypes: propertyTypes,
+      showAdvancedFilters: true,
+      title: context.l10n.map_filter_title,
     );
+    if (result == null || !mounted) return;
+
+    setState(() {
+      _selectedDealType = result.dealType;
+      _selectedTypeId = result.typeId;
+      _selectedGovName = result.governorate;
+      _selectedDistrict = result.district;
+      _minBedrooms = result.minBedrooms;
+      _minPrice = result.minPrice;
+      _maxPrice = result.maxPrice;
+      _onlyExactCoordinates = result.onlyExactCoordinates;
+      _selectedProperty = null;
+
+      if (_selectedGovName != null) {
+        _searchController.text = _selectedGovName!;
+        final govCoord = _governorates.firstWhere(
+          (g) => g.name == _selectedGovName,
+          orElse: () => _governorates.first,
+        );
+        _lastSearchCenter = LatLng(govCoord.latitude, govCoord.longitude);
+        _currentZoom = govCoord.defaultZoom;
+        _visibleBounds = null; // recalculated for the new view
+        _animatedMapMove(_lastSearchCenter!, govCoord.defaultZoom);
+      }
+    });
   }
 
   void _onPropertyTap(Property prop, LatLng centroid) {
@@ -1059,6 +648,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   @override
   Widget build(BuildContext context) {
     final propertiesAsync = ref.watch(allMapPropertiesProvider);
+    // Keep property types cached for the shared filter sheet.
+    ref.watch(propertyTypesProvider);
     final settings = ref.watch(settingsProvider);
     final isMobile = Responsive.isMobile(context);
     final isDesktop = Responsive.isDesktop(context);
@@ -1777,6 +1368,13 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       chips.add(_buildSelectedFilterChip(
         _selectedGovName!,
         onRemoved: () => setState(() => _selectedGovName = null),
+      ));
+    }
+
+    if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
+      chips.add(_buildSelectedFilterChip(
+        _selectedDistrict!,
+        onRemoved: () => setState(() => _selectedDistrict = null),
       ));
     }
 

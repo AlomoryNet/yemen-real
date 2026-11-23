@@ -1,20 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/property_filter_selection.dart';
+
 /// Dashboard hero filter state: the user's pending search selections before
-/// they are submitted to [propertyFilterProvider] and opened as results.
+/// they are submitted to the map/list screen.
 class DashboardFilterState {
   const DashboardFilterState({
     this.searchQuery = '',
     this.dealType = '',
     this.typeId,
     this.governorate,
+    this.district,
   });
 
   final String searchQuery;
   final String dealType;
   final String? typeId;
   final String? governorate;
+  final String? district;
+
+  int get activeFilterCount {
+    var count = 0;
+    if (dealType.isNotEmpty) count++;
+    if (typeId != null) count++;
+    if (governorate != null && governorate!.isNotEmpty) count++;
+    if (district != null && district!.isNotEmpty) count++;
+    return count;
+  }
 }
 
 /// Owns the dashboard filter fields and the hero's search text controller.
@@ -34,6 +47,7 @@ class DashboardFilterNotifier extends StateNotifier<DashboardFilterState> {
       dealType: state.dealType,
       typeId: state.typeId,
       governorate: state.governorate,
+      district: state.district,
     );
   }
 
@@ -43,6 +57,7 @@ class DashboardFilterNotifier extends StateNotifier<DashboardFilterState> {
       dealType: dealType,
       typeId: state.typeId,
       governorate: state.governorate,
+      district: state.district,
     );
   }
 
@@ -52,6 +67,7 @@ class DashboardFilterNotifier extends StateNotifier<DashboardFilterState> {
       dealType: state.dealType,
       typeId: typeId,
       governorate: state.governorate,
+      district: state.district,
     );
   }
 
@@ -61,6 +77,27 @@ class DashboardFilterNotifier extends StateNotifier<DashboardFilterState> {
       dealType: state.dealType,
       typeId: state.typeId,
       governorate: governorate,
+      district: state.district,
+    );
+  }
+
+  void setDistrict(String? district) {
+    state = DashboardFilterState(
+      searchQuery: state.searchQuery,
+      dealType: state.dealType,
+      typeId: state.typeId,
+      governorate: state.governorate,
+      district: district,
+    );
+  }
+
+  void applySelection(PropertyFilterSelection selection) {
+    state = DashboardFilterState(
+      searchQuery: state.searchQuery,
+      dealType: selection.dealType,
+      typeId: selection.typeId,
+      governorate: selection.governorate,
+      district: selection.district,
     );
   }
 
