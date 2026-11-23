@@ -40,12 +40,38 @@ class YemenGovernorateCoord {
   });
 }
 
+/// Options forwarded by the dashboard when it opens the map/list screen.
+/// The map screen owns its filter state, so the incoming values are used as
+/// a one-time seed (no global filter provider is required).
+class MapScreenArgs {
+  final bool initialListView;
+  final String? searchQuery;
+  final String? dealType;
+  final String? propertyTypeId;
+  final String? city;
+
+  const MapScreenArgs({
+    this.initialListView = false,
+    this.searchQuery,
+    this.dealType,
+    this.propertyTypeId,
+    this.city,
+  });
+}
+
 class YemenMapScreen extends ConsumerStatefulWidget {
   /// Dashboard FAB opens the map/list view in list mode. Direct /map visits
   /// keep the map as the initial view.
   final bool initialListView;
 
-  const YemenMapScreen({super.key, this.initialListView = false});
+  /// Optional filter values coming from the dashboard search / view-all CTAs.
+  final MapScreenArgs? initialFilters;
+
+  const YemenMapScreen({
+    super.key,
+    this.initialListView = false,
+    this.initialFilters,
+  });
 
   @override
   ConsumerState<YemenMapScreen> createState() => _YemenMapScreenState();
@@ -54,6 +80,7 @@ class YemenMapScreen extends ConsumerStatefulWidget {
 class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     with SingleTickerProviderStateMixin {
   late final MapController _mapController;
+  late final StreamSubscription<MapEvent> _mapEventsSubscription;
   final TextEditingController _searchController = TextEditingController();
 
   Property? _selectedProperty;
@@ -70,6 +97,9 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   bool _showSearchThisAreaBtn = false;
   double _currentZoom = _defaultZoom;
   LatLng? _lastSearchCenter;
+  LatLngBounds? _visibleBounds;
+  LatLng? _initialFocus;
+  double? _initialZoom;
   Timer? _debounceTimer;
   final ScrollController _listScrollController = ScrollController();
 
@@ -228,9 +258,41 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   void initState() {
     super.initState();
     _mapController = MapController();
+    // Refresh the count/list once a pan/zoom gesture ends (not on every
+    // frame) so they always match the area currently shown on the map.
+    _mapEventsSubscription = _mapController.mapEventStream.listen((event) {
+      if (event is! MapEventMoveEnd || !mounted) return;
+      final camera = _mapController.camera;
+      if (camera.nonRotatedSize.width > 0 && camera.nonRotatedSize.height > 0) {
+        setState(() => _visibleBounds = camera.visibleBounds);
+      }
+    });
     _isListView = widget.initialListView;
-    // Use user's location (or Ibb fallback) for initial map center/zoom
-    _initMapCenter();
+
+    final incoming = widget.initialFilters;
+    if (incoming != null) {
+      if (incoming.searchQuery != null && incoming.searchQuery!.isNotEmpty) {
+        _searchController.text = incoming.searchQuery!;
+      }
+      _selectedDealType = incoming.dealType ?? '';
+      _selectedTypeId = incoming.propertyTypeId;
+      _selectedGovName =
+          (incoming.city == null || incoming.city!.isEmpty) ? null : incoming.city;
+      if (_selectedGovName != null) {
+        for (final gov in _governorates) {
+          if (gov.name == _selectedGovName ||
+              gov.name.contains(_selectedGovName!) ||
+              _selectedGovName!.contains(gov.name)) {
+            _initialFocus = LatLng(gov.latitude, gov.longitude);
+            _initialZoom = gov.defaultZoom;
+            break;
+          }
+        }
+      }
+    }
+
+    // Use the requested focus, or the user's stored location (Ibb fallback).
+    if (_initialFocus == null) _initMapCenter();
     _listScrollController.addListener(() {
       if (!_listScrollController.hasClients || !mounted) return;
       final position = _listScrollController.position;
@@ -245,6 +307,13 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   /// Initialize map center and zoom based on user's stored location (or Ibb fallback).
   Future<void> _initMapCenter() async {
+    final requestedFocus = _initialFocus;
+    if (requestedFocus != null) {
+      _lastSearchCenter = requestedFocus;
+      _currentZoom = _initialZoom ?? _defaultZoom;
+      if (mounted) setState(() {});
+      return;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final lat = prefs.getDouble('settings_latitude');
@@ -266,6 +335,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _mapEventsSubscription.cancel();
     _listScrollController.dispose();
     _searchController.dispose();
     _mapController.dispose();
@@ -314,6 +384,24 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   (double, double) _getPropertyCoords(Property prop) {
     return MapClusterService.getPropertyCoordinates(prop);
+  }
+
+  /// Bounds of the visible map area. While the list view is open the FlutterMap
+  /// widget is not mounted, so a camera built from the last known centre/zoom
+  /// and the screen size is used instead.
+  LatLngBounds _calculateVisibleBounds(Size screenSize) {
+    final tracked = _visibleBounds;
+    if (tracked != null) return tracked;
+    return MapCamera(
+      crs: const Epsg3857(),
+      center: _lastSearchCenter ?? _ibbCenter,
+      zoom: _currentZoom,
+      rotation: 0,
+      nonRotatedSize: Size(
+        screenSize.width > 0 ? screenSize.width : 400,
+        screenSize.height > 0 ? screenSize.height : 800,
+      ),
+    ).visibleBounds;
   }
 
   // Point in polygon ray-casting test for freehand drawing filter
@@ -901,8 +989,12 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                               (g) => g.name == tempGov,
                               orElse: () => _governorates.first,
                             );
+                            _lastSearchCenter =
+                                LatLng(govCoord.latitude, govCoord.longitude);
+                            _currentZoom = govCoord.defaultZoom;
+                            _visibleBounds = null; // recalculated for new view
                             _animatedMapMove(
-                              LatLng(govCoord.latitude, govCoord.longitude),
+                              _lastSearchCenter!,
                               govCoord.defaultZoom,
                             );
                           }
@@ -984,7 +1076,22 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
           final filteredProperties = _filterProperties(effectiveList);
 
-          // Reset pagination whenever the result set changes.
+          // Count badge + list must show only what the map shows: listings
+          // inside the current map viewport.
+          final visibleBounds =
+              _calculateVisibleBounds(MediaQuery.sizeOf(context));
+          final mapProperties = filteredProperties.where((p) {
+            final coords = _getPropertyCoords(p);
+            return visibleBounds.contains(LatLng(coords.$1, coords.$2));
+          }).toList();
+
+          // Reset pagination whenever the result set or the map view changes.
+          final boundsKey = [
+            visibleBounds.south,
+            visibleBounds.north,
+            visibleBounds.west,
+            visibleBounds.east,
+          ].map((v) => v.toStringAsFixed(3)).join(',');
           final filterKey = [
             _searchController.text,
             _selectedDealType,
@@ -996,12 +1103,13 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             _minBedrooms,
             _onlyExactCoordinates,
             _drawnPolygon.length,
+            boundsKey,
           ].join('|');
           if (filterKey != _lastFilterKey) {
             _lastFilterKey = filterKey;
             _visibleCount = _pageSize;
           }
-          _lastFilteredCount = filteredProperties.length;
+          _lastFilteredCount = mapProperties.length;
 
           return Stack(
             children: [
@@ -1052,6 +1160,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         ? InteractiveFlag.none
                         : InteractiveFlag.all,
                     onPositionChanged: (pos, hasGesture) {
+                      if (pos.nonRotatedSize.width > 0 &&
+                          pos.nonRotatedSize.height > 0) {
+                        _visibleBounds = pos.visibleBounds;
+                      }
                       if (pos.zoom != _currentZoom) {
                         setState(() {
                           _currentZoom = pos.zoom;
@@ -1093,7 +1205,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                   padding: EdgeInsets.only(
                     top: MediaQuery.of(context).padding.top + 128,
                   ),
-                  child: filteredProperties.isEmpty
+                  child: mapProperties.isEmpty
                       ? _buildEmptyAreaView()
                       : ListView.builder(
                           controller: _listScrollController,
@@ -1116,7 +1228,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                 ),
                               );
                             }
-                            final prop = filteredProperties[index];
+                            final prop = mapProperties[index];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               child: _buildSelectedPropertyCard(
@@ -1246,7 +1358,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '${context.l10n.map_draw_filter_active} (${filteredProperties.length} ${context.l10n.map_result_property_unit})',
+                            '${context.l10n.map_draw_filter_active} (${mapProperties.length} ${context.l10n.map_result_property_unit})',
                             style: GoogleFonts.cairo(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -1328,11 +1440,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               //   trailing edge (right in LTR, left in RTL), matching the
               //   dashboard FAB alignment.
               if (settings.assetCountVisibility == 'always' ||
-                  filteredProperties.isNotEmpty)
+                  mapProperties.isNotEmpty)
                 PositionedDirectional(
                   end: 16,
                   bottom: _selectedProperty != null ? 420 : 76,
-                  child: _buildCountBadge(filteredProperties),
+                  child: _buildCountBadge(mapProperties),
                 ),
 
               if (!_isListView)

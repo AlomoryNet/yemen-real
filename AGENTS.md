@@ -265,6 +265,41 @@ DONE (AppHeader screen-specific titles + overflow fixes, 2026-11-23, `flutter an
 - My Properties tab overflow fixed: Row with views count + preview button now uses `Expanded` + `TextOverflow.ellipsis`; badge Row wrapped in `Flexible`.
 - All hardcoded `Colors.white`/`Colors.grey`/`Colors.black` in map screen replaced with theme-aware `AppColors` tokens where possible.
 
+DONE (Home screen UI split + dashboard filter notifier, 2026-11-23, `flutter analyze` clean, 56/56 tests):
+- `home_screen.dart` (was 1,293 lines) split into sibling widgets under `lib/features/home/presentation/`:
+  `home_hero_section.dart` (HomeHeroSection), `home_nearby_section.dart` (HomeNearbySection),
+  `home_governorate_picker.dart` (HomeGovernoratePickerSheet), `home_property_sections.dart`
+  (HomeSectionHeader + HomePropertyGrid), `home_publisher_cta.dart` (HomePublisherCta).
+  Screen now holds only state/callbacks + Scaffold shell; all strings/routes/FAB key preserved.
+- Phase 2: new `lib/providers/dashboard_filter_provider.dart` (DashboardFilterState/Notifier)
+  owns hero search text controller + pending deal/type/governorate selections; `_HomeScreenState`
+  now only keeps location-first state (`_userCenter`, `_locationResolved`).
+- Fixed refactor fallout: missing `location_provider` (propertyTypesProvider), `go_router` and
+  `flutter_riverpod` imports; unclosed Row + stale `_locationResolved` in nearby section; unused imports.
+- Runtime fix found via USB run: `HomeNearbySection` clamps `screenWidth - 68` to >= 0 (first frame
+  MediaQuery width can be 0 → negative SizedBox width assertion). Hot reload verified: no runtime errors.
+
+DONE (Dashboard → map routing + map-scoped results + accurate nearby, 2026-11-23, `flutter analyze` clean, 56/56 tests):
+- Verified in code: the list screen's "عرض المزيد من العقارات" only paginates inside `/map`; the four
+  dashboard pushes (hero search + featured/sale/rent "عرض الكل") were the stale `/search` ones.
+- New `MapScreenArgs` (in `yemen_map_screen.dart`) carries `initialListView` + seed filters from the
+  dashboard; `/map` router handles both `bool` (old FAB/nearby behaviour) and `MapScreenArgs`.
+  `YemenMapScreen` seeds its local filter state and map centre from those args; all four dashboard
+  pushes now go to `/map` in list mode (no 404 route).
+- Map count badge, list rows and draw-filter count now use only properties inside the current map
+  viewport: `LatLngBounds` from `onPositionChanged` / `MapEventMoveEnd`, with a `MapCamera` fallback
+  computed from centre+zoom+screen size while the list is open. Pagination resets when the view moves.
+- "Properties near you" now filters `DemoPropertiesGenerator` by distance from `_userCenter` (Ibb
+  fallback) using `settingsProvider.searchRadiusKm`, sorts nearest-first and takes 4 — previously it
+  just took the generator's first 4 rows (other governorates).
+- USB verified on `ZY22G4C24N`: nearby cards are all "إب - …"; map badge reads 20 عقار متاح (Ibb's
+  demo listings, not 440); list mode shows only إب listings; "عرض الكل" opens the map/list screen
+  (no 404); DTD reports no runtime errors after hot reload.
+- Nearby count fix: `_nearbyProperties()` now returns ALL listings within `searchRadiusKm` (sorted
+  nearest-first) instead of only 4; `HomeNearbySection` still renders at most 4 cards via `take(4)`.
+  The section subtitle therefore shows the real total (20) matching the map/list badge, while
+  "عرض الكل" opens the full list. `flutter analyze` clean, 56/56 tests pass.
+
 ## Docs policy
 - AGENTS.md = agent memory (this file). PROJECT_SUMMARY.md = stale human snapshot, keep for context.
 - `docs/reports/` = historical verification (keep) · `docs/screenshots/` = curated only

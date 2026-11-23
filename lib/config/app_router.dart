@@ -77,13 +77,21 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/map',
       name: 'map',
-      pageBuilder: (context, state) => _tabPage(
-        context,
-        state,
-        YemenMapScreen(
-          initialListView: state.extra is bool ? state.extra as bool : false,
-        ),
-      ),
+      pageBuilder: (context, state) {
+        final extra = state.extra;
+        // Dashboard CTAs pass filter values; plain bool keeps the original
+        // list/map entry behaviour (dashboard FAB / nearby section).
+        return _tabPage(
+          context,
+          state,
+          YemenMapScreen(
+            initialListView: extra is MapScreenArgs
+                ? extra.initialListView
+                : (extra is bool ? extra : false),
+            initialFilters: extra is MapScreenArgs ? extra : null,
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/property/:id',
