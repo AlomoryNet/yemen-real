@@ -83,7 +83,7 @@ class YemenMapScreen extends ConsumerStatefulWidget {
 }
 
 class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final MapController _mapController;
   late final StreamSubscription<MapEvent> _mapEventsSubscription;
   final TextEditingController _searchController = TextEditingController();

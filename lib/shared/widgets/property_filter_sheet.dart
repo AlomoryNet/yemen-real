@@ -438,26 +438,31 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                           context: context,
                           icon: Icons.gps_fixed,
                           label: l10n.map_exact_gps_only,
-                          child: SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            value: _onlyExactCoordinates,
-                            title: Text(
-                              l10n.map_exact_gps_only,
-                              style: GoogleFonts.cairo(
-                                fontSize: 13,
-                                color: AppColors.textPrimary,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              value: _onlyExactCoordinates,
+                              title: Text(
+                                l10n.map_exact_gps_only,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
-                            ),
-                            subtitle: Text(
-                              l10n.map_hide_approximate,
-                              style: GoogleFonts.cairo(
-                                fontSize: 11.5,
-                                color: AppColors.textSecondary,
+                              subtitle: Text(
+                                l10n.map_hide_approximate,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 11.5,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
+                              onChanged: (value) {
+                                setState(
+                                  () => _onlyExactCoordinates = value,
+                                );
+                              },
                             ),
-                            onChanged: (value) {
-                              setState(() => _onlyExactCoordinates = value);
-                            },
                           ),
                         ),
                       ],
