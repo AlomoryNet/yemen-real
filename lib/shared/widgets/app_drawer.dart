@@ -40,10 +40,10 @@ class AppDrawer extends ConsumerWidget {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(28),
+                      color: AppColors.textLight.withAlpha(28),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withAlpha(70),
+                        color: AppColors.textLight.withAlpha(70),
                         width: 1.5,
                       ),
                     ),
@@ -52,14 +52,14 @@ class AppDrawer extends ConsumerWidget {
                           ? Text(
                               _initial(context, user.fullName),
                               style: GoogleFonts.cairo(
-                                color: Colors.white,
+                                color: AppColors.textLight,
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                               ),
                             )
                           : const Icon(
                               Icons.apartment_rounded,
-                              color: Colors.white,
+                              color: AppColors.textLight,
                               size: 26,
                             ),
                     ),
@@ -77,7 +77,7 @@ class AppDrawer extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.cairo(
-                            color: Colors.white,
+                            color: AppColors.textLight,
                             fontSize: 16.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -92,7 +92,7 @@ class AppDrawer extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.cairo(
-                            color: Colors.white.withAlpha(205),
+                            color: AppColors.textLight.withAlpha(205),
                             fontSize: 12,
                           ),
                         ),
@@ -110,12 +110,12 @@ class AppDrawer extends ConsumerWidget {
                 gradient: const LinearGradient(
                   begin: Alignment.topRight,
                   end: Alignment.bottomLeft,
-                  colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
+                  colors: [AppColors.primary, AppColors.primaryLight],
                 ),
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0D9488).withAlpha(70),
+                    color: AppColors.primary.withAlpha(70),
                     blurRadius: 12,
                     offset: const Offset(0, 5),
                   ),
@@ -137,12 +137,12 @@ class AppDrawer extends ConsumerWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(38),
+                            color: AppColors.textLight.withAlpha(38),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Icon(
                             Icons.map_rounded,
-                            color: Colors.white,
+                            color: AppColors.textLight,
                             size: 26,
                           ),
                         ),
@@ -155,7 +155,7 @@ class AppDrawer extends ConsumerWidget {
                               Text(
                                 context.l10n.sh_drawer_map_title,
                                 style: GoogleFonts.cairo(
-                                  color: Colors.white,
+                                  color: AppColors.textLight,
                                   fontWeight: FontWeight.w900,
                                   fontSize: 14.5,
                                 ),
@@ -166,7 +166,7 @@ class AppDrawer extends ConsumerWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.cairo(
-                                  color: Colors.white.withAlpha(220),
+                                  color: AppColors.textLight.withAlpha(220),
                                   fontSize: 11,
                                 ),
                               ),
@@ -175,7 +175,7 @@ class AppDrawer extends ConsumerWidget {
                         ),
                         const Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white,
+                          color: AppColors.textLight,
                           size: 16,
                         ),
                       ],
@@ -296,7 +296,7 @@ class AppDrawer extends ConsumerWidget {
                         : ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
+                              foregroundColor: AppColors.textLight,
                               padding: const EdgeInsets.symmetric(vertical: 13),
                               shape: const StadiumBorder(),
                               elevation: 0,
@@ -348,10 +348,14 @@ class AppDrawer extends ConsumerWidget {
     required String title,
     required String route,
   }) {
+    final currentRoute = GoRouterState.of(context).uri.path;
+    final selected = currentRoute == route ||
+        (route != '/' && currentRoute.startsWith('$route/'));
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
-        color: Colors.transparent,
+        color: selected ? AppColors.primaryMuted.withAlpha(105) : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
@@ -379,15 +383,17 @@ class AppDrawer extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.cairo(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
+                      color: selected ? AppColors.primaryInk : AppColors.textPrimary,
+                      fontWeight: selected ? FontWeight.bold : FontWeight.w600,
                       fontSize: 13.5,
                     ),
                   ),
                 ),
                 Icon(
-                  Icons.chevron_left_rounded,
-                  color: AppColors.textMuted,
+                  selected
+                      ? Icons.check_circle_rounded
+                      : Icons.chevron_left_rounded,
+                  color: selected ? AppColors.primaryInk : AppColors.textMuted,
                   size: 20,
                 ),
               ],

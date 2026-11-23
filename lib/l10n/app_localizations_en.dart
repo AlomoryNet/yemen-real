@@ -2883,6 +2883,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sh_nav_map => 'Map';
 
   @override
+  String get sh_nav_search_map => 'Search & Map';
+
+  @override
   String get sh_nav_favorites => 'Favorites';
 
   @override

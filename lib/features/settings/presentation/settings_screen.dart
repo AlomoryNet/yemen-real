@@ -31,9 +31,22 @@ class SettingsScreen extends ConsumerWidget {
         elevation: 0,
       ),
       body: AppPageBody(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          children: [
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            cardTheme: CardThemeData(
+              color: AppColors.surface,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: AppColors.divider),
+              ),
+            ),
+          ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            children: [
             _sectionHeader(Icons.language_rounded, l10n.language),
             Card(
               child: Column(
@@ -224,7 +237,8 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -232,17 +246,35 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _sectionHeader(IconData icon, String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10, top: 2),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.primaryInk),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: GoogleFonts.cairo(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryInk,
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.primaryMuted,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.primaryInk),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.cairo(
+                fontSize: 14.5,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryInk,
+              ),
+            ),
+          ),
+          Container(
+            width: 28,
+            height: 3,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withAlpha(70),
+              borderRadius: BorderRadius.circular(3),
             ),
           ),
         ],

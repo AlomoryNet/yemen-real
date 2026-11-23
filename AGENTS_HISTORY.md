@@ -243,6 +243,65 @@ DONE (Dashboard → map routing + map-scoped results + accurate nearby, 2026-11-
   The section subtitle therefore shows the real total (20) matching the map/list badge, while
   "عرض الكل" opens the full list. `flutter analyze` clean, 56/56 tests pass.
 
+DONE (Unified property cards + admin/settings/drawer/map redesign, 2026-11-23, `flutter analyze` clean, 56/56 tests, USB hot restart clean):
+- Added `lib/core/theme/property_text_styles.dart` for shared property-card typography and
+  `lib/shared/widgets/property/` for favorite button, image/placeholder, carousel and spec chips.
+- Rewrote `lib/shared/widgets/property_card.dart` as the canonical card with
+  `PropertyCardLayout.grid/row/overlay/management`. Shared radius, typography, favorite control,
+  image handling and spec chips are centralized. Overlay/maps keep optional carousel, close,
+  call, WhatsApp, directions and detail action slots; management cards add status/owner info.
+- Migrated `lib/features/map/presentation/property_map_view.dart` cluster rows and
+  `lib/features/map/presentation/yemen_map_screen.dart` list rows + floating selected card to the
+  shared card. Removed private tile/thumbnail/chip helpers and hardcoded Unsplash fallbacks from
+  the map selected card.
+- Reworked map shell geometry: `_headerBottom`, `_selectedCardReserve`, one RTL-aware control
+  stack and `_buildSmallMapFab`; floating header now has `AppColors.divider` border and translucent
+  `AppColors.surface`; filter-chip row indentation normalized.
+- Rebuilt `lib/features/profile/presentation/my_properties_screen.dart` with a page header, stats
+  tiles, deal filter chips, shared management cards, popup actions, FAB and empty states.
+- Rail: merged duplicate Search + Map destinations into one `البحث والخريطة` item → `/map`;
+  `MapScreenArgs` pushes and the in-screen list/map toggle remain intact. Added
+  `sh_nav_search_map` to `app_ar.arb`/`app_en.arb` and regenerated localizations.
+  `AppBottomNavBar` remains exactly 2 destinations (Home + My properties) by requirement.
+- Drawer: added selected-route styling, check icons and tokenized map-card colors; removed the
+  unused `currentRoute` local that `flutter analyze` flagged.
+- Settings: tokenized card theme and section headers; the live `ar_YE/en_US` language radio
+  remains unchanged.
+- Admin split (same `/admin` route, same `AdminDashboardScreen({super.key})` API):
+  - `presentation/widgets/admin_stats.dart` (grid + stat card),
+    `admin_pending_properties.dart`, `admin_pending_property_card.dart`,
+    `admin_dialogs.dart` (CSV preview/copy + manual commission dialog).
+  - `presentation/tabs/` holds `AdminPropertiesTab`, `AdminRequestsTab`,
+    `AdminCommissionsTab`, `AdminReportsTab`, `AdminUsersTab`.
+  - `services/admin_pdf_service.dart` owns section export. PDF mapping stayed 0=properties,
+    1=requests, 2=commissions, 3=reports, 4=users; `context.mounted` guards and all provider
+    refreshes preserved. Users tab keeps the super-admin role/email/id whitelist.
+  - Shell keeps only auth guard, title, stats, moderation queue, five-tab layout and PDF trigger;
+    `SizedBox(height: 650)` around `TabBarView` preserved.
+- Verification: `flutter analyze` → No issues found; `flutter test` → 56/56; `flutter devices`
+  showed USB `ZY22G4C24N`; `flutter run -d ZY22G4C24N` built/installed and DTD hot restart
+  succeeded with no runtime errors. Known offline OSM tile `Network is unreachable` noise remains.
+
+DONE (Paging + overflow fixes, 2026-11-23, `flutter analyze` clean, 56/56 tests, fresh USB run):
+- My Properties no longer builds the whole owner catalog. `getUserProperties(userId, {limit, offset})`
+  pages at the repository (Supabase `.range(...)` + demo sublist); new `getUserPropertyStats`
+  and `UserPropertyStats` provide lightweight totals; `UserPropertiesPaginator` /
+  `userPropertiesPaginatorProvider` load 12 at a time and append more via an explicit
+  "load more" button plus a scroll-near-bottom trigger. Verified on device: 440 total/published
+  stats with only a bounded set of cards built.
+- Favorites grid and admin moderation queue now render 12 cards with a "Load more" button and
+  reset the window when their providers change. Both were converted to `ConsumerStatefulWidget`;
+  `ref.listen` must be called in `build()` (an `initState` assertion on Favorites was caught on
+  device and fixed).
+- Overflow fixes: admin moderation actions use `Wrap`; admin owner/phone/date, location/area,
+  type/price, section-header and moderation empty-state rows use `Flexible`/`Expanded` + ellipsis;
+  `PropertyCard._badges` is a `Wrap` so the map discount pill no longer overflows; map selected-card
+  price caption is ellipsized. Profile header name + admin badge row uses `Flexible` + ellipsis
+  (fixed 15px overflow for `م/محمد السقاف` + super-admin pill). Device sweep (Profile, My Properties,
+  Favorites, Admin, Map/list) shows no RenderFlex overflow.
+- Verification: `flutter analyze` clean, `flutter test` 56/56, fresh `flutter run -d ZY22G4C24N`
+  + DTD hot restart; only remaining noise is offline OSM tile `Network is unreachable`.
+
 ## Docs policy
 - AGENTS.md = agent memory (this file). PROJECT_SUMMARY.md = stale human snapshot, keep for context.
 - `docs/reports/` = historical verification (keep) · `docs/screenshots/` = curated only

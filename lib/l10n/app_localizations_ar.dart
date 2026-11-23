@@ -2883,6 +2883,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sh_nav_map => 'الخريطة';
 
   @override
+  String get sh_nav_search_map => 'البحث والخريطة';
+
+  @override
   String get sh_nav_favorites => 'المفضلة';
 
   @override

@@ -958,6 +958,7 @@
   "sh_drawer_initial_fallback": "U",
   "sh_nav_search": "Search",
   "sh_nav_map": "Map",
+  "sh_nav_search_map": "Search & Map",
   "sh_nav_favorites": "Favorites",
   "sh_rail_my_properties": "My properties",
   "sh_rail_admin": "Admin panel",

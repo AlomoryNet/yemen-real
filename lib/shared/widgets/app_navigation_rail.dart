@@ -27,16 +27,14 @@ class AppNavigationRail extends ConsumerWidget {
         Icons.home_rounded,
         '/',
       ),
+      // One destination for the integrated search + map experience.
+      // Search results and the floating map card both live inside /map, so a
+      // second rail item was only duplicating the route and breaking the
+      // selected-state calculation.
       _RailItem(
-        context.l10n.sh_nav_search,
-        Icons.search_rounded,
-        Icons.search_rounded,
-        '/map',
-      ),
-      _RailItem(
-        context.l10n.sh_nav_map,
-        Icons.map_rounded,
-        Icons.map_rounded,
+        context.l10n.sh_nav_search_map,
+        Icons.explore_outlined,
+        Icons.explore_rounded,
         '/map',
       ),
       _RailItem(
@@ -81,11 +79,15 @@ class AppNavigationRail extends ConsumerWidget {
     ];
 
     final route = GoRouterState.of(context).uri.path;
-    int selectedIndex = 0;
+    var selectedIndex = 0;
+    var bestMatchLength = -1;
     for (var i = 0; i < destinations.length; i++) {
-      if (route == destinations[i].route ||
-          route.startsWith('${destinations[i].route}/')) {
+      final destinationRoute = destinations[i].route;
+      final matches = route == destinationRoute ||
+          route.startsWith('$destinationRoute/');
+      if (matches && destinationRoute.length > bestMatchLength) {
         selectedIndex = i;
+        bestMatchLength = destinationRoute.length;
       }
     }
 

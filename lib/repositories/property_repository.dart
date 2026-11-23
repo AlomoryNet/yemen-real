@@ -5,6 +5,7 @@ import '../core/exceptions/app_exception.dart';
 import '../models/property.dart';
 import '../models/property_image.dart';
 import '../models/property_type.dart';
+import '../models/user_property_stats.dart';
 import '../services/supabase_service.dart';
 import '../core/l10n/app_strings.dart';
 
@@ -316,10 +317,7 @@ class PropertyRepository {
         'has_ownership_pledge': property.hasOwnershipPledge,
       };
 
-      await _client
-          .from('properties')
-          .update(payload)
-          .eq('id', property.id);
+      await _client.from('properties').update(payload).eq('id', property.id);
 
       return await getPropertyById(property.id);
     } catch (e) {
@@ -453,12 +451,26 @@ class PropertyRepository {
     }
   }
 
-  /// Get properties published by a specific user
-  Future<List<Property>> getUserProperties(String userId) async {
+  /// Get one page of properties published by a specific user.
+  ///
+  /// Pagination is done here (not only in the UI) so the My Properties tab
+  /// never builds a full catalog of cards at once.
+  Future<List<Property>> getUserProperties(
+    String userId, {
+    int limit = 12,
+    int offset = 0,
+  }) async {
     if (EnvConfig.isDemoMode || _client == null) {
-      return SupabaseService.demoProperties
+      final owned = SupabaseService.demoProperties
           .where((p) => p.ownerId == userId || userId == 'demo-admin-1')
           .toList();
+      final start = offset < 0
+          ? 0
+          : (offset > owned.length ? owned.length : offset);
+      final end = (start + limit) > owned.length
+          ? owned.length
+          : (start + limit);
+      return owned.sublist(start, end);
     }
 
     try {
@@ -470,11 +482,56 @@ class PropertyRepository {
             property_types (*)
           ''')
           .eq('owner_id', userId)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
 
       return (data as List)
           .map((item) => Property.fromJson(item as Map<String, dynamic>))
           .toList();
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Lightweight status counts for the owner's listings.
+  Future<UserPropertyStats> getUserPropertyStats(String userId) async {
+    if (EnvConfig.isDemoMode || _client == null) {
+      final owned = SupabaseService.demoProperties
+          .where((p) => p.ownerId == userId || userId == 'demo-admin-1')
+          .toList();
+      return UserPropertyStats(
+        total: owned.length,
+        published: owned
+            .where((p) => p.status == AppConstants.statusPublished)
+            .length,
+        pending: owned
+            .where((p) => p.status == AppConstants.statusPending)
+            .length,
+      );
+    }
+
+    try {
+      final data = await _client
+          .from('properties')
+          .select('status')
+          .eq('owner_id', userId);
+
+      final statuses = (data as List)
+          .map((item) => (item as Map<String, dynamic>)['status'] as String?)
+          .whereType<String>();
+      var published = 0;
+      var pending = 0;
+      var total = 0;
+      for (final status in statuses) {
+        total++;
+        if (status == AppConstants.statusPublished) published++;
+        if (status == AppConstants.statusPending) pending++;
+      }
+      return UserPropertyStats(
+        total: total,
+        published: published,
+        pending: pending,
+      );
     } catch (e) {
       throw AppException.fromSupabase(e);
     }

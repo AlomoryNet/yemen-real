@@ -1,7 +1,6 @@
-﻿import 'dart:ui' show ImageFilter;
+import 'dart:ui' show ImageFilter;
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,13 +14,14 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../models/property.dart';
 import '../../../models/property_type.dart';
-import '../../../providers/favorites_provider.dart';
 import '../../../providers/location_provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_page_body.dart';
+import '../../../core/theme/property_text_styles.dart';
+import '../../../shared/widgets/property_card.dart';
 import '../../../shared/widgets/property_filter_sheet.dart';
 import '../../../data/demo_properties_generator.dart';
 import '../services/map_cluster_service.dart';
@@ -98,7 +98,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   int? _minBedrooms;
   bool _onlyExactCoordinates = false;
 
-  bool _isListView = false; // overwritten from widget.initialListView in initState
+  bool _isListView =
+      false; // overwritten from widget.initialListView in initState
   bool _showSearchThisAreaBtn = false;
   double _currentZoom = _defaultZoom;
   LatLng? _lastSearchCenter;
@@ -123,6 +124,23 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   static const double _defaultZoom = 12.5;
   static const LatLng _ibbCenter = LatLng(13.9667, 44.1833);
+
+  // Map shell geometry — one source of truth for the floating header and the
+  // controls anchored around it. Previously these were seven unrelated magic
+  // offsets that broke with text scaling and safe-area changes.
+  static const double _headerPadding = 10;
+  static const double _headerSearchHeight = 46;
+  static const double _headerChipHeight = 42;
+  static const double _headerGap = 8;
+  static const double _selectedCardReserve = 372;
+
+  double _headerBottom(BuildContext context) =>
+      MediaQuery.paddingOf(context).top +
+      _headerPadding +
+      _headerSearchHeight +
+      _headerGap +
+      _headerChipHeight +
+      _headerGap;
 
   static const List<YemenGovernorateCoord> _governorates = [
     YemenGovernorateCoord(
@@ -281,10 +299,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       }
       _selectedDealType = incoming.dealType ?? '';
       _selectedTypeId = incoming.propertyTypeId;
-      _selectedGovName =
-          (incoming.city == null || incoming.city!.isEmpty) ? null : incoming.city;
-      _selectedDistrict = (incoming.district == null ||
-              incoming.district!.isEmpty)
+      _selectedGovName = (incoming.city == null || incoming.city!.isEmpty)
+          ? null
+          : incoming.city;
+      _selectedDistrict =
+          (incoming.district == null || incoming.district!.isEmpty)
           ? null
           : incoming.district;
       if (_selectedGovName != null) {
@@ -308,7 +327,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       if (position.pixels >= position.maxScrollExtent - 300 &&
           _visibleCount < _lastFilteredCount) {
         setState(() {
-          _visibleCount = (_visibleCount + _pageSize).clamp(0, _lastFilteredCount);
+          _visibleCount = (_visibleCount + _pageSize).clamp(
+            0,
+            _lastFilteredCount,
+          );
         });
       }
     });
@@ -424,8 +446,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       final xj = polygon[j].latitude;
       final yj = polygon[j].longitude;
 
-      final intersect = ((yi > point.longitude) != (yj > point.longitude)) &&
-          (point.latitude < (xj - xi) * (point.longitude - yi) / (yj - yi) + xi);
+      final intersect =
+          ((yi > point.longitude) != (yj > point.longitude)) &&
+          (point.latitude <
+              (xj - xi) * (point.longitude - yi) / (yj - yi) + xi);
       if (intersect) inside = !inside;
       j = i;
     }
@@ -452,7 +476,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
       // Filter governorate
       if (_selectedGovName != null && _selectedGovName!.isNotEmpty) {
-        final matchesCity = p.city == _selectedGovName ||
+        final matchesCity =
+            p.city == _selectedGovName ||
             p.city.contains(_selectedGovName!) ||
             _selectedGovName!.contains(p.city);
         if (!matchesCity) return false;
@@ -460,7 +485,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
       // Filter district
       if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
-        final matchesDist = p.district == _selectedDistrict ||
+        final matchesDist =
+            p.district == _selectedDistrict ||
             p.district.contains(_selectedDistrict!) ||
             _selectedDistrict!.contains(p.district);
         if (!matchesDist) return false;
@@ -525,7 +551,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: context.l10n.map_call,
-              textColor: Colors.white,
+              textColor: AppColors.textLight,
               onPressed: () => _makeCall(prop.contactPhone),
             ),
           ),
@@ -656,323 +682,270 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
     return Scaffold(
       drawer: isDesktop ? null : const AppDrawer(),
-      bottomNavigationBar:
-          isDesktop ? null : const AppBottomNavBar(currentRoute: '/map'),
+      bottomNavigationBar: isDesktop
+          ? null
+          : const AppBottomNavBar(currentRoute: '/map'),
       body: AppPageBody(
         child: propertiesAsync.when(
-        data: (allProperties) {
-          final effectiveList = allProperties.isNotEmpty
-              ? allProperties
-              : DemoPropertiesGenerator.generateAllDemoProperties();
+          data: (allProperties) {
+            final effectiveList = allProperties.isNotEmpty
+                ? allProperties
+                : DemoPropertiesGenerator.generateAllDemoProperties();
 
-          final filteredProperties = _filterProperties(effectiveList);
+            final filteredProperties = _filterProperties(effectiveList);
 
-          // Count badge + list must show only what the map shows: listings
-          // inside the current map viewport.
-          final visibleBounds =
-              _calculateVisibleBounds(MediaQuery.sizeOf(context));
-          final mapProperties = filteredProperties.where((p) {
-            final coords = _getPropertyCoords(p);
-            return visibleBounds.contains(LatLng(coords.$1, coords.$2));
-          }).toList();
+            // Count badge + list must show only what the map shows: listings
+            // inside the current map viewport.
+            final visibleBounds = _calculateVisibleBounds(
+              MediaQuery.sizeOf(context),
+            );
+            final mapProperties = filteredProperties.where((p) {
+              final coords = _getPropertyCoords(p);
+              return visibleBounds.contains(LatLng(coords.$1, coords.$2));
+            }).toList();
 
-          // Reset pagination whenever the result set or the map view changes.
-          final boundsKey = [
-            visibleBounds.south,
-            visibleBounds.north,
-            visibleBounds.west,
-            visibleBounds.east,
-          ].map((v) => v.toStringAsFixed(3)).join(',');
-          final filterKey = [
-            _searchController.text,
-            _selectedDealType,
-            _selectedTypeId,
-            _selectedGovName,
-            _selectedDistrict,
-            _minPrice,
-            _maxPrice,
-            _minBedrooms,
-            _onlyExactCoordinates,
-            _drawnPolygon.length,
-            boundsKey,
-          ].join('|');
-          if (filterKey != _lastFilterKey) {
-            _lastFilterKey = filterKey;
-            _visibleCount = _pageSize;
-          }
-          _lastFilteredCount = mapProperties.length;
+            // Reset pagination whenever the result set or the map view changes.
+            final boundsKey = [
+              visibleBounds.south,
+              visibleBounds.north,
+              visibleBounds.west,
+              visibleBounds.east,
+            ].map((v) => v.toStringAsFixed(3)).join(',');
+            final filterKey = [
+              _searchController.text,
+              _selectedDealType,
+              _selectedTypeId,
+              _selectedGovName,
+              _selectedDistrict,
+              _minPrice,
+              _maxPrice,
+              _minBedrooms,
+              _onlyExactCoordinates,
+              _drawnPolygon.length,
+              boundsKey,
+            ].join('|');
+            if (filterKey != _lastFilterKey) {
+              _lastFilterKey = filterKey;
+              _visibleCount = _pageSize;
+            }
+            _lastFilteredCount = mapProperties.length;
 
-          return Stack(
-            children: [
-              // 1. Full Screen Interactive Map or List View
-              if (!_isListView)
-                GestureDetector(
-                  // Handlers for freehand drawing feature
-                  onPanStart: _isDrawingMode
-                      ? (details) {
-                          final latLng = _mapController.camera
-                              .offsetToCrs(details.localPosition);
-                          setState(() {
-                            _drawnPolygon = [latLng];
-                          });
-                        }
-                      : null,
-                  onPanUpdate: _isDrawingMode
-                      ? (details) {
-                          final latLng = _mapController.camera
-                              .offsetToCrs(details.localPosition);
-                          setState(() {
-                            _drawnPolygon.add(latLng);
-                          });
-                        }
-                      : null,
-                  onPanEnd: _isDrawingMode
-                      ? (details) {
-                          if (_drawnPolygon.length > 2) {
+            return Stack(
+              children: [
+                // 1. Full Screen Interactive Map or List View
+                if (!_isListView)
+                  GestureDetector(
+                    // Handlers for freehand drawing feature
+                    onPanStart: _isDrawingMode
+                        ? (details) {
+                            final latLng = _mapController.camera.offsetToCrs(
+                              details.localPosition,
+                            );
                             setState(() {
-                              _isDrawingMode = false;
+                              _drawnPolygon = [latLng];
                             });
                           }
-                        }
-                      : null,
-                  child: PropertyMapView(
-                    properties: filteredProperties,
-                    mapController: _mapController,
-                    initialCenter: _lastSearchCenter ?? _ibbCenter,
-                    initialZoom: _currentZoom,
-                    minZoom: 5.0,
-                    maxZoom: 18.0,
-                    isSatellite: _isSatellite,
-                    selectedPropertyId: _selectedProperty?.id,
-                    highlightGovernorate: _selectedGovName,
-                    drawnPolygon: _drawnPolygon,
-                    showBoundaries: true,
-                    interactionFlags: _isDrawingMode
-                        ? InteractiveFlag.none
-                        : InteractiveFlag.all,
-                    onPositionChanged: (pos, hasGesture) {
-                      if (pos.nonRotatedSize.width > 0 &&
-                          pos.nonRotatedSize.height > 0) {
-                        _visibleBounds = pos.visibleBounds;
-                      }
-                      if (pos.zoom != _currentZoom) {
-                        setState(() {
-                          _currentZoom = pos.zoom;
-                        });
-                      }
-                      if (hasGesture && !_isDrawingMode) {
-                        _debounceTimer?.cancel();
-                        _debounceTimer = Timer(
-                            const Duration(milliseconds: 300), () {
-                          if (mounted) {
-                            final dist = _lastSearchCenter != null
-                                ? const Distance()
-                                    .as(LengthUnit.Kilometer,
-                                        _lastSearchCenter!, pos.center)
-                                : 0;
-                            if (dist > 3.0) {
+                        : null,
+                    onPanUpdate: _isDrawingMode
+                        ? (details) {
+                            final latLng = _mapController.camera.offsetToCrs(
+                              details.localPosition,
+                            );
+                            setState(() {
+                              _drawnPolygon.add(latLng);
+                            });
+                          }
+                        : null,
+                    onPanEnd: _isDrawingMode
+                        ? (details) {
+                            if (_drawnPolygon.length > 2) {
                               setState(() {
-                                _showSearchThisAreaBtn = true;
+                                _isDrawingMode = false;
                               });
                             }
                           }
-                        });
-                      }
-                    },
-                    onMapTap: (tapPosition, point) {
-                      if (_selectedProperty != null) {
-                        setState(() {
-                          _selectedProperty = null;
-                        });
-                      }
-                    },
-                    onPropertyTap: _onPropertyTap,
-                  ),
-                )
-              else
-                // Synced List View
-                Container(
-                  color: AppColors.background,
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 128,
-                  ),
-                  child: mapProperties.isEmpty
-                      ? _buildEmptyAreaView()
-                      : ListView.builder(
-                          controller: _listScrollController,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _visibleCount < _lastFilteredCount
-                              ? _visibleCount + 1
-                              : _visibleCount,
-                          itemBuilder: (context, index) {
-                            if (index == _visibleCount) {
+                        : null,
+                    child: PropertyMapView(
+                      properties: filteredProperties,
+                      mapController: _mapController,
+                      initialCenter: _lastSearchCenter ?? _ibbCenter,
+                      initialZoom: _currentZoom,
+                      minZoom: 5.0,
+                      maxZoom: 18.0,
+                      isSatellite: _isSatellite,
+                      selectedPropertyId: _selectedProperty?.id,
+                      highlightGovernorate: _selectedGovName,
+                      drawnPolygon: _drawnPolygon,
+                      showBoundaries: true,
+                      interactionFlags: _isDrawingMode
+                          ? InteractiveFlag.none
+                          : InteractiveFlag.all,
+                      onPositionChanged: (pos, hasGesture) {
+                        if (pos.nonRotatedSize.width > 0 &&
+                            pos.nonRotatedSize.height > 0) {
+                          _visibleBounds = pos.visibleBounds;
+                        }
+                        if (pos.zoom != _currentZoom) {
+                          setState(() {
+                            _currentZoom = pos.zoom;
+                          });
+                        }
+                        if (hasGesture && !_isDrawingMode) {
+                          _debounceTimer?.cancel();
+                          _debounceTimer = Timer(
+                            const Duration(milliseconds: 300),
+                            () {
+                              if (mounted) {
+                                final dist = _lastSearchCenter != null
+                                    ? const Distance().as(
+                                        LengthUnit.Kilometer,
+                                        _lastSearchCenter!,
+                                        pos.center,
+                                      )
+                                    : 0;
+                                if (dist > 3.0) {
+                                  setState(() {
+                                    _showSearchThisAreaBtn = true;
+                                  });
+                                }
+                              }
+                            },
+                          );
+                        }
+                      },
+                      onMapTap: (tapPosition, point) {
+                        if (_selectedProperty != null) {
+                          setState(() {
+                            _selectedProperty = null;
+                          });
+                        }
+                      },
+                      onPropertyTap: _onPropertyTap,
+                    ),
+                  )
+                else
+                  // Synced List View
+                  Container(
+                    color: AppColors.background,
+                    padding: EdgeInsets.only(top: _headerBottom(context) + 12),
+                    child: mapProperties.isEmpty
+                        ? _buildEmptyAreaView()
+                        : ListView.builder(
+                            controller: _listScrollController,
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _visibleCount < _lastFilteredCount
+                                ? _visibleCount + 1
+                                : _visibleCount,
+                            itemBuilder: (context, index) {
+                              if (index == _visibleCount) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => setState(() {
+                                      _visibleCount =
+                                          (_visibleCount + _pageSize).clamp(
+                                            0,
+                                            _lastFilteredCount,
+                                          );
+                                    }),
+                                    icon: const Icon(Icons.expand_more_rounded),
+                                    label: Text(context.l10n.map_load_more),
+                                  ),
+                                );
+                              }
+                              final prop = mapProperties[index];
                               return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: OutlinedButton.icon(
-                                  onPressed: () => setState(() {
-                                    _visibleCount =
-                                        (_visibleCount + _pageSize)
-                                            .clamp(0, _lastFilteredCount);
-                                  }),
-                                  icon: const Icon(Icons.expand_more_rounded),
-                                  label: Text(context.l10n.map_load_more),
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: PropertyCard(
+                                  property: prop,
+                                  layout: PropertyCardLayout.row,
+                                  onTap: () {
+                                    setState(() {
+                                      _isListView = false;
+                                      _selectedProperty = prop;
+                                      _activeCardImageIndex = 0;
+                                    });
+                                    final coords = _getPropertyCoords(prop);
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          _animatedMapMove(
+                                            LatLng(coords.$1, coords.$2),
+                                            15.0,
+                                          );
+                                        });
+                                  },
+                                  trailing: IconButton(
+                                    tooltip: context.l10n.map_view_details,
+                                    icon: const Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: 18,
+                                    ),
+                                    onPressed: () =>
+                                        context.push('/property/${prop.id}'),
+                                  ),
                                 ),
                               );
-                            }
-                            final prop = mapProperties[index];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: _buildSelectedPropertyCard(
-                                prop,
-                                onSelectOnMap: () {
-                                  setState(() {
-                                    _isListView = false;
-                                    _selectedProperty = prop;
-                                    _activeCardImageIndex = 0;
-                                  });
-                                  final coords = _getPropertyCoords(prop);
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    _animatedMapMove(
-                                      LatLng(coords.$1, coords.$2),
-                                      15.0,
-                                    );
-                                  });
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                ),
-
-              // 2. Unified Top Search & Filters Header
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _buildMapHeader(),
-              ),
-
-              // 3. Drawing Mode Instruction Banner
-              if (_isDrawingMode)
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 128,
-                  left: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(50),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.draw_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            context.l10n.map_draw_instruction,
-                            style: GoogleFonts.cairo(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            },
                           ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _isDrawingMode = false;
-                              _drawnPolygon.clear();
-                            });
-                          },
-                          child: Text(
-                            context.l10n.map_cancel,
-                            style: GoogleFonts.cairo(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
 
-              // 4. Active Drawn Polygon Filter Badge
-              if (_drawnPolygon.isNotEmpty && !_isDrawingMode)
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 128,
-                  left: 16,
-                  right: 16,
-                  child: Center(
+                // 2. Unified Top Search & Filters Header
+                Positioned(top: 0, left: 0, right: 0, child: _buildMapHeader()),
+
+                // 3. Drawing Mode Instruction Banner
+                if (_isDrawingMode)
+                  Positioned(
+                    top: _headerBottom(context) + 8,
+                    left: 16,
+                    right: 16,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
+                        horizontal: 16,
+                        vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.primaryInk,
-                          width: 1.5,
-                        ),
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withAlpha(40),
+                            color: Colors.black.withAlpha(50),
                             blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: AppColors.primaryInk,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${context.l10n.map_draw_filter_active} (${mapProperties.length} ${context.l10n.map_result_property_unit})',
-                            style: GoogleFonts.cairo(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryInk,
-                            ),
+                          const Icon(
+                            Icons.draw_rounded,
+                            color: AppColors.textLight,
+                            size: 20,
                           ),
                           const SizedBox(width: 8),
-                          InkWell(
-                            onTap: () {
+                          Expanded(
+                            child: Text(
+                              context.l10n.map_draw_instruction,
+                              style: GoogleFonts.cairo(
+                                color: AppColors.textLight,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
                               setState(() {
+                                _isDrawingMode = false;
                                 _drawnPolygon.clear();
                               });
                             },
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                size: 14,
-                                color: AppColors.textPrimary,
+                            child: Text(
+                              context.l10n.map_cancel,
+                              style: GoogleFonts.cairo(
+                                color: AppColors.textLight,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -980,185 +953,222 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       ),
                     ),
                   ),
-                ),
 
-              // 5. "Search this area" Button
-              if (_showSearchThisAreaBtn && !_isListView && !_isDrawingMode)
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 210,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.surface,
-                        foregroundColor: AppColors.primaryInk,
-                        elevation: 4,
+                // 4. Active Drawn Polygon Filter Badge
+                if (_drawnPolygon.isNotEmpty && !_isDrawingMode)
+                  Positioned(
+                    top: _headerBottom(context) + 8,
+                    left: 16,
+                    right: 16,
+                    child: Center(
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                          horizontal: 14,
+                          vertical: 6,
                         ),
-                        shape: RoundedRectangleBorder(
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(
+                          border: Border.all(
                             color: AppColors.primaryInk,
                             width: 1.5,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(40),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: AppColors.primaryInk,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${context.l10n.map_draw_filter_active} (${mapProperties.length} ${context.l10n.map_result_property_unit})',
+                              style: GoogleFonts.cairo(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryInk,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _drawnPolygon.clear();
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceVariant,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 14,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      icon: const Icon(Icons.refresh_rounded, size: 16),
-                      label: Text(
-                        context.l10n.map_search_this_area,
-                        style: GoogleFonts.cairo(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                    ),
+                  ),
+
+                // 5. "Search this area" Button
+                if (_showSearchThisAreaBtn && !_isListView && !_isDrawingMode)
+                  Positioned(
+                    top: _headerBottom(context) + 82,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.surface,
+                          foregroundColor: AppColors.primaryInk,
+                          elevation: 4,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: AppColors.primaryInk,
+                              width: 1.5,
+                            ),
+                          ),
                         ),
+                        icon: const Icon(Icons.refresh_rounded, size: 16),
+                        label: Text(
+                          context.l10n.map_search_this_area,
+                          style: GoogleFonts.cairo(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _lastSearchCenter = _mapController.camera.center;
+                            _showSearchThisAreaBtn = false;
+                          });
+                        },
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _lastSearchCenter = _mapController.camera.center;
-                          _showSearchThisAreaBtn = false;
-                        });
-                      },
                     ),
                   ),
-                ),
 
-              // 6. Floating Bottom Map Controls
-              // Stacked vertically on one RTL-aware side:
-              //   list-toggle FAB (bottom) -> count badge -> satellite -> draw (top)
-              // `PositionedDirectional` flips start/end so controls sit on the
-              //   trailing edge (right in LTR, left in RTL), matching the
-              //   dashboard FAB alignment.
-              if (settings.assetCountVisibility == 'always' ||
-                  mapProperties.isNotEmpty)
+                // 6. Floating map controls — one RTL-aware anchored stack.
+                //    draw → layers → count → list toggle (top to bottom).
                 PositionedDirectional(
                   end: 16,
-                  bottom: _selectedProperty != null ? 420 : 76,
-                  child: _buildCountBadge(mapProperties),
+                  bottom: _selectedProperty != null ? _selectedCardReserve : 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!_isListView) ...[
+                        _buildSmallMapFab(
+                          heroTag: 'map_draw_area',
+                          icon: Icons.draw_rounded,
+                          tooltip: _isDrawingMode
+                              ? context.l10n.map_cancel_draw
+                              : context.l10n.map_draw_search_area,
+                          highlight: _isDrawingMode,
+                          onPressed: () {
+                            setState(() {
+                              _isDrawingMode = !_isDrawingMode;
+                              if (!_isDrawingMode) _drawnPolygon.clear();
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSmallMapFab(
+                          heroTag: 'map_layers_toggle',
+                          icon: _isSatellite
+                              ? Icons.map_rounded
+                              : Icons.satellite_alt_rounded,
+                          tooltip: _isSatellite
+                              ? context.l10n.map_switch_to_streets
+                              : context.l10n.map_switch_to_satellite,
+                          onPressed: () =>
+                              setState(() => _isSatellite = !_isSatellite),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      if (settings.assetCountVisibility == 'always' ||
+                          mapProperties.isNotEmpty)
+                        _buildCountBadge(mapProperties),
+                      const SizedBox(height: 10),
+                      FloatingActionButton.extended(
+                        key: const ValueKey('map_list_toggle'),
+                        heroTag: 'map_list_toggle',
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.textLight,
+                        elevation: 4,
+                        icon: Icon(
+                          _isListView
+                              ? Icons.map_rounded
+                              : Icons.format_list_bulleted_rounded,
+                          size: 18,
+                        ),
+                        label: Text(
+                          _isListView
+                              ? context.l10n.map_show_map
+                              : context.l10n.map_show_list,
+                          style: PropertyTextStyles.badge(size: 13),
+                        ),
+                        onPressed: () =>
+                            setState(() => _isListView = !_isListView),
+                      ),
+                    ],
+                  ),
                 ),
-
-              if (!_isListView)
-                PositionedDirectional(
-                  end: 16,
-                  bottom: _selectedProperty != null ? 480 : 136,
-                  child: FloatingActionButton.small(
-                    heroTag: 'map_layers_toggle',
-                    backgroundColor: AppColors.surfaceVariant,
-                    foregroundColor: AppColors.primaryInk,
-                    elevation: 3,
-                    tooltip: _isSatellite
-                        ? context.l10n.map_switch_to_streets
-                        : context.l10n.map_switch_to_satellite,
-                    onPressed: () {
-                      setState(() {
-                        _isSatellite = !_isSatellite;
-                      });
-                    },
-                    child: Icon(
-                      _isSatellite ? Icons.map_rounded : Icons.satellite_alt_rounded,
-                      size: 20,
+                // 8. Selected Property Card
+                if (_selectedProperty != null && !_isListView)
+                  Positioned(
+                    bottom: 10,
+                    left: isMobile ? 8 : 20,
+                    right: isMobile ? 8 : 20,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: _buildSelectedPropertyCard(_selectedProperty!),
+                      ),
                     ),
                   ),
-                ),
-
-              if (!_isListView)
-                PositionedDirectional(
-                  end: 16,
-                  bottom: _selectedProperty != null ? 540 : 196,
-                  child: FloatingActionButton.small(
-                    heroTag: 'map_draw_area',
-                    backgroundColor: _isDrawingMode
-                        ? AppColors.primaryInk // bright teal in dark mode
-                        : AppColors.surfaceVariant,
-                    foregroundColor: _isDrawingMode
-                        ? Colors.white
-                        : AppColors.primaryInk,
-                    elevation: 3,
-                    tooltip: _isDrawingMode
-                        ? context.l10n.map_cancel_draw
-                        : context.l10n.map_draw_search_area,
-                    onPressed: () {
-                      setState(() {
-                        _isDrawingMode = !_isDrawingMode;
-                        if (!_isDrawingMode) _drawnPolygon.clear();
-                      });
-                    },
-                    child: const Icon(Icons.draw_rounded, size: 20),
-                  ),
-                ),
-
-              // C. Primary list <-> map toggle — same extended teal FAB as the
-              //    search view (matches the new map/list screen).
-              PositionedDirectional(
-                end: 16,
-                bottom: _selectedProperty != null ? 360 : 16,
-                child: FloatingActionButton.extended(
-                  key: const ValueKey('map_list_toggle'),
-                  heroTag: 'map_list_toggle',
-                  backgroundColor: const Color(0xFF0F766E),
-                  foregroundColor: Colors.white,
-                  elevation: 6,
-                  icon: Icon(
-                    _isListView ? Icons.map_rounded : Icons.format_list_bulleted_rounded,
-                    size: 18,
-                  ),
-                  label: Text(
-                    _isListView
-                        ? context.l10n.map_show_map
-                        : context.l10n.map_show_list,
-                    style: GoogleFonts.cairo(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isListView = !_isListView;
-                    });
-                  },
-                ),
-              ),
-              // 8. Selected Property Card
-              if (_selectedProperty != null && !_isListView)
-                Positioned(
-                  bottom: 10,
-                  left: isMobile ? 8 : 20,
-                  right: isMobile ? 8 : 20,
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 480),
-                      child: _buildSelectedPropertyCard(_selectedProperty!),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        error: (err, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 12),
-                Text(
-                  context.l10n.map_load_error,
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () => ref.refresh(allMapPropertiesProvider),
-                  child: Text(context.l10n.map_retry),
-                ),
               ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 12),
+                  Text(
+                    context.l10n.map_load_error,
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => ref.refresh(allMapPropertiesProvider),
+                    child: Text(context.l10n.map_retry),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
         ),
       ),
     );
@@ -1166,7 +1176,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   // Unified Map Header & Filter Bar (RTL, Responsive, High Contrast)
   Widget _buildMapHeader() {
-    final hasActiveFilters = _selectedTypeId != null ||
+    final hasActiveFilters =
+        _selectedTypeId != null ||
         _minBedrooms != null ||
         _selectedGovName != null ||
         _selectedDistrict != null ||
@@ -1182,6 +1193,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: AppColors.divider.withAlpha(140)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(50),
@@ -1195,7 +1207,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
               child: Container(
-                color: AppColors.surface,
+                color: AppColors.surface.withAlpha(238),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1239,22 +1251,24 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         children: [
-                  // زر الفلاتر الشاملة — يفتح شريحة الفلاتر السفلية
-                  _buildFilterBarBtn(
-                    label: hasActiveFilters
-                        ? context.l10n.map_filters_active
-                        : context.l10n.map_filters,
-                    icon: Icons.tune,
-                    isActive: hasActiveFilters,
-                    onTap: _showFilterModal,
-                  ),
-                  const SizedBox(width: 8),
-                  // الفلاتر المختارة تظهر كشيكات صغيرة بجوار زر الفلاتر
-                  ..._activeFilterChips(),
-                ],
+                          // زر الفلاتر الشاملة — يفتح شريحة الفلاتر السفلية
+                          _buildFilterBarBtn(
+                            label: hasActiveFilters
+                                ? context.l10n.map_filters_active
+                                : context.l10n.map_filters,
+                            icon: Icons.tune,
+                            isActive: hasActiveFilters,
+                            onTap: _showFilterModal,
+                          ),
+                          const SizedBox(width: 8),
+                          // الفلاتر المختارة تظهر كشيكات صغيرة بجوار زر الفلاتر
+                          ..._activeFilterChips(),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1302,13 +1316,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
           ),
           if (_searchController.text.isNotEmpty)
             GestureDetector(
-              onTap: () {
-                setState(() {
-                  _searchController.clear();
-                  _selectedGovName = null;
-                  _selectedDistrict = null;
-                });
-              },
+              onTap: () => setState(() => _searchController.clear()),
               child: Icon(
                 Icons.close_rounded,
                 color: AppColors.textSecondary,
@@ -1349,64 +1357,80 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     final chips = <Widget>[];
 
     if (_selectedDealType.isNotEmpty) {
-      chips.add(_buildSelectedFilterChip(
-        _selectedDealType == AppConstants.dealSale
-            ? context.l10n.map_for_sale
-            : context.l10n.map_for_rent,
-        onRemoved: () => setState(() => _selectedDealType = ''),
-      ));
+      chips.add(
+        _buildSelectedFilterChip(
+          _selectedDealType == AppConstants.dealSale
+              ? context.l10n.map_for_sale
+              : context.l10n.map_for_rent,
+          onRemoved: () => setState(() => _selectedDealType = ''),
+        ),
+      );
     }
 
     if (_selectedTypeId != null && _selectedTypeId!.isNotEmpty) {
-      chips.add(_buildSelectedFilterChip(
-        _propertyTypeLabel(_selectedTypeId!),
-        onRemoved: () => setState(() => _selectedTypeId = null),
-      ));
+      chips.add(
+        _buildSelectedFilterChip(
+          _propertyTypeLabel(_selectedTypeId!),
+          onRemoved: () => setState(() => _selectedTypeId = null),
+        ),
+      );
     }
 
     if (_selectedGovName != null && _selectedGovName!.isNotEmpty) {
-      chips.add(_buildSelectedFilterChip(
-        _selectedGovName!,
-        onRemoved: () => setState(() => _selectedGovName = null),
-      ));
+      chips.add(
+        _buildSelectedFilterChip(
+          _selectedGovName!,
+          onRemoved: () => setState(() => _selectedGovName = null),
+        ),
+      );
     }
 
     if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
-      chips.add(_buildSelectedFilterChip(
-        _selectedDistrict!,
-        onRemoved: () => setState(() => _selectedDistrict = null),
-      ));
+      chips.add(
+        _buildSelectedFilterChip(
+          _selectedDistrict!,
+          onRemoved: () => setState(() => _selectedDistrict = null),
+        ),
+      );
     }
 
     if (_minBedrooms != null) {
-      chips.add(_buildSelectedFilterChip(
-        '$_minBedrooms ${context.l10n.map_bedrooms}',
-        onRemoved: () => setState(() => _minBedrooms = null),
-      ));
+      chips.add(
+        _buildSelectedFilterChip(
+          '$_minBedrooms ${context.l10n.map_bedrooms}',
+          onRemoved: () => setState(() => _minBedrooms = null),
+        ),
+      );
     }
 
     if (_minPrice != null || _maxPrice != null) {
-      chips.add(_buildSelectedFilterChip(
-        '${_minPrice ?? 0} - ${_maxPrice ?? 0}',
-        onRemoved: () => setState(() {
-          _minPrice = null;
-          _maxPrice = null;
-        }),
-      ));
+      chips.add(
+        _buildSelectedFilterChip(
+          '${Formatters.formatCurrency(_minPrice ?? 0, AppConstants.currencyYer)} – ${Formatters.formatCurrency(_maxPrice ?? 0, AppConstants.currencyYer)}',
+          onRemoved: () => setState(() {
+            _minPrice = null;
+            _maxPrice = null;
+          }),
+        ),
+      );
     }
 
     if (_onlyExactCoordinates) {
-      chips.add(_buildSelectedFilterChip(
-        context.l10n.map_exact_gps_only,
-        onRemoved: () => setState(() => _onlyExactCoordinates = false),
-      ));
+      chips.add(
+        _buildSelectedFilterChip(
+          context.l10n.map_exact_gps_only,
+          onRemoved: () => setState(() => _onlyExactCoordinates = false),
+        ),
+      );
     }
 
     return chips;
   }
 
-  Widget _buildSelectedFilterChip(String label,
-      {required VoidCallback onRemoved}) {
+  Widget _buildSelectedFilterChip(
+    String label, {
+    required VoidCallback onRemoved,
+  }) {
     return Chip(
       deleteIcon: const Icon(Icons.close_rounded, size: 16),
       onDeleted: onRemoved,
@@ -1462,8 +1486,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         decoration: BoxDecoration(
           color: isActive
               ? (AppColors.isDark
-                  ? AppColors.primaryMuted.withAlpha(140)
-                  : AppColors.primaryMuted)
+                    ? AppColors.primaryMuted.withAlpha(140)
+                    : AppColors.primaryMuted)
               : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(18),
         ),
@@ -1487,6 +1511,25 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
           ],
         ),
       ),
+    );
+  }
+
+  /// Small secondary map control (layers / draw) using app tokens.
+  Widget _buildSmallMapFab({
+    required String heroTag,
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    bool highlight = false,
+  }) {
+    return FloatingActionButton.small(
+      heroTag: heroTag,
+      backgroundColor: highlight ? AppColors.primary : AppColors.surfaceVariant,
+      foregroundColor: highlight ? AppColors.textLight : AppColors.primaryInk,
+      elevation: 2,
+      tooltip: tooltip,
+      onPressed: onPressed,
+      child: Icon(icon, size: 20),
     );
   }
 
@@ -1589,471 +1632,169 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     );
   }
 
-  // Selected Property Card
-  Widget _buildSelectedPropertyCard(Property prop, {VoidCallback? onSelectOnMap}) {
-    final isRent = prop.dealType == AppConstants.dealRent;
-    final images = prop.images.isNotEmpty
-        ? prop.images.map((img) => img.imageUrl).toList()
-        : [
-            prop.primaryImageUrl ??
-                'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
-            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-          ];
+  // Selected Property Card — shared card with map-specific actions as slots.
+  Widget _buildSelectedPropertyCard(
+    Property prop, {
+    VoidCallback? onSelectOnMap,
+  }) {
+    final l10n = context.l10n;
+    final isRent = prop.isForRent;
+    final images = prop.images
+        .map((img) => img.imageUrl)
+        .where((url) => url.isNotEmpty)
+        .toList();
+    final isFloating = onSelectOnMap == null;
+    final hasExactGps =
+        prop.latitude != null &&
+        prop.longitude != null &&
+        prop.latitude != 0.0 &&
+        prop.longitude != 0.0;
 
-    final isFav = ref.watch(favoritesProvider).maybeWhen(
-          data: (favs) => favs.any((f) => f.id == prop.id),
-          orElse: () => false,
-        );
-
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(50),
-              blurRadius: 18,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top Image Carousel with Pagination Dots & Badges
-              Stack(
-                children: [
-                  SizedBox(
-                    height: 155,
-                    width: double.infinity,
-                    child: PageView.builder(
-                      itemCount: images.length,
-                      onPageChanged: (idx) {
-                        setState(() {
-                          _activeCardImageIndex = idx;
-                        });
-                      },
-                      itemBuilder: (context, idx) {
-                        return CachedNetworkImage(
-                          imageUrl: images[idx],
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: AppColors.surfaceVariant,
-                            child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                          errorWidget: (context, url, err) => Container(
-                            color: AppColors.surfaceVariant,
-                            child: Icon(
-                              Icons.apartment,
-                              size: 40,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  // Close button on top-right (if floating modal)
-                  if (onSelectOnMap == null)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedProperty = null;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withAlpha(140),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Top Badges: Deal Discount & Bedrooms (Screenshot 4)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Blue Discount / Deal Pill
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary, // Portal Blue
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            isRent ? context.l10n.map_rent_discount : context.l10n.map_sale_discount,
-                            style: GoogleFonts.cairo(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10.5,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-
-                        // White Bedrooms Pill
-                        if (prop.bedrooms > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceVariant,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${prop.bedrooms} ${context.l10n.map_bedrooms}',
-                              style: GoogleFonts.cairo(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10.5,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  // Heart Favorite Button on Top-Right (Screenshot 4)
-                  Positioned(
-                    top: 8,
-                    right: onSelectOnMap == null ? 36 : 8,
-                    child: GestureDetector(
-                      onTap: () {
-                        ref
-                            .read(favoritesProvider.notifier)
-                            .toggleFavorite(prop.id);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(100),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
-                          color: isFav ? Colors.red : Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Pagination Dots Indicator at bottom of image
-                  if (images.length > 1)
-                    Positioned(
-                      bottom: 6,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          images.length.clamp(1, 6),
-                          (dotIdx) => Container(
-                            width: 6,
-                            height: 6,
-                            margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _activeCardImageIndex == dotIdx
-                                  ? Colors.white
-                                  : Colors.white.withAlpha(120),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-
-              // Content & Details below Image
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Price Row with 3-dots menu
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${Formatters.formatCurrency(prop.price, prop.currency)} ${isRent ? context.l10n.map_or_more : ''}',
-                                style: GoogleFonts.cairo(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.textPrimary,
-                                  height: 1.1,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              // Subtitle link: "السعر الشهري الإجمالي" with blue checkmark
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: AppColors.primaryInk,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    isRent
-                                        ? context.l10n.map_total_monthly_price
-                                        : context.l10n.map_final_purchase_price,
-                                    style: GoogleFonts.cairo(
-                                      color: AppColors.primaryInk,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: Icon(
-                            Icons.more_horiz,
-                            color: AppColors.textMuted,
-                          ),
-                          onPressed: () {
-                            context.push('/property/${prop.id}');
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Property Title and Address
-                    Text(
-                      '${prop.title} — ${prop.city}، ${prop.district}',
-                      style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-
-                    // Location accuracy indicator badge
-                    Builder(
-                      builder: (context) {
-                        final hasExactGps = prop.latitude != null &&
-                            prop.longitude != null &&
-                            prop.latitude != 0.0 &&
-                            prop.longitude != 0.0;
-                        return Row(
-                          children: [
-                            Icon(
-                              hasExactGps
-                                  ? Icons.location_on
-                                  : Icons.near_me_outlined,
-                              size: 13,
-                              color: hasExactGps
-                                  ? const Color(0xFF0F766E)
-                                  : Colors.orange.shade800,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              hasExactGps
-                                  ? context.l10n.map_exact_location
-                                  : '${context.l10n.map_approximate_location_prefix} ${prop.city}',
-                              style: GoogleFonts.cairo(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: hasExactGps
-                                    ? const Color(0xFF0F766E)
-                                    : Colors.orange.shade800,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Sub-specifications pill chips (Screenshot 4)
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        if (prop.bedrooms > 0)
-                          _buildUnitBadge(
-                            '${context.l10n.map_one_bedroom} ${Formatters.formatCurrency(prop.price, prop.currency)}',
-                          ),
-                        if (prop.bedrooms > 1)
-                          _buildUnitBadge(
-                            '${context.l10n.map_two_bedrooms} ${(prop.price * 1.25).toStringAsFixed(0)} ${prop.currency}',
-                          ),
-                        _buildUnitBadge('${prop.areaSqm.toInt()} ${context.l10n.map_area_sqm}'),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // أزرار الإجراءات: اتصال + واتساب + تفاصيل + الوصول للعقار
-                    Row(
-                      children: [
-                        // زر الاتصال
-                        _buildCircleActionBtn(
-                          icon: Icons.phone,
-                          color: AppColors.primary,
-                          tooltip: context.l10n.map_call,
-                          onTap: () => _makeCall(prop.contactPhone),
-                        ),
-                        const SizedBox(width: 6),
-
-                        // زر واتساب
-                        if (prop.contactWhatsapp != null &&
-                            prop.contactWhatsapp!.isNotEmpty) ...[
-                          _buildCircleActionBtn(
-                            icon: Icons.chat,
-                            color: Colors.green.shade600,
-                            tooltip: context.l10n.map_whatsapp,
-                            onTap: () => _openWhatsApp(
-                              prop.contactWhatsapp!,
-                              prop.title,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-
-                        // زر الوصول إلى العقار عبر Google Maps
-                        _buildCircleActionBtn(
-                          icon: Icons.directions_rounded,
-                          color: Colors.green.shade700,
-                          tooltip: context.l10n.map_directions,
-                          onTap: () => _openGoogleMapsNavigation(prop),
-                        ),
-                        const SizedBox(width: 6),
-
-                        // زر التفاصيل / التوافر
-                        Expanded(
-                          child: SizedBox(
-                            height: 40,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                              ),
-                              onPressed: () {
-                                if (onSelectOnMap != null) {
-                                  onSelectOnMap();
-                                } else {
-                                  context.push('/property/${prop.id}');
-                                }
-                              },
-                              child: Text(
-                                isRent ? context.l10n.map_check_availability : context.l10n.map_view_details,
-                                style: GoogleFonts.cairo(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // زر الوصول إلى العقار — بارز ومستقل
-                    if (onSelectOnMap == null) ...[
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 40,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.green.shade700,
-                            side: BorderSide(color: Colors.green.shade600, width: 1.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
-                          icon: Icon(Icons.directions_rounded, size: 18, color: Colors.green.shade700),
-                          label: Text(
-                            context.l10n.map_directions_google_maps,
-                            style: GoogleFonts.cairo(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade700,
-                            ),
-                          ),
-                          onPressed: () => _openGoogleMapsNavigation(prop),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUnitBadge(String text) {
-    return Container(
+    final discountPill = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.divider),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        text,
-        style: GoogleFonts.cairo(
-          fontSize: 10.5,
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+        isRent ? l10n.map_rent_discount : l10n.map_sale_discount,
+        style: PropertyTextStyles.badge(size: 10.5),
       ),
+    );
+
+    return PropertyCard(
+      property: prop,
+      layout: PropertyCardLayout.overlay,
+      imageUrls: images,
+      activeImageIndex: _activeCardImageIndex,
+      onImageIndexChanged: (index) => _activeCardImageIndex = index,
+      onClose: isFloating
+          ? () => setState(() => _selectedProperty = null)
+          : null,
+      onTap: onSelectOnMap ?? () => context.push('/property/${prop.id}'),
+      extraBadges: [discountPill],
+      trailing: IconButton(
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        icon: Icon(Icons.more_horiz, color: AppColors.textMuted),
+        tooltip: l10n.map_view_details,
+        onPressed: () => context.push('/property/${prop.id}'),
+      ),
+      priceCaption: Row(
+        children: [
+          Icon(Icons.check_circle, color: AppColors.primaryInk, size: 14),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              isRent
+                  ? l10n.map_total_monthly_price
+                  : l10n.map_final_purchase_price,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: PropertyTextStyles.caption(),
+            ),
+          ),
+        ],
+      ),
+      locationDetail: Row(
+        children: [
+          Icon(
+            hasExactGps ? Icons.location_on : Icons.near_me_outlined,
+            size: 13,
+            color: hasExactGps ? AppColors.primaryInk : AppColors.warning,
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              hasExactGps
+                  ? l10n.map_exact_location
+                  : '${l10n.map_approximate_location_prefix} ${prop.city}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: PropertyTextStyles.caption(size: 10.5).copyWith(
+                color: hasExactGps ? AppColors.primaryInk : AppColors.warning,
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        _buildCircleActionBtn(
+          icon: Icons.phone,
+          color: AppColors.primary,
+          tooltip: l10n.map_call,
+          onTap: () => _makeCall(prop.contactPhone),
+        ),
+        const SizedBox(width: 6),
+        if (prop.contactWhatsapp != null && prop.contactWhatsapp!.isNotEmpty)
+          _buildCircleActionBtn(
+            icon: Icons.chat,
+            color: AppColors.success,
+            tooltip: l10n.map_whatsapp,
+            onTap: () => _openWhatsApp(prop.contactWhatsapp!, prop.title),
+          ),
+        const SizedBox(width: 6),
+        _buildCircleActionBtn(
+          icon: Icons.directions_rounded,
+          color: AppColors.success,
+          tooltip: l10n.map_directions,
+          onTap: () => _openGoogleMapsNavigation(prop),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: SizedBox(
+            height: 40,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textLight,
+                minimumSize: const Size(0, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed:
+                  onSelectOnMap ?? () => context.push('/property/${prop.id}'),
+              child: Text(
+                isRent ? l10n.map_check_availability : l10n.map_view_details,
+                style: GoogleFonts.cairo(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ),
+      ],
+      secondaryAction: isFloating
+          ? SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.success,
+                  side: BorderSide(color: AppColors.success, width: 1.5),
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(Icons.directions_rounded, size: 18),
+                label: Text(
+                  l10n.map_directions_google_maps,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onPressed: () => _openGoogleMapsNavigation(prop),
+              ),
+            )
+          : null,
     );
   }
 }
-
-

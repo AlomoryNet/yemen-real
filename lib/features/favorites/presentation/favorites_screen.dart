@@ -17,32 +17,45 @@ import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/property_card.dart';
 
-class FavoritesScreen extends ConsumerWidget {
+class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FavoritesScreen> createState() => _FavoritesScreenState();
+}
+
+class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
+  // Favorites can grow large; build a bounded page of cards and extend on tap.
+  static const int _pageSize = 12;
+  int _visibleCount = _pageSize;
+
+  @override
+  Widget build(BuildContext context) {
+    // Reset the visible page whenever the favorites list changes (e.g. after
+    // the user removes an item) so the grid never keeps a stale, huge window.
+    ref.listen(favoritesProvider, (_, __) {
+      if (mounted) setState(() => _visibleCount = _pageSize);
+    });
+
     final authState = ref.watch(authProvider);
 
     if (!authState.isAuthenticated) {
       return Scaffold(
         appBar: const AppHeader(title: 'المفضلة', showBack: true),
-        drawer: Responsive.isDesktop(context)
-            ? null
-            : const AppDrawer(),
+        drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
         body: AppPageBody(
           child: Center(
             child: EmptyStateView(
-            icon: Icons.favorite_border,
-            title: context.l10n.fav_login_required,
-            description: context.l10n.fav_signup_prompt,
-            actionText: context.l10n.fav_signup_or_login,
-            onAction: () => AuthPromptDialog.show(
-              context,
-              message: context.l10n.fav_signup_prompt,
-              redirectTo: '/favorites',
+              icon: Icons.favorite_border,
+              title: context.l10n.fav_login_required,
+              description: context.l10n.fav_signup_prompt,
+              actionText: context.l10n.fav_signup_or_login,
+              onAction: () => AuthPromptDialog.show(
+                context,
+                message: context.l10n.fav_signup_prompt,
+                redirectTo: '/favorites',
+              ),
             ),
-          ),
           ),
         ),
       );
@@ -52,101 +65,127 @@ class FavoritesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: const AppHeader(title: 'المفضلة', showBack: true),
-      drawer: Responsive.isDesktop(context)
-          ? null
-          : const AppDrawer(),
+      drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
       body: AppPageBody(
         child: SingleChildScrollView(
           child: Column(
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 30,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.fav_title,
-                        style: GoogleFonts.cairo(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 30,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.fav_title,
+                          style: GoogleFonts.cairo(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        context.l10n.fav_subtitle,
-                        style: GoogleFonts.cairo(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+                        const SizedBox(height: 6),
+                        Text(
+                          context.l10n.fav_subtitle,
+                          style: GoogleFonts.cairo(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      favoritesAsync.when(
-                        data: (properties) {
-                          if (properties.isEmpty) {
-                            return EmptyStateView(
-                              icon: Icons.favorite_border,
-                              title: context.l10n.fav_empty_title,
-                              description: context.l10n.fav_empty_desc,
-                              actionText: context.l10n.fav_empty_action,
-                              onAction: () => context.push('/map'),
-                            );
-                          }
-
-                          return LayoutBuilder(
-                            builder: (context, constraints) {
-                              int crossAxisCount = 1;
-                              if (constraints.maxWidth > 960) {
-                                crossAxisCount = 3;
-                              } else if (constraints.maxWidth > 640) {
-                                crossAxisCount = 2;
-                              }
-
-                              return GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: properties.length,
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: crossAxisCount,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                      childAspectRatio: 0.85,
-                                    ),
-                                itemBuilder: (context, index) {
-                                  return PropertyCard(
-                                    property: properties[index],
-                                  );
-                                },
+                        favoritesAsync.when(
+                          data: (properties) {
+                            if (properties.isEmpty) {
+                              return EmptyStateView(
+                                icon: Icons.favorite_border,
+                                title: context.l10n.fav_empty_title,
+                                description: context.l10n.fav_empty_desc,
+                                actionText: context.l10n.fav_empty_action,
+                                onAction: () => context.push('/map'),
                               );
-                            },
-                          );
-                        },
-                        loading: () => LoadingView(
-                          message: context.l10n.fav_loading,
+                            }
+
+                            final visible = properties.length > _visibleCount
+                                ? properties.sublist(0, _visibleCount)
+                                : properties;
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    int crossAxisCount = 1;
+                                    if (constraints.maxWidth > 960) {
+                                      crossAxisCount = 3;
+                                    } else if (constraints.maxWidth > 640) {
+                                      crossAxisCount = 2;
+                                    }
+
+                                    return GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: visible.length,
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: crossAxisCount,
+                                            crossAxisSpacing: 16,
+                                            mainAxisSpacing: 16,
+                                            childAspectRatio: 0.85,
+                                          ),
+                                      itemBuilder: (context, index) {
+                                        return PropertyCard(
+                                          property: visible[index],
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                                if (properties.length > _visibleCount)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 16),
+                                    child: Center(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => setState(() {
+                                          _visibleCount =
+                                              (_visibleCount + _pageSize).clamp(
+                                                0,
+                                                properties.length,
+                                              );
+                                        }),
+                                        icon: const Icon(
+                                          Icons.expand_more_rounded,
+                                        ),
+                                        label: Text(context.l10n.map_load_more),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                          loading: () =>
+                              LoadingView(message: context.l10n.fav_loading),
+                          error: (err, _) => ErrorView(
+                            message: err.toString(),
+                            onRetry: () => ref
+                                .read(favoritesProvider.notifier)
+                                .loadFavorites(),
+                          ),
                         ),
-                        error: (err, _) => ErrorView(
-                          message: err.toString(),
-                          onRetry: () => ref
-                              .read(favoritesProvider.notifier)
-                              .loadFavorites(),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const AppFooter(),
-          ],
-        ),
+              const AppFooter(),
+            ],
+          ),
         ),
       ),
     );

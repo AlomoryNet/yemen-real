@@ -5831,6 +5831,12 @@ abstract class AppLocalizations {
   /// **'Map'**
   String get sh_nav_map;
 
+  /// No description provided for @sh_nav_search_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Search & Map'**
+  String get sh_nav_search_map;
+
   /// No description provided for @sh_nav_favorites.
   ///
   /// In en, this message translates to:

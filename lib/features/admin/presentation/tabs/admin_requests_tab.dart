@@ -1,0 +1,166 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/l10n/context_l10n.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../providers/admin_provider.dart';
+import '../../../../providers/rental_request_provider.dart';
+import '../../../../repositories/rental_request_repository.dart';
+import '../../../../shared/widgets/empty_state_view.dart';
+import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/status_badge.dart';
+
+import '../widgets/admin_dialogs.dart';
+
+class AdminRequestsTab extends ConsumerWidget {
+  const AdminRequestsTab({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requestsAsync = ref.watch(allRentalRequestsProvider);
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    context.l10n.admin_requests_list_title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  icon: const Icon(Icons.download, size: 16),
+                  label: Text(context.l10n.admin_export_csv),
+                  onPressed: () {
+                    final list = requestsAsync.value ?? [];
+                    final csvData = ref
+                        .read(adminRepositoryProvider)
+                        .exportRentalRequestsToCsv(list);
+                    AdminCsvDialog.show(
+                      context,
+                      context.l10n.admin_export_requests_title,
+                      csvData,
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Expanded(
+              child: requestsAsync.when(
+                data: (requests) {
+                  if (requests.isEmpty) {
+                    return EmptyStateView(
+                      title: context.l10n.admin_no_requests,
+                    );
+                  }
+                  return ListView.separated(
+                    itemCount: requests.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final req = requests[index];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: AppColors.infoMuted,
+                          child: const Icon(
+                            Icons.assignment,
+                            color: AppColors.info,
+                            size: 18,
+                          ),
+                        ),
+                        title: Text(
+                          '${req.requestNumber} - ${req.fullName}',
+                          style: GoogleFonts.cairo(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${context.l10n.admin_phone_label}: ${req.phone} • ${context.l10n.admin_property_label}: ${req.propertyTitle ?? req.propertyId}',
+                          style: GoogleFonts.cairo(fontSize: 12),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            StatusBadge.rentalRequest(req.status),
+                            const SizedBox(width: 8),
+                            PopupMenuButton<String>(
+                              onSelected: (newStatus) async {
+                                await RentalRequestRepository()
+                                    .updateRentalRequestStatus(
+                                      requestId: req.id,
+                                      status: newStatus,
+                                    );
+                                ref.refresh(allRentalRequestsProvider);
+                                ref.refresh(adminStatsProvider);
+                              },
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  value: AppConstants.reqStatusUnderReview,
+                                  child: Text(
+                                    context.l10n.admin_status_under_review,
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: AppConstants.reqStatusContacted,
+                                  child: Text(
+                                    context.l10n.admin_status_contacted,
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: AppConstants
+                                      .reqStatusProvisionallyAccepted,
+                                  child: Text(
+                                    context.l10n.admin_status_provisional,
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: AppConstants.reqStatusRejected,
+                                  child: Text(
+                                    context.l10n.admin_status_rejected,
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: AppConstants.reqStatusCompleted,
+                                  child: Text(
+                                    context.l10n.admin_status_completed,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const LoadingView(),
+                error: (err, _) => ErrorView(message: err.toString()),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

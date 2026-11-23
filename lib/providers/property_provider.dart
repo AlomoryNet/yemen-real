@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/app_constants.dart';
 import '../models/property.dart';
+import '../models/user_property_stats.dart';
 import '../repositories/property_repository.dart';
 
 final propertyRepositoryProvider = Provider<PropertyRepository>((ref) {
@@ -177,7 +178,7 @@ final propertyDetailProvider = FutureProvider.family<Property, String>((
   return await repo.getPropertyById(id);
 });
 
-// User Properties Provider
+// User Properties Provider (full list, kept for small/cache-only callers)
 final userPropertiesProvider = FutureProvider.family<List<Property>, String>((
   ref,
   userId,
@@ -185,3 +186,94 @@ final userPropertiesProvider = FutureProvider.family<List<Property>, String>((
   final repo = ref.watch(propertyRepositoryProvider);
   return await repo.getUserProperties(userId);
 });
+
+/// One paged slice of the owner's listings plus lightweight totals.
+class UserPropertiesPage {
+  const UserPropertiesPage({
+    required this.properties,
+    required this.stats,
+    this.isLoadingMore = false,
+  });
+
+  final List<Property> properties;
+  final UserPropertyStats stats;
+  final bool isLoadingMore;
+
+  bool get hasMore => properties.length < stats.total;
+
+  UserPropertiesPage copyWith({
+    List<Property>? properties,
+    UserPropertyStats? stats,
+    bool? isLoadingMore,
+  }) {
+    return UserPropertiesPage(
+      properties: properties ?? this.properties,
+      stats: stats ?? this.stats,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    );
+  }
+}
+
+/// Incrementally loads the signed-in owner's properties, 12 at a time.
+class UserPropertiesPaginator
+    extends StateNotifier<AsyncValue<UserPropertiesPage>> {
+  UserPropertiesPaginator(this._ref, this._userId)
+    : super(const AsyncValue.loading()) {
+    loadFirstPage();
+  }
+
+  static const int pageSize = 12;
+
+  final Ref _ref;
+  final String _userId;
+
+  Future<void> loadFirstPage() async {
+    state = const AsyncValue.loading();
+    try {
+      final repo = _ref.read(propertyRepositoryProvider);
+      final pageFuture = repo.getUserProperties(
+        _userId,
+        limit: pageSize,
+        offset: 0,
+      );
+      final statsFuture = repo.getUserPropertyStats(_userId);
+      final page = await pageFuture;
+      final stats = await statsFuture;
+      state = AsyncValue.data(
+        UserPropertiesPage(properties: page, stats: stats),
+      );
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> loadMore() async {
+    final current = state.value;
+    if (current == null || current.isLoadingMore || !current.hasMore) return;
+
+    state = AsyncValue.data(current.copyWith(isLoadingMore: true));
+    try {
+      final repo = _ref.read(propertyRepositoryProvider);
+      final next = await repo.getUserProperties(
+        _userId,
+        limit: pageSize,
+        offset: current.properties.length,
+      );
+      state = AsyncValue.data(
+        current.copyWith(
+          properties: [...current.properties, ...next],
+          isLoadingMore: false,
+        ),
+      );
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final userPropertiesPaginatorProvider =
+    StateNotifierProvider.family<
+      UserPropertiesPaginator,
+      AsyncValue<UserPropertiesPage>,
+      String
+    >((ref, userId) => UserPropertiesPaginator(ref, userId));

@@ -66,32 +66,50 @@ flutter test      → suite (last known: 56 tests)
 ```
 
 ## Status — latest
-- Current focus: themed map grouped-properties bottom sheet.
-- `_ClusterPropertiesSheet` in `lib/features/map/presentation/property_map_view.dart`
-  now uses app surface/divider/teal tokens, a count pill, close action, deal badges,
-  thumbnails, meta chips and price rows. It is bottom-anchored, bounded to
-  620dp x 78% screen height, safe-area/IME aware, and shrink-wraps short lists.
-  User-owned OSM tile-loading edits were preserved.
-- Previous: reusable dashboard category sections + shared filter sheet.
-  Added `PropertyCategorySection` (bounded preview, real count, view-all) and
-  `PropertyFilterSheet` (searchable governorate/district dropdowns, M3 chips);
-  dashboard hero now has search + one filter button only, and the map reuses
-  the same sheet with advanced filters.
-- Follow-up fixed runtime assertions: wrapped the filter sheet's
-  `SwitchListTile` in a transparent `Material`, and switched the map screen to
-  `TickerProviderStateMixin` for repeated camera animations.
-- Map tiles: `TileLayer` in `property_map_view.dart` and
-  `property_detail_screen.dart` now rotate OSM `a/b/c` subdomains and log tile
-  failures via `errorTileCallback`. Diagnosis on `ZY22G4C24N` (2026-11-23):
-  blank tiles are caused by the **phone having no outbound internet** (Chrome:
-  `DNS_PROBE_FINISHED_NXDOMAIN`, TCP timeouts to public IPs) even though WiFi
-  "Alomory" is associated; PC on the same `192.168.8.1` network has internet.
-  OSM does NOT block our `com.yemenreal.portal` User-Agent (verified real tile,
-  no `x-blocked` header) — no provider switch needed for that reason.
-- Last verified: `flutter analyze` clean, 56/56 tests, USB hot restart/reload on
-  `ZY22G4C24N` (2026-11-23). Grouped-property sheet opens, stays compact and
-  selects a property correctly. Only runtime errors are the known offline OSM
-  tile `Network is unreachable` failures.
+- Current focus: unified property cards + redesigned property/admin/settings/drawer/map UI.
+- `PropertyCard` (`lib/shared/widgets/property_card.dart`) is canonical with `grid`,
+  `row`, `overlay`, `management` layouts plus optional carousel/favorite/spec chips and
+  call/WhatsApp/directions/detail action slots. Shared tokens live in
+  `lib/core/theme/property_text_styles.dart` and `lib/shared/widgets/property/`.
+  Dashboard, favorites, map cluster rows, map list, map selected card and My Properties
+  all use it. Rich map-card actions were preserved as slots.
+- My Properties rebuilt: page header, stats tiles, deal chips, management cards, popup
+  actions, FAB and empty states. It now **paginates** owner listings (12 per page) via
+  `UserPropertiesPaginator`; totals come from a lightweight `getUserPropertyStats` query
+  (`lib/models/user_property_stats.dart`), so the tab never builds all 440 demo cards.
+  "Load more" appears below the list and auto-triggers near the bottom of the scroll view.
+- Same bounded-page pattern applied to Favorites and the admin moderation queue (12 visible
+  cards + "Load more" button). Map list and admin tabs already use lazy/limited builders.
+- Rail Search + Map merged into one `البحث والخريطة` destination → `/map`; added
+  `sh_nav_search_map` to ARB/generated l10n. Bottom nav deliberately stays at **2**
+  destinations (Home + My properties).
+- Drawer now highlights the active route with tokenized surfaces/check icons. Settings
+  received tokenized cards/headers while keeping the live `ar_YE/en_US` radio.
+- Admin split: `/admin` and `AdminDashboardScreen({super.key})` unchanged; the old
+  2,555-line screen now delegates to `presentation/widgets/`, `presentation/tabs/` and
+  `services/admin_pdf_service.dart`. PDF section mapping 0–4, super-admin whitelist,
+  provider refreshes and `context.mounted` guards all preserved.
+- Map: floating header gained a subtle divider and translucent surface; filter-chip row
+  indentation normalized. Previous grouped-property sheet, reusable filter sheet and
+  dashboard category sections remain intact.
+- Overflow regression fixes: admin moderation action buttons use `Wrap`; owner/date/type/price
+  rows, admin section headers, the moderation empty-state row and the Profile header name/admin
+  badge row use `Flexible`/`Expanded` + ellipsis; `PropertyCard._badges` uses `Wrap` (map discount
+  pill no longer overflows); map selected-card price caption is ellipsized.
+- Map tiles: `TileLayer` in `property_map_view.dart` and `property_detail_screen.dart`
+  rotates OSM `a/b/c` subdomains and logs failures via `errorTileCallback`.
+  User-owned tile-loading edits preserved. Diagnosis on `ZY22G4C24N` (2026-11-23):
+  blank tiles come from **no outbound internet on the phone** (`DNS_PROBE_FINISHED_NXDOMAIN`,
+  TCP timeouts) despite WiFi association. Dev PC reaches internet only via Cloudflare VPN,
+  so its Sanaa/YE geolocation is not the router WAN IP. OSM does not block our User-Agent;
+  a geo-block would return HTTP errors, not DNS/socket failures. `flutter_map` warns
+  against OSM `a/b/c` subdomains (tile policy).
+- Last verified: `flutter analyze` clean, 56/56 tests, fresh USB `flutter run -d ZY22G4C24N`
+  + DTD hot restart (2026-11-23). Navigated My Properties (paged cards, 440 lightweight
+  totals), Favorites, Admin dashboard, Map + list view: no `RenderFlex overflow` and no
+  widget errors. A `ref.listen`-in-`initState` assertion found on Favorites was fixed by
+  moving the listener into `build`. Only remaining runtime noise is the known offline
+  OSM tile `Network is unreachable`.
 - Full changelog: `AGENTS_HISTORY.md`.
 
 ## Docs policy
