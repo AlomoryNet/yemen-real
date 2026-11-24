@@ -129,11 +129,11 @@ class PropertyCard extends ConsumerWidget {
               aspectRatio: 16 / 10,
               child: PropertyImage(imageUrl: property.primaryImageUrl),
             ),
-            Positioned(top: 12, right: 12, child: _badges(context)),
+            PositionedDirectional(top: 12, start: 12, child: _badges(context)),
             if (_favoriteVisible)
-              Positioned(
+              PositionedDirectional(
                 top: 8,
-                left: 8,
+                end: 8,
                 child: _FavoriteSlot(propertyId: property.id),
               ),
           ],
@@ -210,8 +210,8 @@ class PropertyCard extends ConsumerWidget {
                       (images.isEmpty ? null : images.first),
                 ),
               ),
-              Positioned(top: 10, right: 10, child: _badges(context)),
-              Positioned(top: 10, left: 10, child: _imageTopEnd()),
+              PositionedDirectional(top: 10, start: 10, child: _badges(context)),
+              PositionedDirectional(top: 10, end: 10, child: _imageTopEnd()),
             ],
           );
 
@@ -232,7 +232,7 @@ class PropertyCard extends ConsumerWidget {
               aspectRatio: 16 / 7,
               child: PropertyImage(imageUrl: property.primaryImageUrl),
             ),
-            Positioned(top: 10, right: 10, child: _badges(context)),
+            PositionedDirectional(top: 10, start: 10, child: _badges(context)),
           ],
         ),
         _contentManagement(),

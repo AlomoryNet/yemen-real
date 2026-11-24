@@ -66,7 +66,13 @@ flutter test      → suite (last known: 56 tests)
 ```
 
 ## Status — latest
-- Current focus: admin list pagination + i18n completion. Full roadmap in `TODO.md`.
+- Current focus: admin list pagination + i18n completion + image/LTR follow-up.
+  Full roadmap in `TODO.md`.
+- Last two raw `Image.network` calls replaced with `CachedNetworkImage` +
+  `memCacheWidth`. Property-card/image overlay positions now use
+  `PositionedDirectional(start/end)` (RTL layout unchanged, LTR mirrors correctly).
+  Four unbounded admin Supabase queries deliberately left alone — a hard cap
+  would silently truncate admin exports; needs coordinated paging work.
 - All five admin tabs now use `AdminPagedList<T>` (12 rows + "Load more");
   moderation queue shows 6 heavy cards initially. Added `test/admin_paged_list_test.dart`.
 - i18n quick wins done: localized AppHeader titles (admin/favorites/requests/detail/add-edit),

@@ -145,9 +145,9 @@ class _PropertyImageCarouselState extends State<PropertyImageCarousel> {
                 ),
         ),
         if (widget.topStart != null)
-          Positioned(top: 10, right: 10, child: widget.topStart!),
+          PositionedDirectional(top: 10, start: 10, child: widget.topStart!),
         if (widget.topEnd != null)
-          Positioned(top: 10, left: 10, child: widget.topEnd!),
+          PositionedDirectional(top: 10, end: 10, child: widget.topEnd!),
         if (widget.showDots && images.length > 1)
           Positioned(
             bottom: 8,

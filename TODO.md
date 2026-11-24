@@ -5,8 +5,6 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 ## Next up
 
 - [ ] **Remaining i18n (Option B) — larger migrations**
-      - LTR mirroring: shared `PropertyCard`/`PropertyImage` fixed `Positioned`
-        `left`/`right` → directional alignment; asymmetric paddings.
       - PDF locale policy: `contract_preview_screen.dart` and
         `admin_pdf_service.dart` force RTL (`pw.Directionality`, `MultiPage`,
         `pw.Alignment.centerRight`) even in English mode.
@@ -22,12 +20,11 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
       - Cold-start jank on `ZY22G4C24N`: `Choreographer: Skipped 1028 frames`
         during first load (2026-11-24 USB run). Profile startup; likely the
         440-property demo generation plus first-frame/PDF/font work.
-      - Two raw `Image.network` spots remain: `add_edit_property_screen.dart:1513`
-        and `admin_pending_property_card.dart:61` — move to `CachedNetworkImage`.
       - Slim the four unbounded admin queries: `admin_repository.dart:124`
         `.select()`, `commission_repository.dart:20`, `report_repository.dart:53`,
         `rental_request_repository.dart:123` (all `select('*')`, no `.limit()`).
-        Add `.range()`-based server-side paging for true scalability.
+        Needs coordinated provider + UI + PDF-export changes so a hard cap
+        does not silently truncate admin exports — deferred as a unit.
       - `getDashboardStats()` fetches every commission row just to sum it
         (`admin_repository.dart:91–98`) — use an aggregate query.
       - `const` constructor pass; web bundle deferred loading for admin/map.
@@ -54,6 +51,12 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 
 ## Recently completed (2026-11-24)
 
+- [x] **Image + LTR follow-up.** Last two raw `Image.network` calls now use
+      `CachedNetworkImage` with `memCacheWidth` and placeholders
+      (`add_edit_property_screen.dart`, `admin_pending_property_card.dart`).
+      Property-card/image overlays use `PositionedDirectional(start/end)` so
+      badges/favorites mirror correctly in LTR while RTL output is unchanged;
+      add/edit thumbnail margin is `EdgeInsetsDirectional`.
 - [x] **Admin huge list at the bottom.** Added reusable `AdminPagedList<T>`
       (`lib/features/admin/presentation/widgets/admin_paged_list.dart`) and wired
       it into all five admin tabs — 12 rows initially, "Load more" reveals the

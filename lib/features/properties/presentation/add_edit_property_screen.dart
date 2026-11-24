@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1503,14 +1504,26 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
   Widget _buildImageThumbnail(String source, {required bool isNetwork}) {
     return Container(
       width: 90,
-      margin: const EdgeInsets.only(left: 10),
+      margin: const EdgeInsetsDirectional.only(start: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: isNetwork
-          ? Image.network(source, fit: BoxFit.cover)
+          ? CachedNetworkImage(
+              imageUrl: source,
+              fit: BoxFit.cover,
+              memCacheWidth: 180,
+              placeholder: (_, __) => Container(
+                color: AppColors.surfaceVariant,
+                child: const Icon(Icons.image_outlined, size: 20),
+              ),
+              errorWidget: (_, __, ___) => const Icon(
+                Icons.broken_image_outlined,
+                size: 20,
+              ),
+            )
           : Center(child: Icon(Icons.image, color: AppColors.primaryInk)),
     );
   }

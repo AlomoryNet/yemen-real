@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -58,10 +59,19 @@ class _AdminPendingPropertyCardState
                 child: SizedBox(
                   width: 90,
                   height: 90,
-                  child: Image.network(
-                    primaryImg,
+                  child: CachedNetworkImage(
+                    imageUrl: primaryImg,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    memCacheWidth: 180,
+                    placeholder: (_, __) => Container(
+                      color: AppColors.surfaceVariant,
+                      child: Icon(
+                        Icons.apartment,
+                        size: 32,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    errorWidget: (_, __, ___) => Container(
                       color: AppColors.surfaceVariant,
                       child: Icon(
                         Icons.apartment,
