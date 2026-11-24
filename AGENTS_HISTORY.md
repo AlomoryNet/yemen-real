@@ -302,6 +302,32 @@ DONE (Paging + overflow fixes, 2026-11-23, `flutter analyze` clean, 56/56 tests,
 - Verification: `flutter analyze` clean, `flutter test` 56/56, fresh `flutter run -d ZY22G4C24N`
   + DTD hot restart; only remaining noise is offline OSM tile `Network is unreachable`.
 
+DONE (CARTO Voyager tile migration, 2026-11-24):
+- Diagnosed blank street tiles on `ZY22G4C24N`: the phone reaches general internet (google.com
+  loads in Chrome) but OSM tile hosts fail with socket `Network is unreachable (errno 101)`;
+  OSM does not block the app User-Agent, and `flutter_map` warns against OSM a/b/c subdomains.
+- Switched every street `TileLayer` to CARTO Voyager
+  (`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png`, a/b/c/d) in
+  `property_map_view.dart`, `property_detail_screen.dart` and `add_edit_property_screen.dart`.
+  Added `© OpenStreetMap contributors © CARTO` `TextSourceAttribution` (links to
+  carto.com/attributions) and kept `errorTileCallback` logging. Esri satellite unchanged.
+  Attribution in detail/add-edit is lifted with `Padding` so it clears bottom action overlays.
+- Verification: CARTO tile returns HTTP 200 and renders in phone Chrome; CARTO tiles render on
+  `/map` in the app; `flutter analyze` clean; `flutter test` 56/56; fresh USB
+  `flutter run -d ZY22G4C24N`.
+
+DONE (Esri street tiles replace CARTO, 2026-11-24):
+- User reported every tile rendered as `API KEY REQUIRED carto.com/basemaps/apikey`.
+  Confirmed by downloading the CARTO PNG (2,049 bytes) and OCR'ing it — HTTP 200 alone
+  was misleading because the response is a key-required placeholder image.
+- Replaced all three street `TileLayer`s with Esri World Street Map
+  (`server.arcgisonline.com/.../World_Street_Map/MapServer/tile/{z}/{y}/{x}`), no
+  subdomains/API key. Attribution updated to Esri's published sources with a link to
+  the World Street Map terms. Satellite (World_Imagery) unchanged.
+- Verified the Esri tile is a real 18 KB image, loads in Chrome on `ZY22G4C24N`, and
+  renders in the app's `/map` (133 colour buckets, OCR shows no key-required text).
+  `flutter analyze` clean; no tile-failure logs; no runtime errors.
+
 ## Docs policy
 - AGENTS.md = agent memory (this file). PROJECT_SUMMARY.md = stale human snapshot, keep for context.
 - `docs/reports/` = historical verification (keep) · `docs/screenshots/` = curated only

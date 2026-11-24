@@ -96,20 +96,24 @@ flutter test      → suite (last known: 56 tests)
   rows, admin section headers, the moderation empty-state row and the Profile header name/admin
   badge row use `Flexible`/`Expanded` + ellipsis; `PropertyCard._badges` uses `Wrap` (map discount
   pill no longer overflows); map selected-card price caption is ellipsized.
-- Map tiles: `TileLayer` in `property_map_view.dart` and `property_detail_screen.dart`
-  rotates OSM `a/b/c` subdomains and logs failures via `errorTileCallback`.
-  User-owned tile-loading edits preserved. Diagnosis on `ZY22G4C24N` (2026-11-23):
-  blank tiles come from **no outbound internet on the phone** (`DNS_PROBE_FINISHED_NXDOMAIN`,
-  TCP timeouts) despite WiFi association. Dev PC reaches internet only via Cloudflare VPN,
-  so its Sanaa/YE geolocation is not the router WAN IP. OSM does not block our User-Agent;
-  a geo-block would return HTTP errors, not DNS/socket failures. `flutter_map` warns
-  against OSM `a/b/c` subdomains (tile policy).
+- Map tiles: all three street `TileLayer`s (`property_map_view.dart`,
+  `property_detail_screen.dart`, `add_edit_property_screen.dart`) use **Esri World
+  Street Map** (`https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}`,
+  no subdomains/key) with `TextSourceAttribution` 'Tiles © Esri — Sources: Esri, HERE,
+  Garmin, USGS, OpenStreetMap contributors, GIS User Community' linking to the Esri
+  terms. Esri World Imagery satellite layer unchanged. `errorTileCallback` logging kept.
+  Detail/add-edit attribution is padded above bottom action overlays;
+  `AttributionAlignment` only supports bottomLeft/bottomRight in flutter_map 8.3.2.
+  Do NOT use CARTO Voyager: in 2026 its URL still returns HTTP 200 but serves a
+  ~2 KB placeholder PNG reading `API KEY REQUIRED carto.com/basemaps/apikey`.
+  Do NOT use OSM public tiles: unreachable from `ZY22G4C24N` (socket errno 101)
+  despite google.com loading in Chrome. Dev PC reaches internet only via Cloudflare
+  VPN, so its Sanaa/YE geolocation is not the router WAN IP.
 - Last verified: `flutter analyze` clean, 56/56 tests, fresh USB `flutter run -d ZY22G4C24N`
-  + DTD hot restart (2026-11-23). Navigated My Properties (paged cards, 440 lightweight
-  totals), Favorites, Admin dashboard, Map + list view: no `RenderFlex overflow` and no
-  widget errors. A `ref.listen`-in-`initState` assertion found on Favorites was fixed by
-  moving the listener into `build`. Only remaining runtime noise is the known offline
-  OSM tile `Network is unreachable`.
+  (2026-11-24). /map opened on device with Esri street tiles rendering (133 distinct
+  quantized colour buckets, OCR found no 'API KEY REQUIRED'); no tile-failure logs and
+  no runtime errors. Earlier 2026-11-23 USB pass covered My Properties, Favorites,
+  Admin dashboard, Map + list view with no `RenderFlex overflow` or widget errors.
 - Full changelog: `AGENTS_HISTORY.md`.
 
 ## Docs policy

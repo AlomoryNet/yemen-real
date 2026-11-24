@@ -314,8 +314,7 @@ class _PropertyMapViewState extends State<PropertyMapView>
         TileLayer(
           urlTemplate: widget.isSatellite
               ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-              : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
+              : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
           userAgentPackageName: 'com.yemenreal.portal',
           maxZoom: 19,
           errorTileCallback: (tile, error, stackTrace) {
@@ -398,11 +397,11 @@ class _PropertyMapViewState extends State<PropertyMapView>
             TextSourceAttribution(
               widget.isSatellite
                   ? 'Esri, Maxar, Earthstar Geographics'
-                  : 'OpenStreetMap contributors',
+                  : 'Tiles © Esri — Sources: Esri, HERE, Garmin, USGS, OpenStreetMap contributors, GIS User Community',
               onTap: () {
                 final uri = Uri.parse(widget.isSatellite
                     ? 'https://www.esri.com/'
-                    : 'https://www.openstreetmap.org/copyright');
+                    : 'https://goto.arcgisonline.com/maps/World_Street_Map');
                 canLaunchUrl(uri).then((ok) {
                   if (ok) launchUrl(uri, mode: LaunchMode.externalApplication);
                 });

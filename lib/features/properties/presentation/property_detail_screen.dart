@@ -783,8 +783,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    subdomains: const ['a', 'b', 'c'],
+                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
                     userAgentPackageName: 'com.yemenreal.portal',
                     maxZoom: 19,
                     errorTileCallback: (tile, error, stackTrace) {
@@ -843,6 +842,30 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 64),
+                    child: RichAttributionWidget(
+                      alignment: AttributionAlignment.bottomRight,
+                      attributions: [
+                        TextSourceAttribution(
+                          'Tiles © Esri — Sources: Esri, HERE, Garmin, USGS, OpenStreetMap contributors, GIS User Community',
+                          onTap: () {
+                            final uri = Uri.parse(
+                              'https://goto.arcgisonline.com/maps/World_Street_Map',
+                            );
+                            canLaunchUrl(uri).then((ok) {
+                              if (ok) {
+                                launchUrl(
+                                  uri,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

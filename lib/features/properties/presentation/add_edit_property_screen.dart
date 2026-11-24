@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
@@ -1042,10 +1043,16 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       TileLayer(
                                         urlTemplate:
-                                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
                                         userAgentPackageName:
                                             'com.yemenreal.portal',
                                         maxZoom: 19,
+                                        errorTileCallback: (tile, error,
+                                            stackTrace) {
+                                          debugPrint(
+                                            'Location map tile failed to load: $error',
+                                          );
+                                        },
                                       ),
                                       if (_selectedLatitude != null &&
                                           _selectedLongitude != null)
@@ -1066,6 +1073,32 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                             ),
                                           ],
                                         ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 56),
+                                        child: RichAttributionWidget(
+                                          alignment:
+                                              AttributionAlignment.bottomRight,
+                                          attributions: [
+                                            TextSourceAttribution(
+                                              'Tiles © Esri — Sources: Esri, HERE, Garmin, USGS, OpenStreetMap contributors, GIS User Community',
+                                              onTap: () {
+                                                final uri = Uri.parse(
+                                                  'https://goto.arcgisonline.com/maps/World_Street_Map',
+                                                );
+                                                canLaunchUrl(uri).then((ok) {
+                                                  if (ok) {
+                                                    launchUrl(
+                                                      uri,
+                                                      mode: LaunchMode
+                                                          .externalApplication,
+                                                    );
+                                                  }
+                                                });
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   Positioned(
