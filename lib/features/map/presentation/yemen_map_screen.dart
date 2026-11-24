@@ -24,6 +24,7 @@ import '../../../core/theme/property_text_styles.dart';
 import '../../../shared/widgets/property_card.dart';
 import '../../../shared/widgets/property_filter_sheet.dart';
 import '../../../data/demo_properties_generator.dart';
+import '../../../services/supabase_service.dart';
 import '../services/map_cluster_service.dart';
 import 'property_map_view.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -690,7 +691,9 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
           data: (allProperties) {
             final effectiveList = allProperties.isNotEmpty
                 ? allProperties
-                : DemoPropertiesGenerator.generateAllDemoProperties();
+                : SupabaseService.demoProperties.isNotEmpty
+                    ? SupabaseService.demoProperties
+                    : DemoPropertiesGenerator.cachedDemoProperties;
 
             final filteredProperties = _filterProperties(effectiveList);
 

@@ -131,7 +131,9 @@ class SupabaseService {
     demoCurrentUser = null;
 
     // 3. Realistic Demo Properties across all 22 Yemen Governorates (440 total)
-    demoProperties = DemoPropertiesGenerator.generateAllDemoProperties();
+    demoProperties = List<Property>.from(
+      DemoPropertiesGenerator.cachedDemoProperties,
+    );
 
     // Demo Rental Request
     demoRentalRequests = [

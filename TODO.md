@@ -17,16 +17,21 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
         log strings, Arabic comma in contract clauses.
 
 - [ ] **Performance quick wins**
-      - Cold-start jank on `ZY22G4C24N`: `Choreographer: Skipped 1028 frames`
-        during first load (2026-11-24 USB run). Profile startup; likely the
-        440-property demo generation plus first-frame/PDF/font work.
+      - [x] Cold-start jank: the 440 demo listings are now generated once per
+        process (`DemoPropertiesGenerator.cachedDemoProperties`) and reused by
+        the demo store, Home and the map fallback. Home's no-op post-frame
+        rebuild was removed and both `ThemeData` objects are cached.
+      - [ ] Runtime font fetching remains: `GoogleFonts` still downloads Cairo
+        weight variants because the bundled variable `Cairo.ttf` is not declared
+        as a font family. Needs a weight-safe declaration before disabling
+        `allowRuntimeFetching`.
       - Slim the four unbounded admin queries: `admin_repository.dart:124`
         `.select()`, `commission_repository.dart:20`, `report_repository.dart:53`,
         `rental_request_repository.dart:123` (all `select('*')`, no `.limit()`).
         Needs coordinated provider + UI + PDF-export changes so a hard cap
         does not silently truncate admin exports — deferred as a unit.
-      - `getDashboardStats()` fetches every commission row just to sum it
-        (`admin_repository.dart:91–98`) — use an aggregate query.
+      - [x] `getDashboardStats()` now uses PostgREST `sum()`/`count()` aggregates
+        with a client-side fallback for older backends (`admin_repository.dart`).
       - `const` constructor pass; web bundle deferred loading for admin/map.
       - Profile map clustering with `map_cluster_service.dart` for large sets.
 
@@ -53,6 +58,14 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 
 ## Recently completed (2026-11-24)
 
+- [x] **Performance quick win — cold-start hot path.** `HomeScreen` no longer
+      regenerates 440 demo listings on every build and no longer schedules a
+      no-op post-frame `setState`; the map fallback and demo store reuse the
+      same cached snapshot. `AppTheme` now caches both themes; added
+      `test/demo_properties_cache_test.dart`.
+- [x] **Performance quick win — dashboard commission totals.** `getDashboardStats()`
+      now asks PostgREST for `sum()`/`count()` instead of downloading every
+      commission row, with a fallback to the previous fold if aggregates are unsupported.
 - [x] **Overflow, hidden text & theme consistency pass.**
       - Fixed 4 unconstrained `Row`s in `add_edit_property_screen.dart` (incl.
         the exact log overflow at line 995) and the contract editor date/ID row

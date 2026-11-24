@@ -12,6 +12,7 @@ import '../../../providers/location_provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/device_location_service.dart';
+import '../../../services/supabase_service.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_footer.dart';
@@ -35,22 +36,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Filter selections live in dashboardFilterProvider. Only the
   // location-first state remains local to the screen.
 
-  latlong.LatLng _userCenter = DeviceLocationService.ibbCenter;
-  bool _locationResolved = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _resolveLocation());
-  }
-
-  Future<void> _resolveLocation() async {
-    // Simplified: use Ibb center as default, no location permission request.
-    setState(() {
-      _userCenter = DeviceLocationService.ibbCenter;
-      _locationResolved = true;
-    });
-  }
+  // Simplified: use Ibb center as default, no location permission request.
+  final latlong.LatLng _userCenter = DeviceLocationService.ibbCenter;
 
   void _onSearchSubmit() {
     final dashboardFilter = ref.read(dashboardFilterProvider);
@@ -127,8 +114,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Property> _nearbyProperties(double radiusKm) {
     const distance = latlong.Distance();
     final scored = <(Property, double)>[];
-    for (final property
-        in DemoPropertiesGenerator.generateAllDemoProperties()) {
+    // Demo mode keeps its edits in SupabaseService.demoProperties; reuse that
+    // list instead of regenerating 440 objects on every build.
+    final listings = SupabaseService.demoProperties.isNotEmpty
+        ? SupabaseService.demoProperties
+        : DemoPropertiesGenerator.cachedDemoProperties;
+    for (final property in listings) {
       if (property.status != AppConstants.statusPublished) continue;
       final coords = MapClusterService.getPropertyCoordinates(property);
       final km = distance.as(
@@ -193,7 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: HomeNearbySection(
                     nearbyProperties: nearbyProperties,
                     usingFallback: usingFallback,
-                    locationResolved: _locationResolved,
+                    locationResolved: true,
                   ),
                 ),
               ),

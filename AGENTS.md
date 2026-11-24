@@ -66,7 +66,14 @@ flutter test      → suite (last known: 56 tests)
 ```
 
 ## Status — latest
-- Current focus: overflow / hidden-text / theme-consistency pass. Full roadmap in `TODO.md`.
+- Current focus: performance quick wins (next: `const` pass / weight-safe bundled
+  Cairo font). Full roadmap in `TODO.md`.
+- `getDashboardStats()` now uses PostgREST `sum()`/`count()` aggregates for commission
+  totals with a client-side fallback; no longer downloads every commission row.
+- The 440 demo listings are generated once per process via
+  `DemoPropertiesGenerator.cachedDemoProperties` and reused by the demo store, Home
+  and the map fallback. Removed Home's no-op post-frame rebuild; `AppTheme` caches
+  both themes. Added `test/demo_properties_cache_test.dart` (59 tests total).
 - Fixed add/edit screen `RenderFlex` overflows (4 unconstrained Rows, incl. logged
   line 995) and the contract editor date/ID row overflow (logged at
   `contract_preview_screen.dart:772`), and removed unbounded ellipsis from My

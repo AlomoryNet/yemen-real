@@ -425,6 +425,16 @@ class DemoPropertiesGenerator {
     'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1000&q=80',
   ];
 
+  static List<Property>? _generatedDemoPropertiesCache;
+
+  /// Shared, lazily generated snapshot of the 440 demo listings.
+  ///
+  /// Callers that mutate listings should copy this list; the generator itself
+  /// is only run once per process so cold start does not rebuild 440
+  /// [Property] objects on every screen rebuild.
+  static List<Property> get cachedDemoProperties =>
+      _generatedDemoPropertiesCache ??= generateAllDemoProperties();
+
   /// Generate exactly 20 diverse, realistic demo properties for each of the 22 governorates
   /// Total: 22 * 20 = 440 properties
   static List<Property> generateAllDemoProperties() {

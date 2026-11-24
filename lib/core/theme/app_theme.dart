@@ -9,8 +9,10 @@ import 'app_colors.dart';
 /// Tokens exposed by [AppColors] are brightness-aware for screens that style
 /// text directly.
 class AppTheme {
-  static ThemeData get lightTheme => _build(const _Palette.light());
-  static ThemeData get darkTheme => _build(const _Palette.dark());
+  // Building both themes calls GoogleFonts dozens of times. Cache the results
+  // so root rebuilds (settings/auth changes) do not recreate every text style.
+  static final ThemeData lightTheme = _build(const _Palette.light());
+  static final ThemeData darkTheme = _build(const _Palette.dark());
 }
 
 class _Palette {

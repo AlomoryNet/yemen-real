@@ -88,13 +88,31 @@ class AdminRepository {
           .from('reports')
           .count()
           .eq('status', 'pending');
-      final commsData = await _client
-          .from('commissions')
-          .select('total_amount');
-
-      double commSum = 0;
-      for (final row in commsData as List) {
-        commSum += (row['total_amount'] as num?)?.toDouble() ?? 0;
+      late final int commCount;
+      late final double commSum;
+      try {
+        // PostgREST aggregates avoid downloading every commission row just to
+        // compute these two numbers. Older backends may reject aggregate
+        // syntax, so fall back to the previous client-side fold below.
+        final aggregate = await _client
+            .from('commissions')
+            .select('total_amount.sum(),id.count()');
+        final rows = aggregate as List;
+        final row = rows.isNotEmpty
+            ? rows.first as Map<String, dynamic>
+            : const <String, dynamic>{};
+        commCount = (row['count'] as num?)?.toInt() ?? 0;
+        commSum = (row['sum'] as num?)?.toDouble() ?? 0;
+      } catch (_) {
+        final commsData = await _client
+            .from('commissions')
+            .select('total_amount');
+        final rows = commsData as List;
+        commCount = rows.length;
+        commSum = rows.fold<double>(0, (sum, row) {
+          final amount = (row as Map<String, dynamic>)['total_amount'] as num?;
+          return sum + (amount?.toDouble() ?? 0);
+        });
       }
 
       return AdminDashboardStats(
@@ -104,7 +122,7 @@ class AdminRepository {
         totalUsers: usersCount,
         pendingRentalRequests: reqsCount,
         openReports: repsCount,
-        totalCommissions: (commsData as List).length,
+        totalCommissions: commCount,
         totalCommissionAmount: commSum,
       );
     } catch (e) {
