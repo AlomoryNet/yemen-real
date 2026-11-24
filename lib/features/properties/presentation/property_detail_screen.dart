@@ -727,12 +727,12 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F766E).withAlpha(25),
+                color: AppColors.primaryMuted,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.map_rounded,
-                color: Color(0xFF0F766E),
+                color: AppColors.primaryInk,
                 size: 22,
               ),
             ),
@@ -763,7 +763,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             border: Border.all(color: AppColors.divider),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(20),
+                color: AppColors.shadow,
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -802,16 +802,16 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F766E),
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha(60),
+                                color: AppColors.shadow,
                                 blurRadius: 6,
                                 offset: const Offset(0, 3),
                               ),
                             ],
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(color: AppColors.surface, width: 2),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -819,7 +819,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                             children: [
                               const Icon(
                                 Icons.location_on,
-                                color: Colors.white,
+                                color: AppColors.textLight,
                                 size: 16,
                               ),
                               const SizedBox(width: 4),
@@ -830,7 +830,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                     property.currency,
                                   ),
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.textLight,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -881,8 +881,8 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   children: [
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F766E),
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.textLight,
                         elevation: 4,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -904,7 +904,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     ),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppColors.surface,
                         foregroundColor: AppColors.textPrimary,
                         elevation: 4,
                         padding: const EdgeInsets.symmetric(
@@ -915,9 +915,9 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.directions_outlined,
-                        color: Color(0xFF0F766E),
+                        color: AppColors.primaryInk,
                         size: 16,
                       ),
                       label: Text(

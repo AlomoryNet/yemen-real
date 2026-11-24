@@ -36,12 +36,12 @@ class _AdminPendingPropertyCardState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.amber.shade200, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(15),
+            color: AppColors.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -95,9 +95,7 @@ class _AdminPendingPropertyCardState
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: isRent
-                                ? const Color(0xFF0D9488)
-                                : AppColors.primary,
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -105,7 +103,7 @@ class _AdminPendingPropertyCardState
                                 ? context.l10n.admin_for_rent
                                 : context.l10n.admin_for_sale,
                             style: GoogleFonts.cairo(
-                              color: Colors.white,
+                              color: AppColors.textLight,
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
                             ),
@@ -299,8 +297,8 @@ class _AdminPendingPropertyCardState
             children: [
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF059669),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.success,
+                  foregroundColor: AppColors.textLight,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -321,8 +319,8 @@ class _AdminPendingPropertyCardState
               ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFDC2626),
-                  side: const BorderSide(color: Color(0xFFDC2626)),
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 10,
@@ -380,7 +378,7 @@ class _AdminPendingPropertyCardState
               '${context.l10n.admin_approved_prefix}${prop.title}${context.l10n.admin_approved_suffix}',
               style: GoogleFonts.cairo(),
             ),
-            backgroundColor: const Color(0xFF059669),
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -413,7 +411,7 @@ class _AdminPendingPropertyCardState
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.cancel, color: Color(0xFFDC2626)),
+            Icon(Icons.cancel, color: AppColors.error),
             const SizedBox(width: 8),
             Text(
               context.l10n.admin_reject_dialog_title,
@@ -448,8 +446,8 @@ class _AdminPendingPropertyCardState
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.textLight,
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(context.l10n.admin_confirm_reject),
@@ -477,7 +475,7 @@ class _AdminPendingPropertyCardState
                 context.l10n.admin_reject_saved,
                 style: GoogleFonts.cairo(),
               ),
-              backgroundColor: const Color(0xFFDC2626),
+              backgroundColor: AppColors.error,
             ),
           );
         }

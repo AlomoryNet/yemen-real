@@ -31,8 +31,10 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
       - Profile map clustering with `map_cluster_service.dart` for large sets.
 
 - [ ] **Accessibility + loading UX**
-      - `Semantics` on icon buttons, contrast audit (dark theme), 48dp tap targets,
-        keyboard focus traversal for web/desktop.
+      - Remaining low-contrast token: `PropertyTextStyles.badge()` uses
+        `textLight` on `accent` amber at 11px (below ideal WCAG).
+      - `Semantics` on icon buttons, 48dp tap targets, keyboard focus traversal
+        for web/desktop.
       - Skeleton/shimmer loaders instead of spinners on lists and detail.
       - Unify empty/error states via `EmptyStateView` / `ErrorView`.
 
@@ -51,6 +53,27 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 
 ## Recently completed (2026-11-24)
 
+- [x] **Overflow, hidden text & theme consistency pass.**
+      - Fixed 4 unconstrained `Row`s in `add_edit_property_screen.dart` (incl.
+        the exact log overflow at line 995) and the contract editor date/ID row
+        overflow (`contract_preview_screen.dart:772`) by wrapping long text in
+        `Flexible`. Contract editor switches now use transparent `Material`
+        ancestors to remove ListTile ink debug errors.
+      - My Properties header title/subtitle no longer ellipsize without a
+        `maxLines` budget — the subtitle now wraps in full. Same relaxation
+        applied to dashboard category subtitles, admin dashboard/tab titles,
+        moderation heading, drawer map subtitle, contact-unavailable notice and
+        rental-request date rows.
+      - Contract preview + editor sheet migrated off hardcoded white/black/grey
+        to `AppColors` semantic tokens; dark-ink `primaryDark`/`accentDark`
+        foregrounds replaced with `primaryInk`/new `accentInk`; direction-hardcoded
+        paddings/borders made `EdgeInsetsDirectional`/`BorderDirectional`.
+      - Added `AppColors.shadow` and `accentInk` tokens; themed modal barrier
+        scrim on all four bottom sheets and `AuthPromptDialog`.
+      - Migrated dark-theme breakers in admin pending card, status badge,
+        property detail, login/auth-callback/register notices, admin users tab,
+        admin PDF dialog, bottom nav, back-exit snackbar, filter-sheet shadow
+        and rental-request spinner to theme tokens.
 - [x] **Image + LTR follow-up.** Last two raw `Image.network` calls now use
       `CachedNetworkImage` with `memCacheWidth` and placeholders
       (`add_edit_property_screen.dart`, `admin_pending_property_card.dart`).

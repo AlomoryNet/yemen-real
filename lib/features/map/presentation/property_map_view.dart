@@ -275,6 +275,8 @@ class _PropertyMapViewState extends State<PropertyMapView>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       showDragHandle: false,
+      barrierColor:
+          Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
       builder: (_) => _ClusterPropertiesSheet(
         properties: props,
         onPropertySelected: (property) {

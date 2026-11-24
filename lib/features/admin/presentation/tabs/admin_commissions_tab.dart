@@ -35,8 +35,6 @@ class AdminCommissionsTab extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     context.l10n.admin_commissions_list_title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,

@@ -263,14 +263,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             IconData iconData = Icons.error_outline;
 
                             if (isUnconfirmed) {
-                              boxBg = const Color(0xFFFFF8E1);
-                              borderColor = const Color(0xFFFFB300);
-                              textColor = const Color(0xFFB78103);
+                              boxBg = AppColors.warningMuted;
+                              borderColor = AppColors.warning.withValues(alpha: 0.3);
+                              textColor = AppColors.accentInk;
                               iconData = Icons.mark_email_unread_outlined;
                             } else if (isExpired || isRateLimited) {
-                              boxBg = const Color(0xFFFFF3E0);
-                              borderColor = const Color(0xFFFF9800);
-                              textColor = const Color(0xFFE65100);
+                              boxBg = AppColors.warningMuted;
+                              borderColor = AppColors.warning.withValues(alpha: 0.3);
+                              textColor = AppColors.accentInk;
                               iconData = isRateLimited
                                   ? Icons.timer_outlined
                                   : Icons.schedule_outlined;
@@ -454,7 +454,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    color: Colors.white,
+                                    color: AppColors.textLight,
                                     strokeWidth: 2,
                                   ),
                                 )

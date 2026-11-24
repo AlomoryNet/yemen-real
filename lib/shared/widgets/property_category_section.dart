@@ -130,8 +130,6 @@ class PropertyCategorySection extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.cairo(
                             fontSize: 12.5,
                             color: AppColors.textSecondary,

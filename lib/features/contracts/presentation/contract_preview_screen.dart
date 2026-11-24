@@ -74,6 +74,8 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
+      barrierColor:
+          Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
       builder: (ctx) => _ContractEditorSheet(
         contract: _contract,
         property: widget.property,
@@ -594,7 +596,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           context.l10n.contract_app_bar_title,
@@ -621,10 +623,10 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(20),
+              color: AppColors.shadow,
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -657,8 +659,8 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                 flex: 2,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB91C1C),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.error,
+                    foregroundColor: AppColors.textLight,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -680,7 +682,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.textLight,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -707,11 +709,11 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 820),
             child: Card(
-              color: Colors.white,
+              color: AppColors.surface,
               elevation: 3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFD1D5DB)),
+                side: BorderSide(color: AppColors.border),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(28.0),
@@ -727,7 +729,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                             style: GoogleFonts.amiri(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1F2937),
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -755,7 +757,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                               style: GoogleFonts.cairo(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primaryDark,
+                                color: AppColors.primaryInk,
                               ),
                             ),
                           ),
@@ -763,25 +765,31 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Divider(color: Colors.black26, thickness: 1),
+                    Divider(color: AppColors.divider, thickness: 1),
                     const SizedBox(height: 14),
 
                     // Date & Contract ID
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${context.l10n.contract_edit_date} ${_contract.startDate.isNotEmpty ? _contract.startDate : DateTime.now().toString().split(" ").first}',
-                          style: GoogleFonts.cairo(
-                            fontSize: 12,
-                            color: Colors.black87,
+                        Expanded(
+                          child: Text(
+                            '${context.l10n.contract_edit_date} ${_contract.startDate.isNotEmpty ? _contract.startDate : DateTime.now().toString().split(" ").first}',
+                            style: GoogleFonts.cairo(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
-                        Text(
-                          '${context.l10n.contract_number} ${_contract.id}',
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            color: Colors.black54,
+                        const SizedBox(width: 12),
+                        Flexible(
+                          child: Text(
+                            '${context.l10n.contract_number} ${_contract.id}',
+                            textAlign: TextAlign.end,
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                            ),
                           ),
                         ),
                       ],
@@ -816,7 +824,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
-                                    color: AppColors.primaryDark,
+                                    color: AppColors.primaryInk,
                                   ),
                                 ),
                                 Text(
@@ -832,7 +840,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
+                              foregroundColor: AppColors.textLight,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 8,
@@ -894,9 +902,9 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
+                        color: AppColors.surfaceVariant,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Text(
                         '${context.l10n.contract_property_in_governorate} ${widget.property.city} ${context.l10n.contract_district_label} ${widget.property.district} - ${widget.property.addressDetails ?? ""}.\n${context.l10n.contract_specifications} ${widget.property.title} ${context.l10n.contract_approx_area_prefix} ${widget.property.areaSqm} ${context.l10n.contract_sqm_unit}.',
@@ -974,7 +982,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                       const SizedBox(height: 4),
                       ..._contract.customClauses.map(
                         (clause) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6, right: 12),
+                          padding: const EdgeInsetsDirectional.only(bottom: 6, end: 12),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1019,13 +1027,13 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                     ),
 
                     const SizedBox(height: 30),
-                    const Divider(color: Colors.black26),
+                    Divider(color: AppColors.divider),
                     Center(
                       child: Text(
                         context.l10n.contract_footer_notice,
                         style: GoogleFonts.cairo(
                           fontSize: 10,
-                          color: Colors.black45,
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ),
@@ -1043,10 +1051,10 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(6),
-        border: Border(
-          right: BorderSide(color: AppColors.primaryInk, width: 4),
+        border: BorderDirectional(
+          start: BorderSide(color: AppColors.primaryInk, width: 4),
         ),
       ),
       child: Text(
@@ -1054,7 +1062,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
         style: GoogleFonts.cairo(
           fontWeight: FontWeight.bold,
           fontSize: 14,
-          color: AppColors.primaryDark,
+          color: AppColors.primaryInk,
         ),
       ),
     );
@@ -1075,12 +1083,12 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isFilled ? const Color(0xFFF9FCF9) : const Color(0xFFFAFAFA),
+          color: isFilled ? AppColors.primaryMuted : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isFilled
                 ? AppColors.primary.withOpacity(0.4)
-                : const Color(0xFFE5E7EB),
+                : AppColors.border,
           ),
         ),
         child: Column(
@@ -1181,7 +1189,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
           Container(
             width: 22,
             height: 22,
-            margin: const EdgeInsets.only(top: 2, left: 8),
+            margin: const EdgeInsetsDirectional.only(top: 2, start: 8),
             decoration: BoxDecoration(
               color: AppColors.primary,
               shape: BoxShape.circle,
@@ -1190,7 +1198,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
               child: Text(
                 number,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textLight,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1201,16 +1209,16 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
             child: RichText(
               text: TextSpan(
                 style: GoogleFonts.cairo(
-                  color: Colors.black87,
+                  color: AppColors.textSecondary,
                   fontSize: 13,
                   height: 1.6,
                 ),
                 children: [
                   TextSpan(
                     text: '$title ',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   TextSpan(text: body),
@@ -1231,7 +1239,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
         height: 80,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.black26, style: BorderStyle.solid),
+          border: Border.all(color: AppColors.border, style: BorderStyle.solid),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1246,7 +1254,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
             ),
             Text(
               context.l10n.contract_signature_stamp,
-              style: TextStyle(fontSize: 10, color: Colors.black45),
+              style: TextStyle(fontSize: 10, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -1450,8 +1458,8 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
       child: Container(
         height: targetHeight,
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -1463,7 +1471,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppColors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1533,7 +1541,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: AppColors.primary.withOpacity(0.3),
@@ -1555,7 +1563,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
-                                    color: AppColors.primaryDark,
+                                    color: AppColors.primaryInk,
                                   ),
                                 ),
                               ],
@@ -1601,18 +1609,18 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
+                          color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(color: AppColors.divider),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.real_estate_agent,
-                                  color: AppColors.accentDark,
+                                  color: AppColors.accentInk,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 6),
@@ -1621,7 +1629,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                                   style: GoogleFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
-                                    color: AppColors.accentDark,
+                                    color: AppColors.accentInk,
                                   ),
                                 ),
                               ],
@@ -1720,39 +1728,45 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                       const SizedBox(height: 16),
 
                       // Switches
-                      SwitchListTile(
-                        title: Text(
-                          context.l10n.contract_non_renewable_switch_title,
-                          style: GoogleFonts.cairo(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                      Material(
+                        color: Colors.transparent,
+                        child: SwitchListTile(
+                          title: Text(
+                            context.l10n.contract_non_renewable_switch_title,
+                            style: GoogleFonts.cairo(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
+                          subtitle: Text(
+                            context.l10n.contract_non_renewable_switch_subtitle,
+                            style: GoogleFonts.cairo(fontSize: 11),
+                          ),
+                          value: _isRenewableOnlyByOwner,
+                          onChanged: (val) =>
+                              setState(() => _isRenewableOnlyByOwner = val),
+                          activeColor: AppColors.primary,
                         ),
-                        subtitle: Text(
-                          context.l10n.contract_non_renewable_switch_subtitle,
-                          style: GoogleFonts.cairo(fontSize: 11),
-                        ),
-                        value: _isRenewableOnlyByOwner,
-                        onChanged: (val) =>
-                            setState(() => _isRenewableOnlyByOwner = val),
-                        activeColor: AppColors.primary,
                       ),
-                      SwitchListTile(
-                        title: Text(
-                          context.l10n.contract_sublease_switch_title,
-                          style: GoogleFonts.cairo(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                      Material(
+                        color: Colors.transparent,
+                        child: SwitchListTile(
+                          title: Text(
+                            context.l10n.contract_sublease_switch_title,
+                            style: GoogleFonts.cairo(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
+                          subtitle: Text(
+                            context.l10n.contract_sublease_switch_subtitle,
+                            style: GoogleFonts.cairo(fontSize: 11),
+                          ),
+                          value: _forbidSubleasing,
+                          onChanged: (val) =>
+                              setState(() => _forbidSubleasing = val),
+                          activeColor: AppColors.primary,
                         ),
-                        subtitle: Text(
-                          context.l10n.contract_sublease_switch_subtitle,
-                          style: GoogleFonts.cairo(fontSize: 11),
-                        ),
-                        value: _forbidSubleasing,
-                        onChanged: (val) =>
-                            setState(() => _forbidSubleasing = val),
-                        activeColor: AppColors.primary,
                       ),
                       const SizedBox(height: 12),
 
@@ -1789,7 +1803,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
+                            color: AppColors.surfaceVariant,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -1838,7 +1852,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
+                              foregroundColor: AppColors.textLight,
                             ),
                             onPressed: _addCustomClause,
                             child: Text(context.l10n.contract_add),
@@ -1857,23 +1871,26 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                             color: AppColors.accent.withAlpha(80),
                           ),
                         ),
-                        child: SwitchListTile(
-                          title: Text(
-                            context.l10n.contract_save_template_title,
-                            style: GoogleFonts.cairo(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: AppColors.primaryDark,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: SwitchListTile(
+                            title: Text(
+                              context.l10n.contract_save_template_title,
+                              style: GoogleFonts.cairo(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: AppColors.primaryInk,
+                              ),
                             ),
+                            subtitle: Text(
+                              context.l10n.contract_save_template_subtitle,
+                              style: GoogleFonts.cairo(fontSize: 11),
+                            ),
+                            value: _saveAsDefault,
+                            onChanged: (val) =>
+                                setState(() => _saveAsDefault = val),
+                            activeColor: AppColors.accent,
                           ),
-                          subtitle: Text(
-                            context.l10n.contract_save_template_subtitle,
-                            style: GoogleFonts.cairo(fontSize: 11),
-                          ),
-                          value: _saveAsDefault,
-                          onChanged: (val) =>
-                              setState(() => _saveAsDefault = val),
-                          activeColor: AppColors.accent,
                         ),
                       ),
                     ],
@@ -1899,7 +1916,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.textLight,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1913,8 +1930,8 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                   flex: 1,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey.shade700,
-                      side: BorderSide(color: Colors.grey.shade300),
+                      foregroundColor: AppColors.textSecondary,
+                      side: BorderSide(color: AppColors.border),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1961,7 +1978,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
             hintText: hint,
             hintStyle: GoogleFonts.cairo(
               fontSize: 11,
-              color: Colors.grey.shade400,
+              color: AppColors.textMuted,
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,

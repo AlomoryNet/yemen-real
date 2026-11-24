@@ -44,11 +44,13 @@ class ExternalContactButtons extends StatelessWidget {
               color: AppColors.textMuted,
             ),
             const SizedBox(width: 8),
-            Text(
-              context.l10n.sh_contact_unavailable,
-              style: GoogleFonts.cairo(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+            Flexible(
+              child: Text(
+                context.l10n.sh_contact_unavailable,
+                style: GoogleFonts.cairo(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ],

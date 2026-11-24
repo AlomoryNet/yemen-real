@@ -23,6 +23,8 @@ class AuthPromptDialog extends StatelessWidget {
     return showDialog(
       context: context,
       barrierDismissible: true,
+      barrierColor:
+          Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
       builder: (ctx) =>
           AuthPromptDialog(message: resolvedMessage, redirectTo: redirectTo),
     );
@@ -78,7 +80,7 @@ class AuthPromptDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F7FA),
+              color: AppColors.surfaceVariant,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: AppColors.divider),
             ),
@@ -143,7 +145,7 @@ class AuthPromptDialog extends StatelessWidget {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textLight,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

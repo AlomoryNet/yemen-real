@@ -167,11 +167,13 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                             color: AppColors.textMuted,
                                           ),
                                           const SizedBox(width: 6),
-                                          Text(
-                                            '${context.l10n.req_requested_start} ${req.requestedStartDate != null ? Formatters.formatDate(req.requestedStartDate) : context.l10n.req_not_specified}',
-                                            style: GoogleFonts.cairo(
-                                              fontSize: 12,
-                                              color: AppColors.textSecondary,
+                                          Flexible(
+                                            child: Text(
+                                              '${context.l10n.req_requested_start} ${req.requestedStartDate != null ? Formatters.formatDate(req.requestedStartDate) : context.l10n.req_not_specified}',
+                                              style: GoogleFonts.cairo(
+                                                fontSize: 12,
+                                                color: AppColors.textSecondary,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -226,13 +228,16 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            '${context.l10n.req_sent_on} ${Formatters.formatDateTime(req.createdAt)}',
-                                            style: GoogleFonts.cairo(
-                                              fontSize: 11,
-                                              color: AppColors.textMuted,
+                                          Flexible(
+                                            child: Text(
+                                              '${context.l10n.req_sent_on} ${Formatters.formatDateTime(req.createdAt)}',
+                                              style: GoogleFonts.cairo(
+                                                fontSize: 11,
+                                                color: AppColors.textMuted,
+                                              ),
                                             ),
                                           ),
+                                          const SizedBox(width: 8),
                                           TextButton(
                                             onPressed: () => context.push(
                                               '/property/${req.propertyId}',

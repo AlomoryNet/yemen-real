@@ -239,7 +239,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

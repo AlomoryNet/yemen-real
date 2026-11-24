@@ -66,8 +66,22 @@ flutter test      → suite (last known: 56 tests)
 ```
 
 ## Status — latest
-- Current focus: admin list pagination + i18n completion + image/LTR follow-up.
-  Full roadmap in `TODO.md`.
+- Current focus: overflow / hidden-text / theme-consistency pass. Full roadmap in `TODO.md`.
+- Fixed add/edit screen `RenderFlex` overflows (4 unconstrained Rows, incl. logged
+  line 995) and the contract editor date/ID row overflow (logged at
+  `contract_preview_screen.dart:772`), and removed unbounded ellipsis from My
+  Properties header/subtitle, dashboard category subtitles, admin headers/tab titles,
+  drawer map subtitle and rental-request date rows so descriptive text wraps instead
+  of being clipped. Contract editor `SwitchListTile`s now have their own transparent
+  `Material` ancestor to remove ListTile ink/background debug errors.
+- Contract preview + editor sheet now use `AppColors` tokens (no hardcoded
+  white/black/grey); dark-ink `primaryDark`/`accentDark` foregrounds replaced with
+  `primaryInk`/new `accentInk`; direction-hardcoded paddings/borders are
+  `EdgeInsetsDirectional`/`BorderDirectional`. Added `AppColors.shadow` and
+  `accentInk`; themed modal barrier scrim on all bottom sheets + `AuthPromptDialog`.
+- Migrated remaining dark-theme breakers: admin pending card, `StatusBadge` pending,
+  property detail, login/auth-callback/register notices, admin users tab, admin PDF dialog,
+  bottom nav, back-exit snackbar, filter-sheet shadow and rental-request spinner.
 - Last two raw `Image.network` calls replaced with `CachedNetworkImage` +
   `memCacheWidth`. Property-card/image overlay positions now use
   `PositionedDirectional(start/end)` (RTL layout unchanged, LTR mirrors correctly).
@@ -125,11 +139,12 @@ flutter test      → suite (last known: 56 tests)
   Do NOT use OSM public tiles: unreachable from `ZY22G4C24N` (socket errno 101)
   despite google.com loading in Chrome. Dev PC reaches internet only via Cloudflare
   VPN, so its Sanaa/YE geolocation is not the router WAN IP.
-- Last verified: `flutter analyze` clean, 56/56 tests, fresh USB `flutter run -d ZY22G4C24N`
-  (2026-11-24). /map opened on device with Esri street tiles rendering (133 distinct
-  quantized colour buckets, OCR found no 'API KEY REQUIRED'); no tile-failure logs and
-  no runtime errors. Earlier 2026-11-23 USB pass covered My Properties, Favorites,
-  Admin dashboard, Map + list view with no `RenderFlex overflow` or widget errors.
+- Last verified (2026-11-24): `flutter analyze` clean, 58/58 tests, fresh USB
+  `flutter run -d ZY22G4C24N` plus DTD hot restart. Current run log has no
+  `RenderFlex overflow`, Flutter error banner or runtime errors. /map opened on device
+  with Esri street tiles rendering (133 distinct quantized colour buckets, OCR found no
+  'API KEY REQUIRED'); no tile-failure logs. Earlier 2026-11-23 USB pass covered My
+  Properties, Favorites, Admin dashboard, Map + list view with no overflow/widget errors.
 - Full changelog: `AGENTS_HISTORY.md`.
 
 ## Docs policy

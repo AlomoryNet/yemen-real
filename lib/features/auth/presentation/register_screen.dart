@@ -128,7 +128,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   style: GoogleFonts.cairo(
                     fontSize: 12,
                     height: 1.5,
-                    color: Colors.grey.shade800,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -223,13 +223,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 },
                 child: Text(
                   context.l10n.register_browse_guest,
-                  style: GoogleFonts.cairo(color: Colors.grey.shade700),
+                  style: GoogleFonts.cairo(color: AppColors.textSecondary),
                 ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textLight,
                 ),
                 onPressed: () {
                   Navigator.of(ctx).pop();
@@ -510,7 +510,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    color: Colors.white,
+                                    color: AppColors.textLight,
                                     strokeWidth: 2,
                                   ),
                                 )

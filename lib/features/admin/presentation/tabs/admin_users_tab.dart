@@ -85,12 +85,10 @@ class AdminUsersTab extends ConsumerWidget {
                       Flexible(
                         child: Text(
                           context.l10n.admin_users_list_title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
-                            color: AppColors.primaryDark,
+                            color: AppColors.primaryInk,
                           ),
                         ),
                       ),
@@ -105,23 +103,22 @@ class AdminUsersTab extends ConsumerWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
+                      color: AppColors.successMuted,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.green),
+                      border: Border.all(color: AppColors.success),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.lock, size: 14, color: Colors.green),
+                        Icon(Icons.lock,
+                            size: 14, color: AppColors.success),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
                             context.l10n.admin_gm_permissions,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.cairo(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Colors.green.shade900,
+                              color: AppColors.success,
                             ),
                           ),
                         ),
@@ -135,9 +132,9 @@ class AdminUsersTab extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
+                color: AppColors.successMuted,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBBF7D0)),
+                border: Border.all(color: AppColors.success),
               ),
               child: Row(
                 children: [
@@ -203,7 +200,7 @@ class AdminUsersTab extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: AppColors.surfaceVariant,
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.grey.shade300),
+                            border: Border.all(color: AppColors.divider),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,

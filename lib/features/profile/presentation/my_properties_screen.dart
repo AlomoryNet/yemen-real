@@ -247,13 +247,11 @@ class _MyPropertiesScreenState extends ConsumerState<MyPropertiesScreen> {
               Text(
                 context.l10n.myprops_title,
                 style: PropertyTextStyles.title(size: 22),
-                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
               Text(
                 context.l10n.myprops_subtitle,
                 style: PropertyTextStyles.meta(size: 13),
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

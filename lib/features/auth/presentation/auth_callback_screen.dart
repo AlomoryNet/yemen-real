@@ -256,7 +256,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
-                color: Color(0xFFE8F5E9),
+                color: AppColors.successMuted,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -332,7 +332,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppColors.textLight,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -392,13 +392,13 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isExpired
-                    ? const Color(0xFFFFF3E0)
+                    ? AppColors.warningMuted
                     : AppColors.errorMuted,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 isExpired ? Icons.schedule_outlined : Icons.error_outline,
-                color: isExpired ? Colors.orange.shade800 : AppColors.error,
+                color: isExpired ? AppColors.accentInk : AppColors.error,
                 size: 54,
               ),
             ),
@@ -451,7 +451,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textLight,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -463,7 +463,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                         height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.textLight,
                         ),
                       )
                     : const Icon(Icons.send_rounded, size: 18),

@@ -102,7 +102,7 @@ class _NavDestination extends StatelessWidget {
     final activeColor = AppColors.primaryInk; // bright teal in dark mode
     final inactiveColor = isDark
         ? AppColors.textMuted // lighter muted gray on dark surface
-        : const Color(0xFF667085);
+        : AppColors.textSecondary;
     final pillFill = isDark
         ? AppColors.primaryMuted.withAlpha(120) // lighter in dark
         : AppColors.primaryMuted;

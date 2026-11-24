@@ -22,6 +22,8 @@ Future<PropertyFilterSelection?> showPropertyFilterSheet({
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
+    barrierColor:
+        Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
     builder: (_) => PropertyFilterSheet(
       initial: initial,
       propertyTypes: propertyTypes,
@@ -165,7 +167,7 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                 const BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(60),
+                color: AppColors.shadow,
                 blurRadius: 24,
                 offset: const Offset(0, -8),
               ),

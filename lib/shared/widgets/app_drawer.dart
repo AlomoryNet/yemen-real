@@ -163,8 +163,6 @@ class AppDrawer extends ConsumerWidget {
                               const SizedBox(height: 2),
                               Text(
                                 context.l10n.sh_drawer_map_subtitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.cairo(
                                   color: AppColors.textLight.withAlpha(220),
                                   fontSize: 11,

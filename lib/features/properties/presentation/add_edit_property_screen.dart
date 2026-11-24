@@ -169,9 +169,11 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           children: [
             Icon(Icons.rate_review_outlined, color: AppColors.primaryInk),
             const SizedBox(width: 8),
-            Text(
-              context.l10n.addprop_self_review_title,
-              style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+            Flexible(
+              child: Text(
+                context.l10n.addprop_self_review_title,
+                style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -993,19 +995,22 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                             const SizedBox(height: 18),
                             // Interactive Location Map Picker
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Icon(
                                   Icons.pin_drop_rounded,
-                                  color: Color(0xFF0F766E),
+                                  color: AppColors.primary,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  context.l10n.addprop_map_picker_label,
-                                  style: GoogleFonts.cairo(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                    color: AppColors.textPrimary,
+                                Flexible(
+                                  child: Text(
+                                    context.l10n.addprop_map_picker_label,
+                                    style: GoogleFonts.cairo(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1182,13 +1187,16 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  context.l10n.addprop_photos_label,
-                                  style: GoogleFonts.cairo(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
+                                Flexible(
+                                  child: Text(
+                                    context.l10n.addprop_photos_label,
+                                    style: GoogleFonts.cairo(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(width: 12),
                                 TextButton.icon(
                                   onPressed: _pickImages,
                                   icon: const Icon(
@@ -1483,12 +1491,14 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
               children: [
                 Icon(icon, size: 20, color: AppColors.primaryInk),
                 const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: GoogleFonts.cairo(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                Flexible(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.cairo(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
               ],

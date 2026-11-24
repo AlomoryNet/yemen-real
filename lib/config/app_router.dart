@@ -18,6 +18,7 @@ import '../features/property_requests/presentation/my_rental_requests_screen.dar
 import '../features/map/presentation/yemen_map_screen.dart';
 import '../features/contracts/presentation/contract_preview_screen.dart';
 import '../core/l10n/context_l10n.dart';
+import '../core/theme/app_colors.dart';
 import '../models/property.dart';
 import '../shared/widgets/empty_state_view.dart';
 
@@ -283,11 +284,11 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
               style: GoogleFonts.cairo(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.textLight,
               ),
             ),
             duration: const Duration(seconds: 2),
-            backgroundColor: const Color(0xFF134E4A),
+            backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

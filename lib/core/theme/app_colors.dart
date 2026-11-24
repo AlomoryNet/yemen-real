@@ -22,6 +22,9 @@ class AppColors {
   static const Color accentLight = Color(0xFFFDE68A);
   static const Color accentDark = Color(0xFF92400E);
 
+  /// Foreground amber for text/icons on surfaces (bright in dark mode).
+  static Color get accentInk => isDark ? accentLight : accentDark;
+
   // Light palette (explicit — used by AppTheme.lightTheme)
   static const Color lightBackground = Color(0xFFF8FAFC);
   static const Color lightSurface = Color(0xFFFFFFFF);
@@ -71,4 +74,7 @@ class AppColors {
   static Color get textMuted => isDark ? darkTextMuted : lightTextMuted;
   static Color get primaryMuted =>
       isDark ? darkPrimaryMuted : lightPrimaryMuted;
+
+  /// Elevation shadow tint, tuned per theme.
+  static Color get shadow => isDark ? const Color(0x66000000) : const Color(0x1C000000);
 }

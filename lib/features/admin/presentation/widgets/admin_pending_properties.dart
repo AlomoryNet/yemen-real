@@ -70,8 +70,6 @@ class _AdminPendingPropertiesSectionState
                           Flexible(
                             child: Text(
                               context.l10n.admin_pending_title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.cairo(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -89,7 +87,7 @@ class _AdminPendingPropertiesSectionState
                                 ),
                                 decoration: BoxDecoration(
                                   color: list.isNotEmpty
-                                      ? Colors.amber.shade800
+                                      ? AppColors.accent
                                       : AppColors.success,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -101,7 +99,7 @@ class _AdminPendingPropertiesSectionState
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.cairo(
-                                    color: Colors.white,
+                                    color: AppColors.textLight,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                   ),

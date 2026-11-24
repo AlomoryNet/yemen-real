@@ -39,8 +39,8 @@ class StatusBadge extends StatelessWidget {
         fg = AppColors.success;
         break;
       case AppConstants.statusPending:
-        bg = const Color(0xFFFFF3E0);
-        fg = const Color(0xFFE65100);
+        bg = AppColors.warningMuted;
+        fg = AppColors.accentInk;
         break;
       case AppConstants.statusDraft:
         bg = AppColors.surfaceVariant;

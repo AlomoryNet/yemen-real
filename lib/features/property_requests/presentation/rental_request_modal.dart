@@ -21,6 +21,8 @@ class RentalRequestModal extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor:
+          Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
       builder: (context) => RentalRequestModal(property: property),
     );
   }
@@ -365,7 +367,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AppColors.textLight,
                         strokeWidth: 2,
                       ),
                     )
