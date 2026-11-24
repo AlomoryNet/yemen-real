@@ -328,6 +328,44 @@ DONE (Esri street tiles replace CARTO, 2026-11-24):
   renders in the app's `/map` (133 colour buckets, OCR shows no key-required text).
   `flutter analyze` clean; no tile-failure logs; no runtime errors.
 
+DONE (Settings screen completion + verification, 2026-11-24, `flutter analyze` clean, 71/71 tests):
+- Added persisted preferences for currency (YER/SAR/USD), distance unit (km/miles),
+  text size (small/medium/large), default map view (list/map) and a duplicate-key
+  fix for `set_add_property_style` in both ARBs. Regenerated l10n output.
+- Closed three gaps found during verification: text size now drives a root
+  `MediaQuery.textScaler` (0.85/1.0/1.15) because `MaterialApp.router` has no
+  `textScaler` parameter in Flutter 3.47; search-radius values remain stored in
+  km but are converted to miles for both the slider label and subtitle;
+  `PropertyCard` now `watch`es `settingsProvider` so a currency change rebuilds
+  price labels immediately. Currency switching changes the label only until an
+  FX rate source exists.
+- Reworked `test/settings_test.dart`: deterministic `notifier.loaded` instead of
+  1 s sleeps, all setters awaited, new checks for text scaling, km→miles display,
+  and reload from SharedPreferences. `addPropertyStyle` and `notificationsEnabled`
+  persist but still have no consumer outside the Settings screen.
+- Verification: `flutter analyze` clean, `flutter test` 70/70 (71/71 after the
+  theme-scope regression test below), fresh USB build on `ZY22G4C24N` + DTD hot
+  reload with no runtime errors.
+
+DONE (Stale dark/light elements after theme switch, 2026-11-24, `flutter analyze` clean, 71/71 tests):
+- Root cause: `AppColors.isDark` is a mutable static mirror of the effective
+  brightness. Static getters cannot mark widgets dirty, so widgets that read
+  `AppColors.surface/textPrimary/...` directly kept the previous palette until
+  navigation built a fresh page.
+- Added `lib/core/theme/app_theme_scope.dart`: a `ConsumerWidget` that watches
+  `settingsProvider.themeMode`, resolves system brightness through `MediaQuery`,
+  and keys its child subtree by the effective `Brightness`. Every GoRouter page
+  (`_tabPage` and all `builder` routes) is wrapped in it, so the whole route
+  re-evaluates its colors on a theme change while the router page key and
+  navigation stack stay intact.
+- Added a widget regression test in `test/settings_test.dart` asserting the
+  subtree rebuilds when `ThemeMode` changes.
+- Verification: `flutter analyze` clean, `flutter test` 71/71, DTD hot restart
+  on `ZY22G4C24N`, then Dark→Light and Light→Dark round-trips from Settings back
+  to the dashboard. Scaffold, surfaces, header and bottom nav all matched the
+  selected theme after the transition; run log had no runtime errors/overflows.
+- Release prep: bumped `pubspec.yaml` to `2.4.1+19` for the GitHub release.
+
 ## Docs policy
 - AGENTS.md = agent memory (this file). PROJECT_SUMMARY.md = stale human snapshot, keep for context.
 - `docs/reports/` = historical verification (keep) · `docs/screenshots/` = curated only

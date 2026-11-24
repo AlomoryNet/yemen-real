@@ -18,6 +18,11 @@ class SettingsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
+    final distanceLabel = settings.distanceUnit == 'miles'
+        ? l10n.set_distance_unit_miles
+        : l10n.set_distance_unit_km;
+    final displayRadius =
+        settings.displayDistance(settings.searchRadiusKm).round();
 
     return Scaffold(
       appBar: AppBar(
@@ -119,6 +124,40 @@ class SettingsScreen extends ConsumerWidget {
                     groupValue: settings.assetCountVisibility,
                     onChanged: (v) => notifier.setAssetCountVisibility(v!),
                   ),
+                  const Divider(height: 1),
+                  _subHeader(l10n.set_text_size),
+                  _radioTile<String>(
+                    title: l10n.set_text_size_small,
+                    value: 'small',
+                    groupValue: settings.textSize,
+                    onChanged: (v) => notifier.setTextSize(v!),
+                  ),
+                  _radioTile<String>(
+                    title: l10n.set_text_size_medium,
+                    value: 'medium',
+                    groupValue: settings.textSize,
+                    onChanged: (v) => notifier.setTextSize(v!),
+                  ),
+                  _radioTile<String>(
+                    title: l10n.set_text_size_large,
+                    value: 'large',
+                    groupValue: settings.textSize,
+                    onChanged: (v) => notifier.setTextSize(v!),
+                  ),
+                  const Divider(height: 1),
+                  _subHeader(l10n.set_default_map_view),
+                  _radioTile<String>(
+                    title: l10n.set_default_map_view_map,
+                    value: 'map',
+                    groupValue: settings.defaultMapView,
+                    onChanged: (v) => notifier.setDefaultMapView(v!),
+                  ),
+                  _radioTile<String>(
+                    title: l10n.set_default_map_view_list,
+                    value: 'list',
+                    groupValue: settings.defaultMapView,
+                    onChanged: (v) => notifier.setDefaultMapView(v!),
+                  ),
                 ],
               ),
             ),
@@ -160,15 +199,29 @@ class SettingsScreen extends ConsumerWidget {
                       l10n.set_search_radius,
                       style: GoogleFonts.cairo(fontWeight: FontWeight.w600),
                     ),
-                    subtitle: Text('${settings.searchRadiusKm.round()} km'),
+                    subtitle: Text('$displayRadius $distanceLabel'),
                   ),
                   Slider(
                     value: settings.searchRadiusKm,
                     min: 5,
                     max: 100,
                     divisions: 19,
-                    label: '${settings.searchRadiusKm.round()} km',
+                    label: '$displayRadius $distanceLabel',
                     onChanged: (v) => notifier.setSearchRadius(v),
+                  ),
+                  const Divider(height: 1),
+                  _subHeader(l10n.set_distance_unit),
+                  _radioTile<String>(
+                    title: l10n.set_distance_unit_km,
+                    value: 'km',
+                    groupValue: settings.distanceUnit,
+                    onChanged: (v) => notifier.setDistanceUnit(v!),
+                  ),
+                  _radioTile<String>(
+                    title: l10n.set_distance_unit_miles,
+                    value: 'miles',
+                    groupValue: settings.distanceUnit,
+                    onChanged: (v) => notifier.setDistanceUnit(v!),
                   ),
                 ],
               ),
@@ -186,6 +239,34 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 value: settings.notificationsEnabled,
                 onChanged: (v) => notifier.setNotificationsEnabled(v),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+            _sectionHeader(Icons.attach_money_rounded, l10n.set_currency),
+            Card(
+              child: Column(
+                children: [
+                  _subHeader(l10n.set_currency),
+                  _radioTile<String>(
+                    title: l10n.set_currency_yer,
+                    value: AppConstants.currencyYer,
+                    groupValue: settings.currencyCode,
+                    onChanged: (v) => notifier.setCurrency(v!),
+                  ),
+                  _radioTile<String>(
+                    title: l10n.set_currency_sar,
+                    value: AppConstants.currencySar,
+                    groupValue: settings.currencyCode,
+                    onChanged: (v) => notifier.setCurrency(v!),
+                  ),
+                  _radioTile<String>(
+                    title: l10n.set_currency_usd,
+                    value: AppConstants.currencyUsd,
+                    groupValue: settings.currencyCode,
+                    onChanged: (v) => notifier.setCurrency(v!),
+                  ),
+                ],
               ),
             ),
 

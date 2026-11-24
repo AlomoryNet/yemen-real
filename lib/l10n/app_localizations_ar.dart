@@ -2109,6 +2109,48 @@ class AppLocalizationsAr extends AppLocalizations {
   String get set_search_radius => 'نطاق البحث';
 
   @override
+  String get set_currency => 'العملة';
+
+  @override
+  String get set_currency_yer => 'الريال اليمني (ر.ي)';
+
+  @override
+  String get set_currency_sar => 'الريال السعودي (ر.س)';
+
+  @override
+  String get set_currency_usd => 'الدولار الأمريكي (\$)';
+
+  @override
+  String get set_distance_unit => 'وحدة المسافة';
+
+  @override
+  String get set_distance_unit_km => 'كيلومتر (كم)';
+
+  @override
+  String get set_distance_unit_miles => 'ميل (ميل)';
+
+  @override
+  String get set_text_size => 'حجم الخط';
+
+  @override
+  String get set_text_size_small => 'صغير';
+
+  @override
+  String get set_text_size_medium => 'متوسط';
+
+  @override
+  String get set_text_size_large => 'كبير';
+
+  @override
+  String get set_default_map_view => 'العرض الافتراضي للخريطة';
+
+  @override
+  String get set_default_map_view_map => 'الخريطة';
+
+  @override
+  String get set_default_map_view_list => 'القائمة';
+
+  @override
   String get map_all => 'الكل';
 
   @override

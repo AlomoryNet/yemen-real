@@ -19,6 +19,7 @@ import '../features/map/presentation/yemen_map_screen.dart';
 import '../features/contracts/presentation/contract_preview_screen.dart';
 import '../core/l10n/context_l10n.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_theme_scope.dart';
 import '../models/property.dart';
 import '../shared/widgets/empty_state_view.dart';
 
@@ -36,7 +37,7 @@ CustomTransitionPage<void> _tabPage(
 ) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
-    child: child,
+    child: AppThemeScope(child: child),
     transitionDuration: const Duration(milliseconds: 150),
     reverseTransitionDuration: const Duration(milliseconds: 150),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -99,7 +100,7 @@ final GoRouter appRouter = GoRouter(
       name: 'property-detail',
       builder: (context, state) {
         final id = state.pathParameters['id'] ?? '';
-        return PropertyDetailScreen(propertyId: id);
+        return AppThemeScope(child: PropertyDetailScreen(propertyId: id));
       },
     ),
     GoRoute(
@@ -108,7 +109,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final extra = state.extra;
         final prop = extra is Property ? extra : null;
-        return AddEditPropertyScreen(propertyToEdit: prop);
+        return AppThemeScope(child: AddEditPropertyScreen(propertyToEdit: prop));
       },
     ),
     GoRoute(
@@ -117,10 +118,12 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final extra = state.extra;
         if (extra is Property) {
-          return ContractPreviewScreen(property: extra);
+          return AppThemeScope(child: ContractPreviewScreen(property: extra));
         }
-        return Scaffold(
-          body: Center(child: Text(context.l10n.sh_router_select_property)),
+        return AppThemeScope(
+          child: Scaffold(
+            body: Center(child: Text(context.l10n.sh_router_select_property)),
+          ),
         );
       },
     ),
@@ -133,57 +136,64 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/my-requests',
       name: 'my-requests',
-      builder: (context, state) => const MyRentalRequestsScreen(),
+      builder: (context, state) =>
+          AppThemeScope(child: const MyRentalRequestsScreen()),
     ),
     GoRoute(
       path: '/favorites',
       name: 'favorites',
-      builder: (context, state) => const FavoritesScreen(),
+      builder: (context, state) => AppThemeScope(child: const FavoritesScreen()),
     ),
     GoRoute(
       path: '/profile',
       name: 'profile',
-      builder: (context, state) => const ProfileScreen(),
+      builder: (context, state) => AppThemeScope(child: const ProfileScreen()),
     ),
     GoRoute(
       path: '/settings',
       name: 'settings',
-      builder: (context, state) => const SettingsScreen(),
+      builder: (context, state) => AppThemeScope(child: const SettingsScreen()),
     ),
     GoRoute(
       path: '/login',
       name: 'login',
-      builder: (context, state) => const LoginScreen(),
+      builder: (context, state) => AppThemeScope(child: const LoginScreen()),
     ),
     GoRoute(
       path: '/register',
       name: 'register',
-      builder: (context, state) => const RegisterScreen(),
+      builder: (context, state) => AppThemeScope(child: const RegisterScreen()),
     ),
     GoRoute(
       path: '/forgot-password',
       name: 'forgot-password',
-      builder: (context, state) => const ForgotPasswordScreen(),
+      builder: (context, state) =>
+          AppThemeScope(child: const ForgotPasswordScreen()),
     ),
     GoRoute(
       path: '/admin',
       name: 'admin',
-      builder: (context, state) => const AdminDashboardScreen(),
+      builder: (context, state) =>
+          AppThemeScope(child: const AdminDashboardScreen()),
     ),
     GoRoute(
       path: '/login-callback',
       name: 'login-callback',
-      builder: (context, state) => AuthCallbackScreen(
-        queryParams: state.uri.queryParameters,
-        fragment: state.uri.fragment,
+      builder: (context, state) => AppThemeScope(
+        child: AuthCallbackScreen(
+          queryParams: state.uri.queryParameters,
+          fragment: state.uri.fragment,
+        ),
       ),
     ),
     GoRoute(
       path: '/auth-callback',
       name: 'auth-callback',
-      builder: (context, state) => AuthCallbackScreen(
-        queryParams: state.uri.queryParameters,
-        fragment: state.uri.fragment,
+      builder: (context, state) => AppThemeScope(
+        child: AuthCallbackScreen(
+          queryParams: state.uri.queryParameters,
+          fragment: state.uri.fragment,
+        ),
       ),
     ),
   ],

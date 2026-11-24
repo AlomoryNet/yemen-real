@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/property_text_styles.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/property.dart';
+import '../../providers/settings_provider.dart';
 import 'property/favorite_button.dart';
 import 'property/property_image.dart';
 import 'property/property_spec_chips.dart';
@@ -93,10 +94,10 @@ class PropertyCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final child = switch (layout) {
-      PropertyCardLayout.grid => _buildGrid(context),
-      PropertyCardLayout.row => _buildRow(context),
-      PropertyCardLayout.overlay => _buildOverlay(context),
-      PropertyCardLayout.management => _buildManagement(context),
+      PropertyCardLayout.grid => _buildGrid(context, ref),
+      PropertyCardLayout.row => _buildRow(context, ref),
+      PropertyCardLayout.overlay => _buildOverlay(context, ref),
+      PropertyCardLayout.management => _buildManagement(context, ref),
     };
 
     return Card(
@@ -119,7 +120,7 @@ class PropertyCard extends ConsumerWidget {
   // Layouts
   // ---------------------------------------------------------------------------
 
-  Widget _buildGrid(BuildContext context) {
+  Widget _buildGrid(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -138,7 +139,7 @@ class PropertyCard extends ConsumerWidget {
               ),
           ],
         ),
-        _contentGrid(),
+        _contentGrid(ref),
         if (footer != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
@@ -148,7 +149,7 @@ class PropertyCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildRow(BuildContext context) {
+  Widget _buildRow(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Row(
@@ -172,7 +173,7 @@ class PropertyCard extends ConsumerWidget {
               children: [
                 _badges(context),
                 const SizedBox(height: 4),
-                _price(size: 15),
+                _price(size: 15, ref: ref),
                 const SizedBox(height: 2),
                 _title(maxLines: 2, size: 13),
                 const SizedBox(height: 4),
@@ -188,7 +189,7 @@ class PropertyCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildOverlay(BuildContext context) {
+  Widget _buildOverlay(BuildContext context, WidgetRef ref) {
     final images = imageUrls ?? const <String>[];
     final image = images.length > 1
         ? PropertyImageCarousel(
@@ -218,11 +219,11 @@ class PropertyCard extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [image, _contentOverlay()],
+      children: [image, _contentOverlay(ref)],
     );
   }
 
-  Widget _buildManagement(BuildContext context) {
+  Widget _buildManagement(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -235,7 +236,7 @@ class PropertyCard extends ConsumerWidget {
             PositionedDirectional(top: 10, start: 10, child: _badges(context)),
           ],
         ),
-        _contentManagement(),
+        _contentManagement(ref),
         if (footer != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
@@ -306,8 +307,9 @@ class PropertyCard extends ConsumerWidget {
     );
   }
 
-  Widget _price({double size = 18}) => Text(
-    Formatters.formatCurrency(property.price, property.currency),
+  Widget _price({double size = 18, required WidgetRef ref}) => Text(
+    Formatters.formatCurrencyPreferred(
+        property.price, ref.watch(settingsProvider).currencyCode),
     style: PropertyTextStyles.price(size: size),
     maxLines: 1,
     overflow: TextOverflow.ellipsis,
@@ -339,13 +341,13 @@ class PropertyCard extends ConsumerWidget {
     ],
   );
 
-  Widget _contentGrid() {
+  Widget _contentGrid(WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _price(),
+          _price(ref: ref),
           const SizedBox(height: 4),
           _title(),
           const SizedBox(height: 8),
@@ -359,7 +361,7 @@ class PropertyCard extends ConsumerWidget {
     );
   }
 
-  Widget _contentOverlay() {
+  Widget _contentOverlay(WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Column(
@@ -372,7 +374,7 @@ class PropertyCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _price(),
+                    _price(ref: ref),
                     if (priceCaption != null) ...[
                       const SizedBox(height: 2),
                       priceCaption!,
@@ -407,7 +409,7 @@ class PropertyCard extends ConsumerWidget {
     );
   }
 
-  Widget _contentManagement() {
+  Widget _contentManagement(WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -416,7 +418,7 @@ class PropertyCard extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _price()),
+              Expanded(child: _price(ref: ref)),
               if (trailing != null) trailing!,
             ],
           ),

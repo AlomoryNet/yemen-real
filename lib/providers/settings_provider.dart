@@ -14,6 +14,10 @@ class SettingsState {
   final bool locationPromptShown;
   final double? latitude;
   final double? longitude;
+  final String currencyCode; // 'YER' | 'SAR' | 'USD'
+  final String distanceUnit; // 'km' | 'miles'
+  final String textSize; // 'small' | 'medium' | 'large'
+  final String defaultMapView; // 'list' | 'map'
 
   const SettingsState({
     this.locale = const Locale('ar', 'YE'),
@@ -25,6 +29,10 @@ class SettingsState {
     this.locationPromptShown = false,
     this.latitude,
     this.longitude,
+    this.currencyCode = 'YER',
+    this.distanceUnit = 'km',
+    this.textSize = 'medium',
+    this.defaultMapView = 'map',
   });
 
   SettingsState copyWith({
@@ -37,6 +45,10 @@ class SettingsState {
     bool? locationPromptShown,
     double? latitude,
     double? longitude,
+    String? currencyCode,
+    String? distanceUnit,
+    String? textSize,
+    String? defaultMapView,
   }) {
     return SettingsState(
       locale: locale ?? this.locale,
@@ -48,13 +60,32 @@ class SettingsState {
       locationPromptShown: locationPromptShown ?? this.locationPromptShown,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      currencyCode: currencyCode ?? this.currencyCode,
+      distanceUnit: distanceUnit ?? this.distanceUnit,
+      textSize: textSize ?? this.textSize,
+      defaultMapView: defaultMapView ?? this.defaultMapView,
     );
   }
+
+  /// Linear scaling applied by `MaterialApp.textScaler` for the chosen size.
+  double get textScaleFactor => switch (textSize) {
+    'small' => 0.85,
+    'large' => 1.15,
+    _ => 1.0,
+  };
+
+  /// Radius values stay stored in kilometres; convert only for display.
+  double displayDistance(num kilometers) => distanceUnit == 'miles'
+      ? kilometers / 1.609344
+      : kilometers.toDouble();
 }
 
 class SettingsNotifier extends StateNotifier<SettingsState> {
+  /// Completes once persisted preferences have been applied to [state].
+  late final Future<void> loaded;
+
   SettingsNotifier() : super(const SettingsState()) {
-    _load();
+    loaded = _load();
   }
 
   static const _kLocale = 'settings_locale';
@@ -66,6 +97,10 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   static const _kLocationPrompt = 'settings_location_prompt_shown';
   static const _kLatitude = 'settings_latitude';
   static const _kLongitude = 'settings_longitude';
+  static const _kCurrency = 'settings_currency';
+  static const _kDistanceUnit = 'settings_distance_unit';
+  static const _kTextSize = 'settings_text_size';
+  static const _kDefaultMapView = 'settings_default_map_view';
 
   Future<void> _load() async {
     try {
@@ -84,6 +119,10 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
         locationPromptShown: prefs.getBool(_kLocationPrompt) ?? false,
         latitude: prefs.getDouble(_kLatitude),
         longitude: prefs.getDouble(_kLongitude),
+        currencyCode: prefs.getString(_kCurrency) ?? 'YER',
+        distanceUnit: prefs.getString(_kDistanceUnit) ?? 'km',
+        textSize: prefs.getString(_kTextSize) ?? 'medium',
+        defaultMapView: prefs.getString(_kDefaultMapView) ?? 'map',
       );
     } catch (_) {
       // use defaults when prefs unavailable
@@ -140,6 +179,30 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     state = state.copyWith(notificationsEnabled: enabled);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kNotifications, enabled);
+  }
+
+  Future<void> setCurrency(String currency) async {
+    state = state.copyWith(currencyCode: currency);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kCurrency, currency);
+  }
+
+  Future<void> setDistanceUnit(String unit) async {
+    state = state.copyWith(distanceUnit: unit);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kDistanceUnit, unit);
+  }
+
+  Future<void> setTextSize(String size) async {
+    state = state.copyWith(textSize: size);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kTextSize, size);
+  }
+
+  Future<void> setDefaultMapView(String view) async {
+    state = state.copyWith(defaultMapView: view);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kDefaultMapView, view);
   }
 
   Future<void> setSearchRadius(double radius) async {

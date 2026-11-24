@@ -4283,6 +4283,90 @@ abstract class AppLocalizations {
   /// **'Search radius'**
   String get set_search_radius;
 
+  /// No description provided for @set_currency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get set_currency;
+
+  /// No description provided for @set_currency_yer.
+  ///
+  /// In en, this message translates to:
+  /// **'Yemeni Rial (ر.ي)'**
+  String get set_currency_yer;
+
+  /// No description provided for @set_currency_sar.
+  ///
+  /// In en, this message translates to:
+  /// **'Saudi Riyal (ر.س)'**
+  String get set_currency_sar;
+
+  /// No description provided for @set_currency_usd.
+  ///
+  /// In en, this message translates to:
+  /// **'US Dollar (\$)'**
+  String get set_currency_usd;
+
+  /// No description provided for @set_distance_unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance unit'**
+  String get set_distance_unit;
+
+  /// No description provided for @set_distance_unit_km.
+  ///
+  /// In en, this message translates to:
+  /// **'Kilometers (km)'**
+  String get set_distance_unit_km;
+
+  /// No description provided for @set_distance_unit_miles.
+  ///
+  /// In en, this message translates to:
+  /// **'Miles (mi)'**
+  String get set_distance_unit_miles;
+
+  /// No description provided for @set_text_size.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get set_text_size;
+
+  /// No description provided for @set_text_size_small.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get set_text_size_small;
+
+  /// No description provided for @set_text_size_medium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get set_text_size_medium;
+
+  /// No description provided for @set_text_size_large.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get set_text_size_large;
+
+  /// No description provided for @set_default_map_view.
+  ///
+  /// In en, this message translates to:
+  /// **'Default map view'**
+  String get set_default_map_view;
+
+  /// No description provided for @set_default_map_view_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get set_default_map_view_map;
+
+  /// No description provided for @set_default_map_view_list.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get set_default_map_view_list;
+
   /// No description provided for @map_all.
   ///
   /// In en, this message translates to:

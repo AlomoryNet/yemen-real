@@ -2109,6 +2109,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get set_search_radius => 'Search radius';
 
   @override
+  String get set_currency => 'Currency';
+
+  @override
+  String get set_currency_yer => 'Yemeni Rial (ر.ي)';
+
+  @override
+  String get set_currency_sar => 'Saudi Riyal (ر.س)';
+
+  @override
+  String get set_currency_usd => 'US Dollar (\$)';
+
+  @override
+  String get set_distance_unit => 'Distance unit';
+
+  @override
+  String get set_distance_unit_km => 'Kilometers (km)';
+
+  @override
+  String get set_distance_unit_miles => 'Miles (mi)';
+
+  @override
+  String get set_text_size => 'Text size';
+
+  @override
+  String get set_text_size_small => 'Small';
+
+  @override
+  String get set_text_size_medium => 'Medium';
+
+  @override
+  String get set_text_size_large => 'Large';
+
+  @override
+  String get set_default_map_view => 'Default map view';
+
+  @override
+  String get set_default_map_view_map => 'Map';
+
+  @override
+  String get set_default_map_view_list => 'List';
+
+  @override
   String get map_all => 'All';
 
   @override

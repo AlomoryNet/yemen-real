@@ -292,6 +292,12 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       }
     });
     _isListView = widget.initialListView;
+    // Respect the user's default map view preference from Settings for direct
+    // /map visits (not when the dashboard explicitly requests list mode).
+    if (widget.initialFilters == null && !widget.initialListView) {
+      final settings = ref.read(settingsProvider);
+      _isListView = settings.defaultMapView == 'list';
+    }
 
     final incoming = widget.initialFilters;
     if (incoming != null) {

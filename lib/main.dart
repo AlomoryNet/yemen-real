@@ -105,20 +105,25 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
       routeInformationProvider: appRouter.routeInformationProvider,
       routeInformationParser: appRouter.routeInformationParser,
       routerDelegate: appRouter.routerDelegate,
-      builder: (context, child) => GlobalAppBackHandler(
-        child: GestureDetector(
-          // Tap anywhere outside the focused field (and on non-interactive
-          // surfaces) dismisses the keyboard — standard mobile behaviour.
-          behavior: HitTestBehavior.translucent,
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (notification) {
-              if (notification is ScrollUpdateNotification) {
-                FocusManager.instance.primaryFocus?.unfocus();
-              }
-              return false; // let other listeners (e.g. scroll controllers) see it
-            },
-            child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(settings.textScaleFactor),
+        ),
+        child: GlobalAppBackHandler(
+          child: GestureDetector(
+            // Tap anywhere outside the focused field (and on non-interactive
+            // surfaces) dismisses the keyboard — standard mobile behaviour.
+            behavior: HitTestBehavior.translucent,
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollUpdateNotification) {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                }
+                return false; // let other listeners (e.g. scroll controllers) see it
+              },
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         ),
       ),

@@ -62,10 +62,29 @@ demo/offline fallback (DemoPropertiesGenerator). State: Riverpod. Routing: GoRou
 ```
 flutter analyze   → expect "No issues found!"
 flutter run -d ZY22G4C24N   (USB, preferred)
-flutter test      → suite (last known: 56 tests)
+flutter test      → suite (last known: 71 tests)
 ```
 
 ## Status — latest
+- Settings screen verified functional and expanded: currency (YER/SAR/USD),
+  distance unit (km/miles), text size (small/medium/large) and default map view
+  (list/map) added with SharedPreferences persistence via settingsProvider.
+  Text size drives a root `MediaQuery` textScaler; default map view drives /map
+  initial list/map mode; property-card price labels use the chosen currency code
+  (display only — no FX conversion). Search radius stays stored in km and is
+  converted for display when miles is selected. Asset-count visibility is also
+  consumed on the map. `addPropertyStyle` and `notificationsEnabled` persist but
+  still have no consumer outside Settings, so those two toggles do not change
+  app behavior yet. Fixed a duplicate `set_add_property_style` ARB key introduced
+  with the new labels. `flutter analyze` clean, `flutter test` 71/71 passed.
+- Fixed stale dark/light elements after a theme switch: `AppColors.isDark` is a
+  mutable static mirror, so widgets reading its semantic getters did not always
+  rebuild when `ThemeMode` changed. Added `AppThemeScope` around every router
+  page; it keys the route subtree by effective brightness, forcing all
+  directly-styled widgets to re-evaluate colors without resetting navigation.
+  Verified on USB: Dark→Light and Light→Dark both repaint dashboard scaffold,
+  surfaces, header and bottom nav immediately; no runtime errors. Added a
+  widget regression test in `test/settings_test.dart`.
 - Current focus: performance quick wins (next: web deferred loading / map
   clustering; bundled Cairo font deferred until its `wght` axis can be set safely).
   Full roadmap in `TODO.md`.

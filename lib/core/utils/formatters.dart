@@ -35,6 +35,14 @@ class Formatters {
     return '$formattedAmount $currencyName';
   }
 
+  /// Format a price label with the user's preferred currency code when no
+  /// explicit code is given. Amounts are never FX-converted: the listing price
+  /// stays in its original currency until a rate source is introduced.
+  static String formatCurrencyPreferred(num amount, String? preferredCurrency) {
+    final code = preferredCurrency ?? AppConstants.currencyYer;
+    return formatCurrency(amount, code);
+  }
+
   static String formatArea(num area) {
     final formatted = _decimalFormat.format(area);
     return '$formatted ${tr.misc_area_unit}';
