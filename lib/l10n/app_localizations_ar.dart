@@ -2898,6 +2898,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sh_rail_login => 'دخول / تسجيل';
 
   @override
+  String get sh_back => 'رجوع';
+
+  @override
   String get sh_footer_republic => 'الجمهورية اليمنية';
 
   @override
@@ -3177,4 +3180,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get misc_user => 'مستخدم';
+
+  @override
+  String get dash_map_cta_title => 'استكشف عقارات اليمن على الخريطة التفاعلية 🇾🇪';
+
+  @override
+  String get dash_map_cta_subtitle => 'تصفح الأسعار والمواقع مباشرة في صنعاء، إب، تعز، وكافة المحافظات';
 }

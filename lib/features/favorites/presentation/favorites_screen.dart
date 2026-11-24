@@ -41,7 +41,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
     if (!authState.isAuthenticated) {
       return Scaffold(
-        appBar: const AppHeader(title: 'المفضلة', showBack: true),
+        appBar: AppHeader(title: context.l10n.favorite_properties, showBack: true),
         drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
         body: AppPageBody(
           child: Center(
@@ -64,7 +64,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     final favoritesAsync = ref.watch(favoritesProvider);
 
     return Scaffold(
-      appBar: const AppHeader(title: 'المفضلة', showBack: true),
+      appBar: AppHeader(title: context.l10n.favorite_properties, showBack: true),
       drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
       body: AppPageBody(
         child: SingleChildScrollView(

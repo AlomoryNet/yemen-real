@@ -461,7 +461,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
 
     if (!authState.isAuthenticated) {
       return Scaffold(
-        appBar: const AppHeader(title: 'إضافة عقار', showBack: true),
+        appBar: AppHeader(title: context.l10n.title_add_property, showBack: true),
         drawer: Responsive.isDesktop(context)
             ? null
             : const AppDrawer(),
@@ -488,7 +488,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
     final typesAsync = ref.watch(propertyTypesProvider);
 
     return Scaffold(
-      appBar: const AppHeader(title: 'إضافة عقار', showBack: true),
+      appBar: AppHeader(title: context.l10n.title_add_property, showBack: true),
       drawer: Responsive.isDesktop(context)
           ? null
           : const AppDrawer(),

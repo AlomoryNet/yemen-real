@@ -2898,6 +2898,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sh_rail_login => 'Sign in / Register';
 
   @override
+  String get sh_back => 'Back';
+
+  @override
   String get sh_footer_republic => 'Republic of Yemen';
 
   @override
@@ -3177,4 +3180,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get misc_user => 'User';
+
+  @override
+  String get dash_map_cta_title => 'Explore Yemeni properties on the interactive map 🇾🇪';
+
+  @override
+  String get dash_map_cta_subtitle => 'Browse prices and locations directly in Sanaa, Ibb, Taiz, and all governorates';
 }

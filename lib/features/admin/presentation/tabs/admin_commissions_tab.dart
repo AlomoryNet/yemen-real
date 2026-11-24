@@ -14,6 +14,7 @@ import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/status_badge.dart';
 
 import '../widgets/admin_dialogs.dart';
+import '../widgets/admin_paged_list.dart';
 
 class AdminCommissionsTab extends ConsumerWidget {
   const AdminCommissionsTab({super.key});
@@ -87,11 +88,10 @@ class AdminCommissionsTab extends ConsumerWidget {
                       description: context.l10n.admin_commissions_desc,
                     );
                   }
-                  return ListView.separated(
-                    itemCount: commissions.length,
+                  return AdminPagedList(
+                    items: commissions,
                     separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final c = commissions[index];
+                    itemBuilder: (context, c, index) {
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppColors.accentLight,

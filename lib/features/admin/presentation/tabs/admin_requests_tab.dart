@@ -14,6 +14,7 @@ import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/status_badge.dart';
 
 import '../widgets/admin_dialogs.dart';
+import '../widgets/admin_paged_list.dart';
 
 class AdminRequestsTab extends ConsumerWidget {
   const AdminRequestsTab({super.key});
@@ -74,11 +75,10 @@ class AdminRequestsTab extends ConsumerWidget {
                       title: context.l10n.admin_no_requests,
                     );
                   }
-                  return ListView.separated(
-                    itemCount: requests.length,
+                  return AdminPagedList(
+                    items: requests,
                     separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final req = requests[index];
+                    itemBuilder: (context, req, index) {
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppColors.infoMuted,

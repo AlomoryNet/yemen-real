@@ -5861,6 +5861,12 @@ abstract class AppLocalizations {
   /// **'Sign in / Register'**
   String get sh_rail_login;
 
+  /// No description provided for @sh_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get sh_back;
+
   /// No description provided for @sh_footer_republic.
   ///
   /// In en, this message translates to:
@@ -6406,6 +6412,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'User'**
   String get misc_user;
+
+  /// No description provided for @dash_map_cta_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore Yemeni properties on the interactive map 🇾🇪'**
+  String get dash_map_cta_title;
+
+  /// No description provided for @dash_map_cta_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse prices and locations directly in Sanaa, Ibb, Taiz, and all governorates'**
+  String get dash_map_cta_subtitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -11,6 +11,8 @@ import '../../../../shared/widgets/empty_state_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 
+import '../widgets/admin_paged_list.dart';
+
 class AdminReportsTab extends ConsumerWidget {
   const AdminReportsTab({super.key});
 
@@ -49,11 +51,10 @@ class AdminReportsTab extends ConsumerWidget {
                       description: context.l10n.admin_no_reports_desc,
                     );
                   }
-                  return ListView.separated(
-                    itemCount: reports.length,
+                  return AdminPagedList(
+                    items: reports,
                     separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final rep = reports[index];
+                    itemBuilder: (context, rep, index) {
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppColors.errorMuted,

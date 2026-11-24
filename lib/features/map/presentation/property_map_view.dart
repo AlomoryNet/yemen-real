@@ -697,7 +697,7 @@ class _ClusterPropertiesSheet extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: '${property.title}? $price',
+      label: '${property.title} • $price',
       child: PropertyCard(
         property: property,
         layout: PropertyCardLayout.row,

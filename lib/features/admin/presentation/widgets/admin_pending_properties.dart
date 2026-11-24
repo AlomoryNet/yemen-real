@@ -23,7 +23,7 @@ class AdminPendingPropertiesSection extends ConsumerStatefulWidget {
 class _AdminPendingPropertiesSectionState
     extends ConsumerState<AdminPendingPropertiesSection> {
   // Moderation cards are heavy; render a bounded page and extend on demand.
-  static const int _pageSize = 12;
+  static const int _pageSize = 6;
   int _visibleCount = _pageSize;
 
   @override

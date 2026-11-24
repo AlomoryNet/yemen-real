@@ -221,7 +221,7 @@ class HomeHeroSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'استكشف عقارات اليمن على الخريطة التفاعلية 🇾🇪',
+                    context.l10n.dash_map_cta_title,
                     style: GoogleFonts.cairo(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -229,7 +229,7 @@ class HomeHeroSection extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'تصفح الأسعار والمواقع مباشرة في صنعاء، إب، تعز، وكافة المحافظات',
+                    context.l10n.dash_map_cta_subtitle,
                     style: GoogleFonts.cairo(
                       color: AppColors.textLight.withAlpha(210),
                       fontSize: 11,

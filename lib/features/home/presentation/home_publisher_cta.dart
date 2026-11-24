@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
 
@@ -21,7 +22,7 @@ class HomePublisherCta extends StatelessWidget {
         mobile: Column(
           children: [
             Text(
-              'هل تمتلك عقاراً ترغب في بيعه أو تأجيره؟',
+              context.l10n.dash_cta_title,
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: 18,
@@ -31,7 +32,7 @@ class HomePublisherCta extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'انشر إعلانك مجاناً عبر بوابة اليمن العقارية وتواصل مباشرة مع آلاف الباحثين عن عقارات.',
+              context.l10n.dash_cta_desc_mobile,
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: 13,
@@ -55,7 +56,7 @@ class HomePublisherCta extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.map_rounded, size: 18),
                   label: Text(
-                    'خريطة اليمن',
+                    context.l10n.dash_yemen_map,
                     style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                   ),
                   onPressed: () => context.push('/map'),
@@ -71,7 +72,7 @@ class HomePublisherCta extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.add_home_outlined, size: 18),
                   label: Text(
-                    'أضف إعلانك الآن',
+                    context.l10n.dash_add_listing_now,
                     style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                   ),
                   onPressed: () => context.push('/add-property'),
@@ -88,7 +89,7 @@ class HomePublisherCta extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'هل تمتلك عقاراً ترغب في بيعه أو تأجيره؟',
+                    context.l10n.dash_cta_title,
                     style: GoogleFonts.cairo(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -97,7 +98,7 @@ class HomePublisherCta extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'انشر إعلانك عبر بوابة اليمن العقارية بميزة المراجعة الذاتية الفورية والتواصل المباشر مع العملاء.',
+                    context.l10n.dash_cta_desc_desktop,
                     style: GoogleFonts.cairo(
                       fontSize: 14,
                       color: AppColors.textSecondary,
@@ -123,7 +124,7 @@ class HomePublisherCta extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.map_rounded),
                   label: Text(
-                    'خريطة اليمن',
+                    context.l10n.dash_yemen_map,
                     style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                   ),
                   onPressed: () => context.push('/map'),
@@ -143,7 +144,7 @@ class HomePublisherCta extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.add_home_outlined),
                   label: Text(
-                    'أضف إعلانك الآن',
+                    context.l10n.dash_add_listing_now,
                     style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                   ),
                   onPressed: () => context.push('/add-property'),

@@ -10,6 +10,8 @@ import '../../../../providers/auth_provider.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 
+import '../widgets/admin_paged_list.dart';
+
 class AdminUsersTab extends ConsumerWidget {
   const AdminUsersTab({super.key});
 
@@ -159,11 +161,10 @@ class AdminUsersTab extends ConsumerWidget {
             Expanded(
               child: usersAsync.when(
                 data: (users) {
-                  return ListView.separated(
-                    itemCount: users.length,
+                  return AdminPagedList(
+                    items: users,
                     separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final u = users[index];
+                    itemBuilder: (context, u, index) {
                       final accountEmail =
                           u.email ??
                           (u.phone != null && u.phone!.isNotEmpty

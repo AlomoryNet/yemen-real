@@ -93,7 +93,9 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
     AppColors.isDark = effectiveBrightness == Brightness.dark;
 
     return MaterialApp.router(
-      title: AppConstants.appNameAr,
+      title: AppLocale.isArabic
+          ? AppConstants.appNameAr
+          : AppConstants.appNameEn,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

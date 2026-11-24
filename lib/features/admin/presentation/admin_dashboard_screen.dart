@@ -61,7 +61,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
     if (!authState.isAuthenticated || !authState.isAdmin) {
       return Scaffold(
-        appBar: const AppHeader(title: 'لوحة الإدارة', showBack: true),
+        appBar: AppHeader(title: context.l10n.admin_dashboard, showBack: true),
         drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
         body: AppPageBody(
           child: Center(
@@ -80,7 +80,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final statsAsync = ref.watch(adminStatsProvider);
 
     return Scaffold(
-      appBar: const AppHeader(title: 'لوحة الإدارة', showBack: true),
+      appBar: AppHeader(title: context.l10n.admin_dashboard, showBack: true),
       drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
       body: AppPageBody(
         child: SingleChildScrollView(

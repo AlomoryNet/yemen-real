@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 
 class AppLogo extends StatelessWidget {
@@ -41,7 +42,7 @@ class AppLogo extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppConstants.appNameAr,
+                context.l10n.sh_brand_name,
                 style: GoogleFonts.cairo(
                   fontSize: size * 0.42,
                   fontWeight: FontWeight.bold,

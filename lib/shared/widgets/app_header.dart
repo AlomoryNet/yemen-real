@@ -54,7 +54,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                         ),
                         color: AppColors.textPrimary,
                         tooltip: showBack
-                            ? 'Back'
+                            ? context.l10n.back
                             : MaterialLocalizations.of(scaffoldContext)
                                 .openAppDrawerTooltip,
                         onPressed: showBack

@@ -66,7 +66,17 @@ flutter test      → suite (last known: 56 tests)
 ```
 
 ## Status — latest
-- Current focus: unified property cards + redesigned property/admin/settings/drawer/map UI.
+- Current focus: admin list pagination + i18n completion. Full roadmap in `TODO.md`.
+- All five admin tabs now use `AdminPagedList<T>` (12 rows + "Load more");
+  moderation queue shows 6 heavy cards initially. Added `test/admin_paged_list_test.dart`.
+- i18n quick wins done: localized AppHeader titles (admin/favorites/requests/detail/add-edit),
+  `Back` tooltip, publisher CTA, hero-map strings (new `dash_map_cta_title`/`subtitle`
+  keys in both ARBs), branding and copyright. Regenerate with `flutter gen-l10n`
+  after ARB edits (`flutter pub get` alone does NOT regenerate here).
+- Remaining i18n work: LTR mirroring of fixed `Positioned left/right` in
+  `PropertyCard`/`PropertyImage`, forced-RTL PDFs, governorate name data model,
+  contract default clauses. See `TODO.md`.
+- Previous: unified property cards + redesigned property/admin/settings/drawer/map UI.
 - `PropertyCard` (`lib/shared/widgets/property_card.dart`) is canonical with `grid`,
   `row`, `overlay`, `management` layouts plus optional carousel/favorite/spec chips and
   call/WhatsApp/directions/detail action slots. Shared tokens live in

@@ -9,7 +9,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -472,7 +471,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                   pw.SizedBox(height: 8),
                   pw.Divider(thickness: 0.5, color: PdfColors.grey400),
                   pw.Text(
-                    '${AppConstants.copyrightNoticeAr} ${context.l10n.contract_portal_name_suffix}',
+                    '${context.l10n.admin_pdf_copyright} ${context.l10n.contract_portal_name_suffix}',
                     style: pw.TextStyle(
                       font: fontCairo,
                       fontSize: 7.5,

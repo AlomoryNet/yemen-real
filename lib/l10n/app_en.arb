@@ -1054,5 +1054,7 @@
   "csv_notes": "Notes",
   "misc_owner": "Owner",
   "misc_listed_property": "Listed property",
-  "misc_user": "User"
+  "misc_user": "User",
+  "dash_map_cta_title": "Explore Yemeni properties on the interactive map 🇾🇪",
+  "dash_map_cta_subtitle": "Browse prices and locations directly in Sanaa, Ibb, Taiz, and all governorates"
 }

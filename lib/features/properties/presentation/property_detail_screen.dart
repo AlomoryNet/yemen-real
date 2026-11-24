@@ -156,7 +156,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     final propertyAsync = ref.watch(propertyDetailProvider(widget.propertyId));
 
     return Scaffold(
-      appBar: const AppHeader(title: 'تفاصيل العقار', showBack: true),
+      appBar: AppHeader(title: context.l10n.property_details, showBack: true),
       drawer: Responsive.isDesktop(context)
           ? null
           : const AppDrawer(),

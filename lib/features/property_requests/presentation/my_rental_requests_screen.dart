@@ -27,7 +27,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
 
     if (!authState.isAuthenticated) {
       return Scaffold(
-        appBar: const AppHeader(title: 'طلبات الاستئجار', showBack: true),
+        appBar: AppHeader(title: context.l10n.my_requests, showBack: true),
         drawer: Responsive.isDesktop(context)
             ? null
             : const AppDrawer(),
@@ -52,7 +52,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
     final requestsAsync = ref.watch(userRentalRequestsProvider);
 
     return Scaffold(
-      appBar: const AppHeader(title: 'طلبات الاستئجار', showBack: true),
+      appBar: AppHeader(title: context.l10n.my_requests, showBack: true),
       drawer: Responsive.isDesktop(context)
           ? null
           : const AppDrawer(),
