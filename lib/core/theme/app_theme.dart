@@ -324,7 +324,7 @@ ThemeData _build(_Palette p) {
       showDragHandle: true,
       dragHandleColor: p.divider,
       dragHandleSize: const Size(40, 4),
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
     ),

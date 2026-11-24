@@ -1190,7 +1190,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
             width: 22,
             height: 22,
             margin: const EdgeInsetsDirectional.only(top: 2, start: 8),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.primary,
               shape: BoxShape.circle,
             ),
@@ -1460,7 +1460,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
@@ -1517,11 +1517,11 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
               ),
               tabs: [
                 Tab(
-                  icon: Icon(Icons.people_outline, size: 18),
+                  icon: const Icon(Icons.people_outline, size: 18),
                   text: context.l10n.contract_tab_parties,
                 ),
                 Tab(
-                  icon: Icon(Icons.gavel_outlined, size: 18),
+                  icon: const Icon(Icons.gavel_outlined, size: 18),
                   text: context.l10n.contract_tab_terms,
                 ),
               ],

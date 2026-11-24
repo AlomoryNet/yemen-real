@@ -195,12 +195,12 @@ class AdminPropertiesTab extends ConsumerWidget {
                                     value: 'approve',
                                     child: Row(
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.check_circle_outline,
                                           color: AppColors.success,
                                           size: 18,
                                         ),
-                                        SizedBox(width: 8),
+                                        const SizedBox(width: 8),
                                         Text(
                                           context
                                               .l10n
@@ -213,12 +213,12 @@ class AdminPropertiesTab extends ConsumerWidget {
                                     value: 'reject',
                                     child: Row(
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.cancel_outlined,
                                           color: AppColors.error,
                                           size: 18,
                                         ),
-                                        SizedBox(width: 8),
+                                        const SizedBox(width: 8),
                                         Text(context.l10n.admin_reject_request),
                                       ],
                                     ),
@@ -244,7 +244,7 @@ class AdminPropertiesTab extends ConsumerWidget {
                                   value: 'delete',
                                   child: Text(
                                     context.l10n.admin_delete_permanent,
-                                    style: TextStyle(color: AppColors.error),
+                                    style: const TextStyle(color: AppColors.error),
                                   ),
                                 ),
                               ],

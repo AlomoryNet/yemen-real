@@ -78,9 +78,9 @@ class AdminRequestsTab extends ConsumerWidget {
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, req, index) {
                       return ListTile(
-                        leading: CircleAvatar(
+                        leading: const CircleAvatar(
                           backgroundColor: AppColors.infoMuted,
-                          child: const Icon(
+                          child: Icon(
                             Icons.assignment,
                             color: AppColors.info,
                             size: 18,

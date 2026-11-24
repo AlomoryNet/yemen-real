@@ -211,7 +211,7 @@ class _AdminPendingPropertiesSectionState
               },
               loading: () => Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: LoadingView(
                     message: context.l10n.admin_loading_pending,
                   ),

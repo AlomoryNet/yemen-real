@@ -32,8 +32,11 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
         does not silently truncate admin exports — deferred as a unit.
       - [x] `getDashboardStats()` now uses PostgREST `sum()`/`count()` aggregates
         with a client-side fallback for older backends (`admin_repository.dart`).
-      - `const` constructor pass; web bundle deferred loading for admin/map.
-      - Profile map clustering with `map_cluster_service.dart` for large sets.
+      - [x] `const` constructor pass (40 `const`/`unnecessary_const` fixes across
+        hot-path and shared widgets; `prefer_const_constructors` was temporarily
+        enabled to find them, then disabled again in `analysis_options.yaml`).
+      - [ ] Web bundle deferred loading for admin/map.
+      - [ ] Profile map clustering with `map_cluster_service.dart` for large sets.
 
 - [ ] **Accessibility + loading UX**
       - Remaining low-contrast token: `PropertyTextStyles.badge()` uses
@@ -58,6 +61,9 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 
 ## Recently completed (2026-11-24)
 
+- [x] **Performance quick win — `const` pass.** Applied 40 mechanical
+      `const`/`unnecessary_const` fixes across admin tabs, contract/map/sheet
+      widgets, `PropertyCard` and tests. No behavior changes.
 - [x] **Performance quick win — cold-start hot path.** `HomeScreen` no longer
       regenerates 440 demo listings on every build and no longer schedules a
       no-op post-frame `setState`; the map fallback and demo store reuse the

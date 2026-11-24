@@ -1779,7 +1779,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.success,
-                  side: BorderSide(color: AppColors.success, width: 1.5),
+                  side: const BorderSide(color: AppColors.success, width: 1.5),
                   minimumSize: const Size(0, 40),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   shape: RoundedRectangleBorder(

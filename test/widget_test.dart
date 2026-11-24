@@ -24,7 +24,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Scaffold(
+        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: const Locale('ar', 'YE'), home: Scaffold(
           body: Column(
             children: [
               StatusBadge.dealType(AppConstants.dealSale),
@@ -47,7 +47,7 @@ void main() {
     bool clicked = false;
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Scaffold(
+        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: const Locale('ar', 'YE'), home: Scaffold(
           body: EmptyStateView(
             title: 'لا توجد نتائج',
             description: 'يرجى المحاولة لاحقاً',

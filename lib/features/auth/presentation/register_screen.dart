@@ -420,7 +420,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             Validators.requiredField(val, context.l10n.register_full_name),
                         decoration: InputDecoration(
                           hintText: context.l10n.register_name_hint,
-                          prefixIcon: Icon(Icons.person_outline),
+                          prefixIcon: const Icon(Icons.person_outline),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -460,7 +460,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         validator: Validators.phone,
                         decoration: InputDecoration(
                           hintText: context.l10n.register_phone_hint,
-                          prefixIcon: Icon(Icons.phone_outlined),
+                          prefixIcon: const Icon(Icons.phone_outlined),
                         ),
                       ),
                       const SizedBox(height: 14),

@@ -56,9 +56,9 @@ class AdminReportsTab extends ConsumerWidget {
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, rep, index) {
                       return ListTile(
-                        leading: CircleAvatar(
+                        leading: const CircleAvatar(
                           backgroundColor: AppColors.errorMuted,
-                          child: const Icon(
+                          child: Icon(
                             Icons.flag,
                             color: AppColors.error,
                             size: 18,

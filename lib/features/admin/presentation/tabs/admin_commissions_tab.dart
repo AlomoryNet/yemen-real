@@ -91,9 +91,9 @@ class AdminCommissionsTab extends ConsumerWidget {
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, c, index) {
                       return ListTile(
-                        leading: CircleAvatar(
+                        leading: const CircleAvatar(
                           backgroundColor: AppColors.accentLight,
-                          child: const Icon(
+                          child: Icon(
                             Icons.monetization_on,
                             color: AppColors.accentDark,
                             size: 18,

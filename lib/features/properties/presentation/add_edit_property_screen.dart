@@ -1280,7 +1280,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         controller: _phoneController,
                                         keyboardType: TextInputType.phone,
                                         validator: Validators.phone,
-                                        decoration: InputDecoration(
+                                        decoration: const InputDecoration(
                                           hintText: '770000000',
                                         ),
                                       ),

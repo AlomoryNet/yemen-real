@@ -20,7 +20,7 @@ void main() {
     test(
       'Correctly identifies invalid credentials error without confusing with email',
       () {
-        final authEx = supa.AuthException(
+        final authEx = const supa.AuthException(
           'Invalid login credentials',
           statusCode: '400',
         );
@@ -38,7 +38,7 @@ void main() {
     test(
       'Correctly identifies unconfirmed email error with email_not_confirmed code',
       () {
-        final authEx = supa.AuthException(
+        final authEx = const supa.AuthException(
           'Email not confirmed',
           statusCode: '400',
         );
@@ -50,7 +50,7 @@ void main() {
     );
 
     test('Correctly identifies expired or already used OTP link', () {
-      final authEx = supa.AuthException(
+      final authEx = const supa.AuthException(
         'Email link is invalid or has expired',
         statusCode: '403',
       );
@@ -61,7 +61,7 @@ void main() {
     });
 
     test('Correctly identifies duplicate user registration error', () {
-      final authEx = supa.AuthException(
+      final authEx = const supa.AuthException(
         'User already registered',
         statusCode: '422',
       );
@@ -72,7 +72,7 @@ void main() {
     });
 
     test('Correctly identifies rate limit error', () {
-      final authEx = supa.AuthException(
+      final authEx = const supa.AuthException(
         'over_email_send_rate_limit: email rate limit exceeded',
         statusCode: '429',
       );
@@ -293,7 +293,7 @@ void main() {
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Builder(
+            localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: const Locale('ar', 'YE'), home: Builder(
               builder: (context) => ElevatedButton(
                 onPressed: () => AuthPromptDialog.show(
                   context,

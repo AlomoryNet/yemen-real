@@ -105,7 +105,7 @@ class PropertyCard extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
         side: selected
-            ? BorderSide(color: AppColors.primary, width: 2)
+            ? const BorderSide(color: AppColors.primary, width: 2)
             : BorderSide.none,
       ),
       child: InkWell(

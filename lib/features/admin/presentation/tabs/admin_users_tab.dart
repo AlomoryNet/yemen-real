@@ -109,7 +109,7 @@ class AdminUsersTab extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.lock,
+                        const Icon(Icons.lock,
                             size: 14, color: AppColors.success),
                         const SizedBox(width: 4),
                         Flexible(

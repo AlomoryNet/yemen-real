@@ -411,7 +411,7 @@ class _AdminPendingPropertyCardState
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.cancel, color: AppColors.error),
+            const Icon(Icons.cancel, color: AppColors.error),
             const SizedBox(width: 8),
             Text(
               context.l10n.admin_reject_dialog_title,
@@ -434,7 +434,7 @@ class _AdminPendingPropertyCardState
               style: GoogleFonts.cairo(fontSize: 13),
               decoration: InputDecoration(
                 hintText: context.l10n.admin_reject_hint,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
