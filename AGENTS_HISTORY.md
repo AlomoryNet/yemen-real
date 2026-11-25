@@ -39,9 +39,19 @@ DONE (unified map query, 2026-11-25, uncommitted, `flutter analyze` clean,
   `onViewAll` callback so the same center/radius drives preview and results.
 - Added `test/map_query_test.dart` (model/notifier/filter/factory regressions)
   and updated the two old map tests that expected `Ibb` in the search field.
+  Also removed the leftover `MapQueryNotifier.seed()`; initial state is owned
+  exclusively by the scoped provider override, so no caller can bypass it.
 - Fixed `AppColors.onAccent`: it aliased the light `darkTextPrimary`, giving
   2.9:1 on the amber badge fill. It now uses a dark ink with 5.6:1 contrast;
   `PropertyTextStyles.badgeOnAccent()` already pointed at this token.
+- Verification: `flutter analyze` clean; `flutter test` 124/124. Fresh USB cold
+  run on `ZY22G4C24N` with DTD hot reload: direct `/map` opened with 20 listings
+  and an Ibb chip; sheet Reset → Apply showed 440, a plain Filters chip and a
+  zoomed-out cluster field. Nearby "View all" opened list view with 20 listings
+  and a Near You chip; deleting it showed 440. Dashboard search seeded `test`
+  into the map field (0 results), and Featured "View all" opened list view with
+  88 featured listings and a Featured chip. No runtime errors and no new ANR
+  (latest remains `anr_2026-11-25-03-21-45-455`).
 
 DONE (filter reset/chip/zoom, 2026-11-25, uncommitted, `flutter analyze` clean,
 116/116 tests):

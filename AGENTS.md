@@ -86,8 +86,16 @@ flutter test      → suite (last known: 124 tests)
   and open list view. `filterMapProperties()` is a pure shared filter (status,
   text, chips, featured, nearby radius, drawn polygon). Fixed `onAccent` to a
   real dark ink (WCAG AA 5.6:1) instead of the light `darkTextPrimary`.
-  Added `test/map_query_test.dart` and updated map regressions. `flutter analyze`
-  clean, `flutter test` 124/124.
+  Added `test/map_query_test.dart` and updated map regressions. Removed the now
+  unused `MapQueryNotifier.seed()` (the scoped override owns initial state).
+  `flutter analyze` clean, `flutter test` 124/124. Fresh USB cold run + DTD hot
+  reload: direct `/map` opened with 20 listings + an Ibb chip; sheet Reset →
+  Apply showed 440, plain Filters chip and a zoomed-out cluster field. Nearby
+  "View all" opened list view with 20 listings + a Near You chip; deleting that
+  chip showed 440. Dashboard search seeded `test` into the map field (0 results),
+  and Featured "View all" opened list view with 88 featured listings + a
+  Featured chip. No runtime errors and no new ANR (latest remains
+  `anr_2026-11-25-03-21-45-455`).
 - Filter reset/chip/zoom fix (uncommitted): resetting `/map`'s bottom-sheet
   filters and removing the governorate chip now both clear the auto-written
   governorate label from the search field, so the free-text pass no longer

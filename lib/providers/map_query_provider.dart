@@ -13,8 +13,6 @@ import '../models/property_filter_selection.dart';
 class MapQueryNotifier extends StateNotifier<MapQuery> {
   MapQueryNotifier([MapQuery? initialQuery]) : super(initialQuery ?? const MapQuery());
 
-  void seed(MapQuery query) => state = query;
-
   void update(MapQuery Function(MapQuery current) change) {
     final next = change(state);
     if (next != state) state = next;
