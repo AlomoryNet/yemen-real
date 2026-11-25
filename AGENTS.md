@@ -66,6 +66,30 @@ flutter test      → suite (last known: 124 tests)
 ```
 
 ## Status — latest
+- Sign-up / create-account / auth screens fix (committed `ee4903c`, pushed to
+  `origin/main`, after `12e1930`): Login, Register and Forgot-password screens
+  now render a real localized AppBar title (`login_title` / `register_title` /
+  `forgot_title`, Cairo bold 17) instead of a bare `AppLogo` mark, matching the
+  app bar pattern of the rest of the app. The register submit button now uses
+  explicit theme tokens (`AppColors.primary` bg, `AppColors.textLight` fg,
+  StadiumBorder, bold, ellipsis overflow, disabled-while-loading) instead of the
+  raw theme default; switch-to-account rows made overflow-safe
+  (`Flexible` + centered/ellipsis text) for Arabic strings.
+  - Keyboard: verified on `ZY22G4C24N` via `dumpsys input_method` that the
+    global tap-outside + scroll unfocus handling (`HitTestBehavior.deferToChild`
+    GestureDetector in `lib/main.dart`, ScrollNotification unfocus) keeps the
+    IME open when a create-account field is pressed — last check showed
+    `mInputShown=true` with only a `SHOW_SOFT_INPUT` event after tapping the
+    phone field (no follow-up `HIDE_SOFT_INPUT`). The temporary experiment
+    states used during debugging were reverted; `lib/main.dart` is clean
+    (no diff).
+  - Auth flow: all auth transitions now use `context.go` (root-level) instead of
+    `context.push` (stacked): login→register, register→login, drawer login CTA,
+    auth prompt dialog actions, login→forgot-password. Back navigation no
+    longer reverses the login ↔ create-account chain.
+  - Verification: `flutter analyze` clean; `flutter test` 125/125; fresh hot
+    reload on the running USB app after the edits, no runtime errors and no new
+    ANR (latest remains `anr_2026-11-25-03-21-45-455`).
 - Readability fix (uncommitted, after `f85d78b` was committed/pushed): filter
   sheet chips (property type + minimum bedrooms) now set explicit label styles
   instead of relying on the theme's muted `textSecondary`: unselected labels use
