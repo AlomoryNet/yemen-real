@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
+import 'widgets/auth_ui.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -158,461 +159,218 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final routerState = GoRouterState.of(context);
+    final reason = routerState.uri.queryParameters['reason'];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          context.l10n.login_title,
-          style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 17),
-        ),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: AppColors.divider),
+    final isUnconfirmed = authState.errorCode == 'email_not_confirmed';
+    final isExpired = authState.errorCode == 'link_expired';
+    final isRateLimited = authState.errorCode == 'rate_limit';
+    final isNetwork = authState.errorCode == 'network_error';
+    final isCreds = authState.errorCode == 'invalid_credentials';
+    final isWarning = isUnconfirmed || isExpired || isRateLimited;
+    final canResend = isUnconfirmed || isExpired;
+
+    final errorIcon = isUnconfirmed
+        ? Icons.mark_email_unread_outlined
+        : isExpired
+        ? Icons.schedule_outlined
+        : isRateLimited
+        ? Icons.timer_outlined
+        : isCreds
+        ? Icons.lock_outline
+        : isNetwork
+        ? Icons.wifi_off_outlined
+        : Icons.error_outline;
+
+    return AuthFormScaffold(
+      title: context.l10n.login_title,
+      subtitle: context.l10n.login_subtitle,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (reason != null && reason.isNotEmpty) ...[
+              AuthInfoBanner(
+                tone: AuthInfoTone.info,
+                icon: Icons.info_outline,
+                message: reason,
               ),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(28),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.login_title,
-                        style: AppFonts.cairo(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        context.l10n.login_subtitle,
-                        style: AppFonts.cairo(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
+              const SizedBox(height: 16),
+            ],
+            if (authState.errorMessage != null) ...[
+              AuthInfoBanner(
+                tone: isWarning ? AuthInfoTone.warning : AuthInfoTone.error,
+                icon: errorIcon,
+                message: authState.errorMessage!,
+                actionLabel: canResend
+                    ? (_isResending
+                          ? context.l10n.login_sending
+                          : context.l10n.login_resend_now)
+                    : null,
+                actionIcon: Icons.send_rounded,
+                onAction: canResend ? _resendVerification : null,
+                actionLoading: _isResending,
+              ),
+              const SizedBox(height: 16),
+            ],
 
-                      Builder(
-                        builder: (context) {
-                          final reason = GoRouterState.of(
-                            context,
-                          ).uri.queryParameters['reason'];
-                          if (reason == null || reason.isEmpty)
-                            return const SizedBox.shrink();
-                          return Container(
-                            padding: const EdgeInsets.all(12),
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryMuted,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: AppColors.primary.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  color: AppColors.primaryInk,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    reason,
-                                    style: AppFonts.cairo(
-                                      color: AppColors.primaryDark,
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+            AuthField(
+              label: context.l10n.login_email,
+              child: TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                validator: Validators.email,
+                decoration: const InputDecoration(
+                  hintText: 'name@example.com',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
 
-                      if (authState.errorMessage != null) ...[
-                        Builder(
-                          builder: (context) {
-                            final isUnconfirmed =
-                                authState.errorCode == 'email_not_confirmed';
-                            final isExpired =
-                                authState.errorCode == 'link_expired';
-                            final isRateLimited =
-                                authState.errorCode == 'rate_limit';
-                            final isNetwork =
-                                authState.errorCode == 'network_error';
-                            final isCreds =
-                                authState.errorCode == 'invalid_credentials';
+            AuthField(
+              label: context.l10n.login_password,
+              child: TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                validator: Validators.password,
+                decoration: InputDecoration(
+                  hintText: '••••••••',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    tooltip: _obscurePassword
+                        ? context.l10n.auth_show_password
+                        : context.l10n.auth_hide_password,
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () => setState(
+                      () => _obscurePassword = !_obscurePassword,
+                    ),
+                  ),
+                ),
+                onFieldSubmitted: (_) => _submit(),
+              ),
+            ),
+            const SizedBox(height: 8),
 
-                            Color boxBg = AppColors.errorMuted;
-                            Color borderColor = AppColors.error.withOpacity(
-                              0.3,
-                            );
-                            Color textColor = AppColors.error;
-                            IconData iconData = Icons.error_outline;
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  onChanged: (val) =>
+                      setState(() => _rememberMe = val ?? false),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    context.l10n.login_remember_me,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.cairo(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  onPressed: () => context.push('/forgot-password'),
+                  child: Text(
+                    context.l10n.login_forgot_password,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.cairo(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryInk,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
 
-                            if (isUnconfirmed) {
-                              boxBg = AppColors.warningMuted;
-                              borderColor = AppColors.warning.withValues(
-                                alpha: 0.3,
-                              );
-                              textColor = AppColors.accentInk;
-                              iconData = Icons.mark_email_unread_outlined;
-                            } else if (isExpired || isRateLimited) {
-                              boxBg = AppColors.warningMuted;
-                              borderColor = AppColors.warning.withValues(
-                                alpha: 0.3,
-                              );
-                              textColor = AppColors.accentInk;
-                              iconData = isRateLimited
-                                  ? Icons.timer_outlined
-                                  : Icons.schedule_outlined;
-                            } else if (isCreds) {
-                              iconData = Icons.lock_outline;
-                            } else if (isNetwork) {
-                              iconData = Icons.wifi_off_outlined;
-                            }
+            AuthPrimaryButton(
+              label: context.l10n.login_submit,
+              loading: authState.isLoading,
+              onPressed: _submit,
+            ),
+            const SizedBox(height: 12),
 
-                            return Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: boxBg,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: borderColor),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(
-                                        iconData,
-                                        color: textColor,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          authState.errorMessage!,
-                                          style: AppFonts.cairo(
-                                            color: textColor,
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (isUnconfirmed || isExpired) ...[
-                                    const SizedBox(height: 8),
-                                    Divider(height: 1, color: borderColor),
-                                    const SizedBox(height: 6),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: TextButton.icon(
-                                        onPressed: _isResending
-                                            ? null
-                                            : _resendVerification,
-                                        icon: _isResending
-                                            ? const SizedBox(
-                                                width: 14,
-                                                height: 14,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : const Icon(
-                                                Icons.send_rounded,
-                                                size: 16,
-                                              ),
-                                        label: Text(
-                                          _isResending
-                                              ? context.l10n.login_sending
-                                              : context.l10n.login_resend_now,
-                                          style: AppFonts.cairo(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.primaryDark,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+            AuthSwitchLink(
+              prompt: context.l10n.login_no_account,
+              action: context.l10n.login_create_account,
+              onPressed: () {
+                final redirectTo = routerState.uri.queryParameters['redirectTo'];
+                final reasonParam = routerState.uri.queryParameters['reason'];
+                final uri = Uri(
+                  path: '/register',
+                  queryParameters: {
+                    if (redirectTo != null) 'redirectTo': redirectTo,
+                    if (reasonParam != null) 'reason': reasonParam,
+                  },
+                );
+                // Replace the auth page instead of stacking login↔register
+                // toggles, while preserving the app screen underneath for Back.
+                context.pushReplacement(uri.toString());
+              },
+            ),
 
-                      // Email Field
-                      Text(
-                        context.l10n.login_email,
-                        style: AppFonts.cairo(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        validator: Validators.email,
-                        decoration: const InputDecoration(
-                          hintText: 'name@example.com',
-                          prefixIcon: Icon(Icons.email_outlined),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Password Field
-                      Text(
-                        context.l10n.login_password,
-                        style: AppFonts.cairo(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.done,
-                        validator: Validators.password,
-                        decoration: InputDecoration(
-                          hintText: '••••••••',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            tooltip: _obscurePassword
-                                ? context.l10n.auth_show_password
-                                : context.l10n.auth_hide_password,
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                        ),
-                        onFieldSubmitted: (_) => _submit(),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Remember Me & Forgot Password Row
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            activeColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            onChanged: (val) =>
-                                setState(() => _rememberMe = val ?? false),
-                          ),
-                          Flexible(
-                            child: Text(
-                              context.l10n.login_remember_me,
-                              maxLines: 2,
-                              style: AppFonts.cairo(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () => context.push('/forgot-password'),
-                            child: Text(
-                              context.l10n.login_forgot_password,
-                              style: AppFonts.cairo(
-                                fontSize: 12,
-                                color: AppColors.primaryInk,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Login Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: AppColors.textLight,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: const StadiumBorder(),
-                          ),
-                          onPressed: authState.isLoading ? null : _submit,
-                          child: authState.isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.textLight,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  context.l10n.login_submit,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppFonts.cairo(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: AppColors.textLight,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Switch to Register
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              context.l10n.login_no_account,
-                              maxLines: 2,
-                              style: AppFonts.cairo(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                          Flexible(
-                            child: TextButton(
-                              onPressed: () {
-                                final redirectTo = GoRouterState.of(
-                                  context,
-                                ).uri.queryParameters['redirectTo'];
-                                final reason = GoRouterState.of(
-                                  context,
-                                ).uri.queryParameters['reason'];
-                                final uri = Uri(
-                                  path: '/register',
-                                  queryParameters: {
-                                    if (redirectTo != null)
-                                      'redirectTo': redirectTo,
-                                    if (reason != null) 'reason': reason,
-                                  },
-                                );
-                                // Replace the auth page instead of stacking
-                                // login↔register toggles, while preserving the
-                                // app screen underneath for Android Back.
-                                context.pushReplacement(uri.toString());
-                              },
-                              child: Text(
-                                context.l10n.login_create_account,
-                                style: AppFonts.cairo(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryInk,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: _isResending ? null : _resendVerification,
-                          icon: const Icon(
-                            Icons.mark_email_unread_outlined,
-                            size: 16,
-                          ),
-                          label: Text(
-                            context.l10n.login_resend_prompt,
-                            style: AppFonts.cairo(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const Divider(height: 28),
-
-                      // Demo Quick Fill Helpers
-                      Text(
-                        context.l10n.login_quick_demo,
-                        style: AppFonts.cairo(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                              ),
-                              onPressed: _fillDemoAdmin,
-                              child: Text(
-                                context.l10n.login_demo_admin,
-                                style: AppFonts.cairo(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                              ),
-                              onPressed: _fillDemoUser,
-                              child: Text(
-                                context.l10n.login_demo_user,
-                                style: AppFonts.cairo(fontSize: 11),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+            Center(
+              child: TextButton(
+                onPressed: _isResending ? null : _resendVerification,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: Text(
+                    context.l10n.login_resend_prompt,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AppFonts.cairo(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+
+            const Divider(height: 28),
+
+            Text(
+              context.l10n.login_quick_demo,
+              style: AppFonts.cairo(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Column(
+              children: [
+                AuthSecondaryButton(
+                  label: context.l10n.login_demo_admin,
+                  icon: Icons.admin_panel_settings_outlined,
+                  onPressed: _fillDemoAdmin,
+                ),
+                const SizedBox(height: 8),
+                AuthSecondaryButton(
+                  label: context.l10n.login_demo_user,
+                  icon: Icons.person_outline,
+                  onPressed: _fillDemoUser,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

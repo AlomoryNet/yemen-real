@@ -66,6 +66,19 @@ flutter test      → suite (last known: 124 tests)
 ```
 
 ## Status - latest
+- Auth screen redesign (committed 2026-11-26, after `9517a8e`): Login, Register
+  and Forgot-password now share `lib/features/auth/presentation/widgets/auth_ui.dart`
+  (top-aligned scrollable card, one app-bar title, themed `AuthField`,
+  `AuthPrimaryButton`/`AuthSecondaryButton`, `AuthSwitchLink`, semantic
+  `AuthInfoBanner`). Removed duplicate in-card titles, fixed long/demo button and
+  switch-link overflow with ellipsis/2-line labels, replaced hardcoded amber
+  warnings with `AppColors.warningFill`/`warningInk`, and made the sent-state
+  reset screen use success tokens. `flutter analyze` clean; `flutter test`
+  132/132 (new `test/auth_layout_test.dart`). USB `ZY22G4C24N`: verified Login /
+  Register / Forgot in English + Arabic, light + dark, back stack intact, all
+  button/link bounds inside the screen, register phone tap kept IME open
+  (`mInputShown=true`), no runtime errors and no new ANR. Committed and pushed.
+  The unrelated map `BorderRadius` tweak is committed separately.
 - Auth back-stack + exit-info placement fix (committed 2026-11-26, after `bfdc870`):
   the exit hint now uses a new `exitInfoSnackBar()` helper with
   `SnackBarBehavior.fixed` and **no margin**, so it sits at the bottom above the

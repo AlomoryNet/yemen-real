@@ -6,6 +6,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
+import 'widgets/auth_ui.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -35,6 +36,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         .read(authProvider.notifier)
         .sendPasswordReset(_emailController.text.trim());
 
+    if (!mounted) return;
     setState(() {
       _isSending = false;
       _sent = success;
@@ -43,147 +45,110 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          context.l10n.forgot_title,
-          style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 17),
-        ),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: AppColors.divider),
-              ),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(28),
-                child: _sent
-                    ? _buildSentView(context)
-                    : _buildFormView(context),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return AuthFormScaffold(
+      title: context.l10n.forgot_title,
+      subtitle:
+          _sent ? context.l10n.forgot_check_inbox : context.l10n.forgot_instructions,
+      child: _sent ? _buildSentView(context) : _buildFormView(context),
     );
   }
 
   Widget _buildSentView(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Icon(
-          Icons.mark_email_read_outlined,
-          size: 60,
-          color: AppColors.success,
+        const SizedBox(height: 8),
+        Container(
+          width: 68,
+          height: 68,
+          decoration: BoxDecoration(
+            color: AppColors.successFill,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.mark_email_read_outlined,
+            size: 34,
+            color: AppColors.successInk,
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         Text(
           context.l10n.forgot_link_sent,
-          style: AppFonts.cairo(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          context.l10n.forgot_check_inbox,
           textAlign: TextAlign.center,
-          style: AppFonts.cairo(fontSize: 13, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => context.pushReplacement('/login'),
-            child: Text(context.l10n.forgot_back_to_login),
+          style: AppFonts.cairo(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
           ),
+        ),
+        const SizedBox(height: 20),
+        AuthPrimaryButton(
+          label: context.l10n.forgot_back_to_login,
+          icon: Icons.login,
+          onPressed: () => context.pushReplacement('/login'),
         ),
       ],
     );
   }
 
   Widget _buildFormView(BuildContext context) {
+    final authState = ref.watch(authProvider);
     return Form(
       key: _formKey,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            context.l10n.forgot_title,
-            style: AppFonts.cairo(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+          if (authState.errorMessage != null) ...[
+            AuthInfoBanner(
+              tone: AuthInfoTone.error,
+              icon: Icons.error_outline,
+              message: authState.errorMessage!,
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            context.l10n.forgot_instructions,
-            style: AppFonts.cairo(fontSize: 13, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 16),
+          ],
 
-          Text(
-            context.l10n.forgot_email,
-            style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.done,
-            validator: Validators.email,
-            decoration: const InputDecoration(
-              hintText: 'name@example.com',
-              prefixIcon: Icon(Icons.email_outlined),
-            ),
-            onFieldSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: 24),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textLight,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: const StadiumBorder(),
+          AuthField(
+            label: context.l10n.forgot_email,
+            child: TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              validator: Validators.email,
+              decoration: const InputDecoration(
+                hintText: 'name@example.com',
+                prefixIcon: Icon(Icons.email_outlined),
               ),
-              onPressed: _isSending ? null : _submit,
-              child: _isSending
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: AppColors.textLight,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      context.l10n.forgot_send_link,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.cairo(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: AppColors.textLight,
-                      ),
-                    ),
+              onFieldSubmitted: (_) => _submit(),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+
+          AuthPrimaryButton(
+            label: context.l10n.forgot_send_link,
+            loading: _isSending,
+            onPressed: _submit,
+          ),
+          const SizedBox(height: 12),
 
           Center(
-            child: TextButton(
+            child: TextButton.icon(
               onPressed: () => context.pushReplacement('/login'),
-              child: Text(context.l10n.forgot_return_to_login),
+              icon: const Icon(Icons.login, size: 17),
+              label: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 240),
+                child: Text(
+                  context.l10n.forgot_return_to_login,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.cairo(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryInk,
+                  ),
+                ),
+              ),
             ),
           ),
         ],

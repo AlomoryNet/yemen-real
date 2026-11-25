@@ -8,6 +8,41 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
+DONE (auth screen redesign, 2026-11-26, committed/pushed after `9517a8e`;
+`flutter analyze` clean, `flutter test` 132/132):
+
+- Added `lib/features/auth/presentation/widgets/auth_ui.dart` with the shared
+  `AuthFormScaffold`, `AuthField`, `AuthPrimaryButton`, `AuthSecondaryButton`,
+  `AuthSwitchLink`, `AuthInfoBanner` and `AuthInfoTone`. The scaffold uses one
+  centered AppBar title plus a top-aligned scrollable card (max width 480), so
+  all three auth screens share spacing, typography and keyboard behaviour and
+  no longer float in the middle of a tall screen or repeat their title inside
+  the card.
+- `login_screen.dart`: rebuilt on the shared scaffold; the reason/error/resend
+  notices became themed `AuthInfoBanner`s (warning tone for unconfirmed/expired/
+  rate-limited states, error tone otherwise), the remember-me row and switch
+  link are overflow-safe, and both demo shortcuts are full-width
+  `AuthSecondaryButton`s with wrapped, ellipsized Arabic/English labels.
+- `register_screen.dart`: rebuilt on the shared scaffold; the confirmation
+  dialog uses semantic fills/inks (`primaryFill`, `warningFill`) instead of the
+  old hardcoded amber, resend labels are constrained, and the duplicate-account
+  error now exposes a real resend/go-login action through `AuthInfoBanner`.
+- `forgot_password_screen.dart`: replaced the vertically centered form with the
+  shared top-aligned scaffold; error banner, ellipsized primary button, a single
+  back-to-login link, and a success-token sent state with a full-width
+  `AuthPrimaryButton`.
+- Added `test/auth_layout_test.dart`: top-alignment/padding, long-label
+  ellipsis for primary and secondary actions, loading spinner/blocked taps,
+  and semantic banner tone + ellipsized action.
+- USB `ZY22G4C24N`: hot restart + hot reload, Login/Register/Forgot inspected in
+  English and Arabic in both themes. All buttons and links stayed within the
+  720 px screen (e.g. AR demo shortcuts `[70,1081][650,1169]` and
+  `[70,1183][650,1270]`, AR register CTA `[70,938][650,1025]`); back navigation
+  Login→Home and Forgot→Login still worked; the register phone field kept the
+  IME open (`mInputShown=true`); DTD reported no runtime errors and no new ANR.
+  Committed and pushed. The unrelated `yemen_map_screen.dart` border-radius
+  tweak from an earlier task is committed in a separate small commit.
+
 DONE (auth back-stack + exit-info placement, 2026-11-26, committed/pushed, after
 `bfdc870`; `flutter analyze` clean, `flutter test` 128/128):
 
