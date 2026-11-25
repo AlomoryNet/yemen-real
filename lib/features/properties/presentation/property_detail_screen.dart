@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/property_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/utils/responsive.dart';
@@ -157,34 +158,32 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
 
     return Scaffold(
       appBar: AppHeader(title: context.l10n.property_details, showBack: true),
-      drawer: Responsive.isDesktop(context)
-          ? null
-          : const AppDrawer(),
+      drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
       bottomNavigationBar: Responsive.isDesktop(context)
           ? null
           : const AppBottomNavBar(currentRoute: '/property'),
       body: AppPageBody(
         child: propertyAsync.when(
-        data: (property) => _buildDetailContent(context, property),
-        loading: () =>
-            LoadingView(message: context.l10n.detail_loading),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ErrorView(
-                message: err.toString(),
-                onRetry: () =>
-                    ref.refresh(propertyDetailProvider(widget.propertyId)),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => context.go('/map'),
-                child: Text(context.l10n.detail_browse_properties),
-              ),
-            ],
+          data: (property) => _buildDetailContent(context, property),
+          loading: () =>
+              LoadingView(message: context.l10n.detail_loading, skeleton: true),
+          error: (err, _) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ErrorView(
+                  message: err.toString(),
+                  onRetry: () =>
+                      ref.refresh(propertyDetailProvider(widget.propertyId)),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => context.go('/map'),
+                  child: Text(context.l10n.detail_browse_properties),
+                ),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -350,24 +349,27 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final isSelected = index == _activeImageIndex;
-                return InkWell(
-                  onTap: () => setState(() => _activeImageIndex = index),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: 90,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : Colors.transparent,
-                        width: 2.5,
+                return Tooltip(
+                  message: '${context.l10n.detail_view_image} ${index + 1}',
+                  child: InkWell(
+                    onTap: () => setState(() => _activeImageIndex = index),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: 90,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.transparent,
+                          width: 2.5,
+                        ),
                       ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: CachedNetworkImage(
-                      imageUrl: images[index].imageUrl,
-                      fit: BoxFit.cover,
+                      clipBehavior: Clip.antiAlias,
+                      child: CachedNetworkImage(
+                        imageUrl: images[index].imageUrl,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 );
@@ -407,10 +409,35 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           children: [
             // Price & Deal badge
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                StatusBadge.dealType(property.dealType),
+                Expanded(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      StatusBadge.dealType(property.dealType),
+                      if (property.isFeatured)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            context.l10n.sh_property_featured,
+                            style: PropertyTextStyles.badgeOnAccent(),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
                 IconButton(
+                  tooltip: isFav
+                      ? context.l10n.remove_favorite
+                      : context.l10n.save_favorite,
                   icon: Icon(
                     isFav ? Icons.favorite : Icons.favorite_border,
                     color: isFav ? AppColors.error : AppColors.textSecondary,
@@ -420,8 +447,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     if (!auth.isAuthenticated) {
                       AuthPromptDialog.show(
                         context,
-                        message:
-                            context.l10n.detail_auth_prompt_message,
+                        message: context.l10n.detail_auth_prompt_message,
                         redirectTo: '/property/${property.id}',
                       );
                       return;
@@ -496,6 +522,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.onAccent,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   icon: const Icon(Icons.assignment_outlined, size: 20),
@@ -511,8 +538,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     if (!auth.isAuthenticated) {
                       AuthPromptDialog.show(
                         context,
-                        message:
-                            context.l10n.detail_auth_prompt_message,
+                        message: context.l10n.detail_auth_prompt_message,
                         redirectTo: '/property/${property.id}',
                       );
                       return;
@@ -566,10 +592,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   ),
                   label: Text(
                     context.l10n.detail_report_action,
-                    style: AppFonts.cairo(
-                      fontSize: 12,
-                      color: AppColors.error,
-                    ),
+                    style: AppFonts.cairo(fontSize: 12, color: AppColors.error),
                   ),
                 ),
                 TextButton.icon(
@@ -750,10 +773,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         const SizedBox(height: 6),
         Text(
           '${AppConstants.getGovernorateNameAr(property.city)} — ${AppConstants.getDistrictNameAr(property.district)} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
-          style: AppFonts.cairo(
-            fontSize: 13,
-            color: AppColors.textSecondary,
-          ),
+          style: AppFonts.cairo(fontSize: 13, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 14),
         Container(
@@ -811,7 +831,10 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                 offset: const Offset(0, 3),
                               ),
                             ],
-                            border: Border.all(color: AppColors.surface, width: 2),
+                            border: Border.all(
+                              color: AppColors.surface,
+                              width: 2,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,

@@ -103,11 +103,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.email,
-                        color: AppColors.primaryInk,
-                        size: 20,
-                      ),
+                      Icon(Icons.email, color: AppColors.primaryInk, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -416,8 +412,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _nameController,
-                        validator: (val) =>
-                            Validators.requiredField(val, context.l10n.register_full_name),
+                        validator: (val) => Validators.requiredField(
+                          val,
+                          context.l10n.register_full_name,
+                        ),
                         decoration: InputDecoration(
                           hintText: context.l10n.register_name_hint,
                           prefixIcon: const Icon(Icons.person_outline),
@@ -479,10 +477,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         obscureText: _obscurePassword,
                         validator: Validators.password,
                         decoration: InputDecoration(
-                          hintText:
-                              context.l10n.register_password_hint,
+                          hintText: context.l10n.register_password_hint,
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? context.l10n.auth_show_password
+                                : context.l10n.auth_hide_password,
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility_off

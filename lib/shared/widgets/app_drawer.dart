@@ -11,10 +11,20 @@ import '../../../providers/auth_provider.dart';
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
+  /// Destinations that own the navigation stack. Opening one of these resets
+  /// the stack to that root; Profile stays a pushed page with a back affordance.
+  static const Set<String> rootRoutes = {
+    '/',
+    '/map',
+    '/my-properties',
+    '/admin',
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
+    final logoutColor = Theme.of(context).colorScheme.error;
 
     return Drawer(
       backgroundColor: AppColors.surface,
@@ -112,28 +122,28 @@ class AppDrawer extends ConsumerWidget {
                   _buildDrawerTile(
                     context,
                     icon: Icons.home_rounded,
-                    tint: AppColors.primary,
+                    tint: AppColors.primaryInk,
                     title: context.l10n.sh_nav_home,
                     route: '/',
                   ),
                   _buildDrawerTile(
                     context,
                     icon: Icons.search_rounded,
-                    tint: AppColors.info,
+                    tint: AppColors.infoInk,
                     title: context.l10n.sh_drawer_search,
                     route: '/map',
                   ),
                   _buildDrawerTile(
                     context,
                     icon: Icons.favorite_rounded,
-                    tint: AppColors.error,
+                    tint: AppColors.errorInk,
                     title: context.l10n.sh_drawer_favorites,
                     route: '/favorites',
                   ),
                   _buildDrawerTile(
                     context,
                     icon: Icons.add_home_rounded,
-                    tint: AppColors.accent,
+                    tint: AppColors.accentInk,
                     title: context.l10n.sh_header_add_property_free,
                     route: '/add-property',
                   ),
@@ -143,21 +153,21 @@ class AppDrawer extends ConsumerWidget {
                     _buildDrawerTile(
                       context,
                       icon: Icons.holiday_village_rounded,
-                      tint: AppColors.success,
+                      tint: AppColors.successInk,
                       title: context.l10n.sh_drawer_my_properties,
                       route: '/my-properties',
                     ),
                     _buildDrawerTile(
                       context,
                       icon: Icons.assignment_rounded,
-                      tint: const Color(0xFF7C3AED),
+                      tint: AppColors.violetInk,
                       title: context.l10n.sh_drawer_my_requests,
                       route: '/my-requests',
                     ),
                     _buildDrawerTile(
                       context,
                       icon: Icons.person_rounded,
-                      tint: const Color(0xFF475569),
+                      tint: AppColors.textSecondary,
                       title: context.l10n.sh_drawer_profile,
                       route: '/profile',
                     ),
@@ -168,7 +178,7 @@ class AppDrawer extends ConsumerWidget {
                     _buildDrawerTile(
                       context,
                       icon: Icons.admin_panel_settings_rounded,
-                      tint: AppColors.warning,
+                      tint: AppColors.warningInk,
                       title: context.l10n.sh_drawer_admin_panel,
                       route: '/admin',
                     ),
@@ -190,9 +200,9 @@ class AppDrawer extends ConsumerWidget {
                     child: authState.isAuthenticated
                         ? OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.error,
-                              side: const BorderSide(
-                                color: AppColors.error,
+                              foregroundColor: logoutColor,
+                              side: BorderSide(
+                                color: logoutColor,
                                 width: 1.5,
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 13),
@@ -283,7 +293,11 @@ class AppDrawer extends ConsumerWidget {
           borderRadius: BorderRadius.circular(14),
           onTap: () {
             Navigator.pop(context);
-            context.push(route);
+            if (rootRoutes.contains(route)) {
+              context.go(route);
+            } else {
+              context.push(route);
+            }
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
@@ -293,7 +307,7 @@ class AppDrawer extends ConsumerWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: tint.withAlpha(26),
+                    color: tint.withAlpha(AppColors.isDark ? 56 : 26),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: tint, size: 22),

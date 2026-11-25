@@ -204,7 +204,7 @@ class PropertyCard extends ConsumerWidget {
             initialIndex: activeImageIndex ?? 0,
             onIndexChanged: onImageIndexChanged,
             topStart: _badges(context),
-            topEnd: _imageTopEnd(),
+            topEnd: _imageTopEnd(context),
           )
         : Stack(
             children: [
@@ -218,8 +218,16 @@ class PropertyCard extends ConsumerWidget {
                   memCacheWidth: 800,
                 ),
               ),
-              PositionedDirectional(top: 10, start: 10, child: _badges(context)),
-              PositionedDirectional(top: 10, end: 10, child: _imageTopEnd()),
+              PositionedDirectional(
+                top: 10,
+                start: 10,
+                child: _badges(context),
+              ),
+              PositionedDirectional(
+                top: 10,
+                end: 10,
+                child: _imageTopEnd(context),
+              ),
             ],
           );
 
@@ -260,11 +268,11 @@ class PropertyCard extends ConsumerWidget {
   // Shared fragments
   // ---------------------------------------------------------------------------
 
-  Widget _imageTopEnd() {
+  Widget _imageTopEnd(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (onClose != null) _closeButton(),
+        if (onClose != null) _closeButton(context),
         if (_favoriteVisible) ...[
           const SizedBox(width: 6),
           _FavoriteSlot(propertyId: property.id),
@@ -273,18 +281,21 @@ class PropertyCard extends ConsumerWidget {
     );
   }
 
-  Widget _closeButton() {
-    return Material(
-      color: AppColors.surface.withAlpha(230),
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onClose,
-        child: SizedBox(
-          width: 32,
-          height: 32,
-          child: Icon(Icons.close, size: 17, color: AppColors.textPrimary),
+  Widget _closeButton(BuildContext context) {
+    return Tooltip(
+      message: context.l10n.close,
+      child: Material(
+        color: AppColors.surface.withAlpha(230),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onClose,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Icon(Icons.close, size: 20, color: AppColors.textPrimary),
+          ),
         ),
       ),
     );
@@ -312,14 +323,16 @@ class PropertyCard extends ConsumerWidget {
       ),
       child: Text(
         context.l10n.sh_property_featured,
-        style: PropertyTextStyles.badge(),
+        style: PropertyTextStyles.badgeOnAccent(),
       ),
     );
   }
 
   Widget _price({double size = 18, required WidgetRef ref}) => Text(
     Formatters.formatCurrencyPreferred(
-        property.price, ref.watch(settingsProvider).currencyCode),
+      property.price,
+      ref.watch(settingsProvider).currencyCode,
+    ),
     style: PropertyTextStyles.price(size: size),
     maxLines: 1,
     overflow: TextOverflow.ellipsis,

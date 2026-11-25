@@ -929,6 +929,18 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
+  /// No description provided for @auth_show_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get auth_show_password;
+
+  /// No description provided for @auth_hide_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get auth_hide_password;
+
   /// No description provided for @mark_as_read.
   ///
   /// In en, this message translates to:
@@ -1034,13 +1046,13 @@ abstract class AppLocalizations {
   /// No description provided for @login_demo_admin_filled.
   ///
   /// In en, this message translates to:
-  /// **'The admin email has been filled in. Please enter the password manually to continue securely'**
+  /// **'The admin email and demo password have been filled in. You can continue now'**
   String get login_demo_admin_filled;
 
   /// No description provided for @login_demo_user_filled.
   ///
   /// In en, this message translates to:
-  /// **'The demo user email has been filled in. Please enter the password to continue'**
+  /// **'The demo user email and password have been filled in. You can continue now'**
   String get login_demo_user_filled;
 
   /// No description provided for @login_title.
@@ -1124,13 +1136,13 @@ abstract class AppLocalizations {
   /// No description provided for @login_demo_admin.
   ///
   /// In en, this message translates to:
-  /// **'General Manager (email only)'**
+  /// **'General Manager (email + password)'**
   String get login_demo_admin;
 
   /// No description provided for @login_demo_user.
   ///
   /// In en, this message translates to:
-  /// **'Advertiser account (email only)'**
+  /// **'Advertiser account (email + password)'**
   String get login_demo_user;
 
   /// No description provided for @register_confirm_title.
@@ -2026,6 +2038,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All published listings are compliant and no violations have been reported.'**
   String get admin_no_reports_desc;
+
+  /// No description provided for @admin_no_users.
+  ///
+  /// In en, this message translates to:
+  /// **'No user accounts found'**
+  String get admin_no_users;
 
   /// No description provided for @admin_details_label.
   ///
@@ -4499,6 +4517,12 @@ abstract class AppLocalizations {
   /// **'Clear drawing'**
   String get map_clear_draw;
 
+  /// No description provided for @map_clear_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get map_clear_search;
+
   /// No description provided for @map_close.
   ///
   /// In en, this message translates to:
@@ -5656,6 +5680,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'To complete this action, please create an account and verify your email first.'**
   String get detail_auth_prompt_message;
+
+  /// No description provided for @detail_view_image.
+  ///
+  /// In en, this message translates to:
+  /// **'View image'**
+  String get detail_view_image;
 
   /// No description provided for @detail_publish_date.
   ///

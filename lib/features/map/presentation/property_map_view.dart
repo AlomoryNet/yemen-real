@@ -34,14 +34,16 @@ String formatMapPriceTag(BuildContext context, Property p) {
   final cur = p.currency == AppConstants.currencyYer
       ? context.l10n.map_currency_yer
       : p.currency == AppConstants.currencyUsd
-          ? '\$'
-          : context.l10n.map_currency_sar;
+      ? '\$'
+      : context.l10n.map_currency_sar;
 
   final isRent = p.dealType == AppConstants.dealRent;
   final suffix = isRent ? context.l10n.map_per_month : '';
 
   if (p.price >= 1000000) {
-    final millions = (p.price / 1000000).toStringAsFixed(1).replaceAll('.0', '');
+    final millions = (p.price / 1000000)
+        .toStringAsFixed(1)
+        .replaceAll('.0', '');
     return '$millions ${context.l10n.map_million_abbr} $cur $suffix'.trim();
   } else if (p.price >= 1000) {
     final thousands = (p.price / 1000).toStringAsFixed(0);
@@ -142,8 +144,9 @@ class _PropertyMapViewState extends State<PropertyMapView>
 
   static Future<List<GovernorateBoundary>> _readBoundaries() async {
     try {
-      final jsonStr = await rootBundle
-          .loadString('assets/map/yemen_adm1_simplified.geojson');
+      final jsonStr = await rootBundle.loadString(
+        'assets/map/yemen_adm1_simplified.geojson',
+      );
       final data = json.decode(jsonStr) as Map<String, dynamic>;
       final features = data['features'] as List<dynamic>;
       final List<GovernorateBoundary> loaded = [];
@@ -180,11 +183,13 @@ class _PropertyMapViewState extends State<PropertyMapView>
         }
 
         if (rings.isNotEmpty) {
-          loaded.add(GovernorateBoundary(
-            englishName: shapeName,
-            arabicName: arabicName,
-            polygonRings: rings,
-          ));
+          loaded.add(
+            GovernorateBoundary(
+              englishName: shapeName,
+              arabicName: arabicName,
+              polygonRings: rings,
+            ),
+          );
         }
       }
 
@@ -231,6 +236,7 @@ class _PropertyMapViewState extends State<PropertyMapView>
   }
 
   void _applyAnimatedMove() {
+    if (!mounted) return;
     final t = Curves.easeInOutCubic.transform(_moveController.value);
     final center = LatLng(
       _moveFrom.latitude + (_moveTo.latitude - _moveFrom.latitude) * t,
@@ -254,9 +260,7 @@ class _PropertyMapViewState extends State<PropertyMapView>
   }
 
   void _handleClusterTap(PropertyCluster cluster) {
-    if (cluster.latSpan > 0.0003 ||
-        cluster.lngSpan > 0.0003 ||
-        _zoom < 15.0) {
+    if (cluster.latSpan > 0.0003 || cluster.lngSpan > 0.0003 || _zoom < 15.0) {
       _animatedMove(cluster.centroid, math.min(_zoom + 2.5, 16.5));
     } else {
       _showClusterPropertiesSheet(cluster.properties);
@@ -269,8 +273,7 @@ class _PropertyMapViewState extends State<PropertyMapView>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       showDragHandle: false,
-      barrierColor:
-          Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
       builder: (_) => _ClusterPropertiesSheet(
         properties: props,
         onPropertySelected: (property) {
@@ -298,6 +301,10 @@ class _PropertyMapViewState extends State<PropertyMapView>
         maxZoom: widget.maxZoom,
         interactionOptions: InteractionOptions(flags: widget.interactionFlags),
         onPositionChanged: (pos, hasGesture) {
+          // A camera animation owned by the parent can keep moving the map
+          // after this view has been popped; never call setState on a disposed
+          // State from that late callback.
+          if (!mounted) return;
           if ((pos.zoom - _zoom).abs() > 0.001) {
             setState(() => _zoom = pos.zoom);
           }
@@ -320,7 +327,8 @@ class _PropertyMapViewState extends State<PropertyMapView>
         if (widget.showBoundaries && _boundaries.isNotEmpty)
           PolygonLayer(
             polygons: _boundaries.expand((gov) {
-              final isSelected = highlight != null &&
+              final isSelected =
+                  highlight != null &&
                   (gov.arabicName == highlight ||
                       gov.arabicName.contains(highlight) ||
                       highlight.contains(gov.arabicName));
@@ -361,14 +369,18 @@ class _PropertyMapViewState extends State<PropertyMapView>
                 point: cluster.centroid,
                 width: isSelected ? 160 : 140,
                 height: isSelected ? 74 : 66,
-                child: GestureDetector(
-                  onTap: () =>
-                      widget.onPropertyTap?.call(prop, cluster.centroid),
-                  child: _PropertyPriceMarker(
-                    priceText: formatMapPriceTag(context, prop),
-                    isSelected: isSelected,
-                    isRent: isRent,
-                    hasExact: hasExact,
+                child: Semantics(
+                  button: true,
+                  label: '${context.l10n.map_view_details}: ${prop.title}',
+                  child: GestureDetector(
+                    onTap: () =>
+                        widget.onPropertyTap?.call(prop, cluster.centroid),
+                    child: _PropertyPriceMarker(
+                      priceText: formatMapPriceTag(context, prop),
+                      isSelected: isSelected,
+                      isRent: isRent,
+                      hasExact: hasExact,
+                    ),
                   ),
                 ),
               );
@@ -380,9 +392,14 @@ class _PropertyMapViewState extends State<PropertyMapView>
               point: cluster.centroid,
               width: size,
               height: size,
-              child: GestureDetector(
-                onTap: () => _handleClusterTap(cluster),
-                child: _ClusterBadge(count: count),
+              child: Semantics(
+                button: true,
+                label:
+                    '$count ${context.l10n.map_cluster_property_unit} — ${context.l10n.map_cluster_properties_title}',
+                child: GestureDetector(
+                  onTap: () => _handleClusterTap(cluster),
+                  child: _ClusterBadge(count: count),
+                ),
               ),
             );
           }).toList(),
@@ -395,9 +412,11 @@ class _PropertyMapViewState extends State<PropertyMapView>
                   ? 'Esri, Maxar, Earthstar Geographics'
                   : 'Tiles © Esri — Sources: Esri, HERE, Garmin, USGS, OpenStreetMap contributors, GIS User Community',
               onTap: () {
-                final uri = Uri.parse(widget.isSatellite
-                    ? 'https://www.esri.com/'
-                    : 'https://goto.arcgisonline.com/maps/World_Street_Map');
+                final uri = Uri.parse(
+                  widget.isSatellite
+                      ? 'https://www.esri.com/'
+                      : 'https://goto.arcgisonline.com/maps/World_Street_Map',
+                );
                 canLaunchUrl(uri).then((ok) {
                   if (ok) launchUrl(uri, mode: LaunchMode.externalApplication);
                 });
@@ -439,10 +458,7 @@ class _PropertyPriceMarker extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFFD97706) : Colors.white,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: pinColor,
-              width: isSelected ? 0 : 1.5,
-            ),
+            border: Border.all(color: pinColor, width: isSelected ? 0 : 1.5),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(50),
@@ -489,8 +505,8 @@ class _ClusterBadge extends StatelessWidget {
     final inner = count >= 50
         ? const Color(0xFFD32F2F)
         : count >= 10
-            ? const Color(0xFF1565C0)
-            : AppColors.primary;
+        ? const Color(0xFF1565C0)
+        : AppColors.primary;
 
     return Container(
       width: size,
@@ -518,7 +534,9 @@ class _ClusterBadge extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              count >= 1000 ? '${(count / 1000).toStringAsFixed(1)}k' : '$count',
+              count >= 1000
+                  ? '${(count / 1000).toStringAsFixed(1)}k'
+                  : '$count',
               style: AppFonts.cairo(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -571,8 +589,9 @@ class _ClusterPropertiesSheet extends StatelessWidget {
                 width: double.maxFinite,
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(60),
@@ -765,9 +784,12 @@ class _GooglePinPainter extends CustomPainter {
       cx - r,
       headY,
     );
-    pinPath
-        .arcTo(Rect.fromCircle(center: Offset(cx, headY), radius: r), math.pi,
-            math.pi, false);
+    pinPath.arcTo(
+      Rect.fromCircle(center: Offset(cx, headY), radius: r),
+      math.pi,
+      math.pi,
+      false,
+    );
     pinPath.cubicTo(
       cx + r,
       headY + r * 0.5,

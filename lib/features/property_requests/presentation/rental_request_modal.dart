@@ -21,8 +21,7 @@ class RentalRequestModal extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor:
-          Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
       builder: (context) => RentalRequestModal(property: property),
     );
   }
@@ -240,6 +239,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                 ),
               ),
               IconButton(
+                tooltip: context.l10n.close,
                 icon: const Icon(Icons.close),
                 onPressed: () => context.pop(),
               ),
@@ -250,10 +250,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
             widget.property.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppFonts.cairo(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
+            style: AppFonts.cairo(fontSize: 13, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
           const Divider(height: 1),
@@ -351,9 +348,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
           TextFormField(
             controller: _notesController,
             maxLines: 3,
-            decoration: InputDecoration(
-              hintText: context.l10n.req_notes_hint,
-            ),
+            decoration: InputDecoration(hintText: context.l10n.req_notes_hint),
           ),
           const SizedBox(height: 20),
 

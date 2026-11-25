@@ -124,7 +124,7 @@ class AppNavigationRail extends ConsumerWidget {
           if (authState.isAuthenticated && user != null) ...[
             InkWell(
               borderRadius: BorderRadius.circular(8),
-              onTap: () => context.go('/profile'),
+              onTap: () => context.push('/profile'),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 8,

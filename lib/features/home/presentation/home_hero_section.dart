@@ -142,38 +142,67 @@ class HomeHeroSection extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Badge(
                           isLabelVisible: activeFilterCount > 0,
-                          label: Text('$activeFilterCount'),
-                          backgroundColor: AppColors.accent,
-                          child: FilledButton.tonalIcon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primaryMuted,
-                              foregroundColor: AppColors.primaryInk,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                              ),
-                              shape: const StadiumBorder(),
+                          label: Text(
+                            '$activeFilterCount',
+                            style: AppFonts.cairo(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.onAccent,
                             ),
-                            onPressed: onFilterRequested,
-                            icon: const Icon(Icons.tune_rounded, size: 18),
-                            label: compact
-                                ? const SizedBox.shrink()
-                                : Text(l10n.map_filters),
                           ),
+                          backgroundColor: AppColors.accent,
+                          child: compact
+                              ? FilledButton.tonal(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: AppColors.primaryMuted,
+                                    foregroundColor: AppColors.primaryInk,
+                                    minimumSize: const Size(48, 48),
+                                    padding: EdgeInsets.zero,
+                                    shape: const StadiumBorder(),
+                                  ),
+                                  onPressed: onFilterRequested,
+                                  child: const Icon(Icons.tune_rounded, size: 18),
+                                )
+                              : FilledButton.tonalIcon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: AppColors.primaryMuted,
+                                    foregroundColor: AppColors.primaryInk,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                    ),
+                                    shape: const StadiumBorder(),
+                                  ),
+                                  onPressed: onFilterRequested,
+                                  icon: const Icon(Icons.tune_rounded, size: 18),
+                                  label: Text(l10n.map_filters),
+                                ),
                         ),
                         const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            shape: const StadiumBorder(),
-                          ),
-                          onPressed: onSearchSubmit,
-                          icon: const Icon(Icons.search, size: 18),
-                          label: compact
-                              ? const SizedBox.shrink()
-                              : Text(l10n.dash_search_button),
-                        ),
+                        compact
+                            ? ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.textLight,
+                                  minimumSize: const Size(48, 48),
+                                  padding: EdgeInsets.zero,
+                                  shape: const StadiumBorder(),
+                                ),
+                                onPressed: onSearchSubmit,
+                                child: const Icon(Icons.search, size: 18),
+                              )
+                            : ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.textLight,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  shape: const StadiumBorder(),
+                                ),
+                                onPressed: onSearchSubmit,
+                                icon: const Icon(Icons.search, size: 18),
+                                label: Text(l10n.dash_search_button),
+                              ),
                       ],
                     );
                   },

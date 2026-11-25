@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:yemen_real_estate_portal/config/env_config.dart';
+import 'package:yemen_real_estate_portal/config/app_config.dart';
 import 'package:yemen_real_estate_portal/core/constants/app_constants.dart';
 import 'package:yemen_real_estate_portal/data/demo_properties_generator.dart';
 import 'package:yemen_real_estate_portal/features/map/presentation/yemen_map_screen.dart';
@@ -18,12 +18,12 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
-    EnvConfig.setForceDemoModeForTesting(true);
+    AppConfig.setForceDemoModeForTesting(true);
     await SupabaseService.initialize();
   });
 
   tearDownAll(() {
-    EnvConfig.setForceDemoModeForTesting(false);
+    AppConfig.setForceDemoModeForTesting(false);
   });
 
   group('Yemen Map & Header Integration Verification Tests', () {

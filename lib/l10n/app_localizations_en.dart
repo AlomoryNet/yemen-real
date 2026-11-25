@@ -432,6 +432,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
+  String get auth_show_password => 'Show password';
+
+  @override
+  String get auth_hide_password => 'Hide password';
+
+  @override
   String get mark_as_read => 'Mark as Read';
 
   @override
@@ -483,10 +489,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login_resend_failed => 'Unable to resend right now';
 
   @override
-  String get login_demo_admin_filled => 'The admin email has been filled in. Please enter the password manually to continue securely';
+  String get login_demo_admin_filled => 'The admin email and demo password have been filled in. You can continue now';
 
   @override
-  String get login_demo_user_filled => 'The demo user email has been filled in. Please enter the password to continue';
+  String get login_demo_user_filled => 'The demo user email and password have been filled in. You can continue now';
 
   @override
   String get login_title => 'Sign In';
@@ -528,10 +534,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login_quick_demo => 'Quick sign-in with system accounts:';
 
   @override
-  String get login_demo_admin => 'General Manager (email only)';
+  String get login_demo_admin => 'General Manager (email + password)';
 
   @override
-  String get login_demo_user => 'Advertiser account (email only)';
+  String get login_demo_user => 'Advertiser account (email + password)';
 
   @override
   String get register_confirm_title => 'Confirm and activate your account';
@@ -979,6 +985,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get admin_no_reports_desc => 'All published listings are compliant and no violations have been reported.';
+
+  @override
+  String get admin_no_users => 'No user accounts found';
 
   @override
   String get admin_details_label => 'Details';
@@ -2217,6 +2226,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get map_clear_draw => 'Clear drawing';
 
   @override
+  String get map_clear_search => 'Clear search';
+
+  @override
   String get map_close => 'Close';
 
   @override
@@ -2794,6 +2806,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get detail_auth_prompt_message => 'To complete this action, please create an account and verify your email first.';
+
+  @override
+  String get detail_view_image => 'View image';
 
   @override
   String get detail_publish_date => 'Published on:';

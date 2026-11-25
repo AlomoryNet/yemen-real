@@ -27,37 +27,37 @@ class AdminStatsGrid extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 14,
           mainAxisSpacing: 14,
-          childAspectRatio: 1.8,
+          childAspectRatio: constraints.maxWidth < 600 ? 1.35 : 1.6,
           children: [
             AdminStatCard(
               context.l10n.admin_total_properties,
               '${stats.totalProperties}',
               Icons.apartment,
-              AppColors.primary,
+              AppColors.primaryInk,
             ),
             AdminStatCard(
               context.l10n.admin_published_properties,
               '${stats.publishedProperties}',
               Icons.check_circle_outline,
-              AppColors.success,
+              AppColors.successInk,
             ),
             AdminStatCard(
               context.l10n.admin_pending_review,
               '${stats.pendingProperties}',
               Icons.rate_review_outlined,
-              Colors.amber.shade800,
+              AppColors.warningInk,
             ),
             AdminStatCard(
               context.l10n.admin_total_users,
               '${stats.totalUsers}',
               Icons.people_outline,
-              AppColors.primaryDark,
+              AppColors.primaryInk,
             ),
             AdminStatCard(
               context.l10n.admin_commission_records,
               '${stats.totalCommissions}',
               Icons.receipt_long,
-              AppColors.accent,
+              AppColors.accentInk,
             ),
           ],
         );
@@ -88,18 +88,18 @@ class AdminStatCard extends StatelessWidget {
         side: BorderSide(color: AppColors.divider),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withAlpha(25),
+                color: color.withAlpha(AppColors.isDark ? 52 : 28),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -111,7 +111,7 @@ class AdminStatCard extends StatelessWidget {
                       fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(

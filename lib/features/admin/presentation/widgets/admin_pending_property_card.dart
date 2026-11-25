@@ -151,6 +151,8 @@ class _AdminPendingPropertyCardState
                     const SizedBox(height: 6),
                     Text(
                       p.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: AppFonts.cairo(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -197,11 +199,15 @@ class _AdminPendingPropertyCardState
                         ),
                         if (p.bedrooms > 0) ...[
                           const SizedBox(width: 8),
-                          Text(
-                            '• ${p.bedrooms} ${context.l10n.admin_rooms}',
-                            style: AppFonts.cairo(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
+                          Flexible(
+                            child: Text(
+                              '• ${p.bedrooms} ${context.l10n.admin_rooms}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppFonts.cairo(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
@@ -222,10 +228,10 @@ class _AdminPendingPropertyCardState
               color: AppColors.surfaceVariant.withAlpha(100),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Row(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final infoRows = <Widget>[
+                  Row(
                     children: [
                       Icon(Icons.person, size: 16, color: AppColors.primaryInk),
                       const SizedBox(width: 6),
@@ -242,9 +248,7 @@ class _AdminPendingPropertyCardState
                       ),
                     ],
                   ),
-                ),
-                Expanded(
-                  child: Row(
+                  Row(
                     children: [
                       Icon(Icons.phone, size: 16, color: AppColors.primaryInk),
                       const SizedBox(width: 6),
@@ -260,9 +264,7 @@ class _AdminPendingPropertyCardState
                       ),
                     ],
                   ),
-                ),
-                Expanded(
-                  child: Row(
+                  Row(
                     children: [
                       Icon(
                         Icons.calendar_today,
@@ -283,8 +285,23 @@ class _AdminPendingPropertyCardState
                       ),
                     ],
                   ),
-                ),
-              ],
+                ];
+
+                if (constraints.maxWidth < 560) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final row in infoRows)
+                        SizedBox(width: double.infinity, child: row),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    for (final row in infoRows) Expanded(child: row),
+                  ],
+                );
+              },
             ),
           ),
 

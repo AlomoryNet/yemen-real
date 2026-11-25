@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/constants/app_constants.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/property.dart';
@@ -28,7 +28,7 @@ class PropertyRepository {
     int offset = 0,
     bool onlyFeatured = false,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       var list = List<Property>.from(SupabaseService.demoProperties);
 
       // Status check (only published for public)
@@ -153,7 +153,7 @@ class PropertyRepository {
 
   /// Get property details by ID
   Future<Property> getPropertyById(String id) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final prop = SupabaseService.demoProperties.firstWhere(
         (p) => p.id == id,
         orElse: () => throw AppException(tr.sys_property_not_found),
@@ -189,7 +189,7 @@ class PropertyRepository {
     required Property property,
     required List<String> imageUrls,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final newId = 'prop-${DateTime.now().millisecondsSinceEpoch}';
       final images = imageUrls.asMap().entries.map((entry) {
         return PropertyImage(
@@ -280,7 +280,7 @@ class PropertyRepository {
 
   /// Update existing property
   Future<Property> updateProperty(Property property) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoProperties.indexWhere(
         (p) => p.id == property.id,
       );
@@ -327,7 +327,7 @@ class PropertyRepository {
 
   /// Update status only (published, hidden, archived, pending, rejected)
   Future<void> updatePropertyStatus(String id, String newStatus) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoProperties.indexWhere((p) => p.id == id);
       if (idx != -1) {
         final current = SupabaseService.demoProperties[idx];
@@ -350,7 +350,7 @@ class PropertyRepository {
 
   /// Get all properties awaiting admin approval (status = 'pending')
   Future<List<Property>> getPendingProperties() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoProperties
           .where((p) => p.status == AppConstants.statusPending)
           .toList();
@@ -378,7 +378,7 @@ class PropertyRepository {
 
   /// Approve property publishing (Exclusive to sole admin: Mohammed Al-Saqqaf)
   Future<void> approvePropertyPublishing(String id) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoProperties.indexWhere((p) => p.id == id);
       if (idx != -1) {
         final current = SupabaseService.demoProperties[idx];
@@ -408,7 +408,7 @@ class PropertyRepository {
 
   /// Reject property publishing (Exclusive to sole admin: Mohammed Al-Saqqaf)
   Future<void> rejectPropertyPublishing(String id, String reason) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoProperties.indexWhere((p) => p.id == id);
       if (idx != -1) {
         final current = SupabaseService.demoProperties[idx];
@@ -439,7 +439,7 @@ class PropertyRepository {
 
   /// Delete property
   Future<void> deleteProperty(String id) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       SupabaseService.demoProperties.removeWhere((p) => p.id == id);
       return;
     }
@@ -460,7 +460,7 @@ class PropertyRepository {
     int limit = 12,
     int offset = 0,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final owned = SupabaseService.demoProperties
           .where((p) => p.ownerId == userId || userId == 'demo-admin-1')
           .toList();
@@ -495,7 +495,7 @@ class PropertyRepository {
 
   /// Lightweight status counts for the owner's listings.
   Future<UserPropertyStats> getUserPropertyStats(String userId) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final owned = SupabaseService.demoProperties
           .where((p) => p.ownerId == userId || userId == 'demo-admin-1')
           .toList();
@@ -541,7 +541,7 @@ class PropertyRepository {
   // Favorites Management
   // ===========================================================================
   Future<bool> toggleFavorite(String userId, String propertyId) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       if (SupabaseService.demoFavoriteIds.contains(propertyId)) {
         SupabaseService.demoFavoriteIds.remove(propertyId);
         return false;
@@ -579,7 +579,7 @@ class PropertyRepository {
   }
 
   Future<bool> isFavorite(String userId, String propertyId) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoFavoriteIds.contains(propertyId);
     }
 
@@ -597,7 +597,7 @@ class PropertyRepository {
   }
 
   Future<List<Property>> getUserFavorites(String userId) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoProperties
           .where((p) => SupabaseService.demoFavoriteIds.contains(p.id))
           .toList();

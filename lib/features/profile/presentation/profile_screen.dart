@@ -9,7 +9,6 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/app_drawer.dart';
@@ -83,11 +82,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     if (!authState.isAuthenticated) {
       return Scaffold(
-        appBar: const AppHeader(),
+        appBar: AppHeader(
+          title: context.l10n.sh_drawer_profile,
+          showBack: true,
+        ),
         drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
-        bottomNavigationBar: Responsive.isDesktop(context)
-            ? null
-            : const AppBottomNavBar(currentRoute: '/profile'),
         body: AppPageBody(
           child: Center(
             child: EmptyStateView(
@@ -109,11 +108,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = authState.user!;
 
     return Scaffold(
-      appBar: const AppHeader(),
+      appBar: AppHeader(
+        title: context.l10n.sh_drawer_profile,
+        showBack: true,
+      ),
       drawer: Responsive.isDesktop(context) ? null : const AppDrawer(),
-      bottomNavigationBar: Responsive.isDesktop(context)
-          ? null
-          : const AppBottomNavBar(currentRoute: '/profile'),
       body: AppPageBody(
         child: SingleChildScrollView(
           child: Column(
@@ -159,22 +158,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Row(
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 6,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
                                         children: [
-                                          Flexible(
-                                            child: Text(
-                                              user.fullName,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: AppFonts.cairo(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.textPrimary,
-                                              ),
+                                          Text(
+                                            user.fullName,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppFonts.cairo(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textPrimary,
                                             ),
                                           ),
-                                          if (user.isAdmin) ...[
-                                            const SizedBox(width: 8),
+                                          if (user.isAdmin)
                                             Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
@@ -194,14 +194,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                                           .l10n
                                                           .prof_super_admin
                                                     : context.l10n.prof_admin,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                                 style: AppFonts.cairo(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
+                                                  color: AppColors.onAccent,
                                                 ),
                                               ),
                                             ),
-                                          ],
                                         ],
                                       ),
                                       const SizedBox(height: 4),
@@ -225,6 +226,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                 ),
                                 IconButton(
+                                  tooltip: _isEditing
+                                      ? context.l10n.close
+                                      : context.l10n.edit,
                                   icon: Icon(
                                     _isEditing
                                         ? Icons.close
@@ -299,7 +303,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 20),
-                                    Row(
+                                    Wrap(
+                                      spacing: 10,
+                                      runSpacing: 8,
                                       children: [
                                         ElevatedButton(
                                           onPressed: _isSaving
@@ -321,7 +327,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                                       .prof_save_changes,
                                                 ),
                                         ),
-                                        const SizedBox(width: 10),
                                         OutlinedButton(
                                           onPressed: () => setState(
                                             () => _isEditing = false,
@@ -455,10 +460,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         subtitle: Text(
           subtitle,
-          style: AppFonts.cairo(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-          ),
+          style: AppFonts.cairo(fontSize: 12, color: AppColors.textSecondary),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,

@@ -36,6 +36,8 @@ class AdminPropertiesTab extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     context.l10n.admin_properties_list_title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -87,8 +89,11 @@ class AdminPropertiesTab extends ConsumerWidget {
                             size: 18,
                           ),
                         ),
+                        isThreeLine: true,
                         title: Text(
                           p.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -96,70 +101,14 @@ class AdminPropertiesTab extends ConsumerWidget {
                         ),
                         subtitle: Text(
                           '${p.city} - ${p.district} • ${Formatters.formatCurrency(p.price, p.currency)} • ${context.l10n.admin_status_label}: ${AppConstants.getPropertyStatusNameAr(p.status)}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             StatusBadge.propertyStatus(p.status),
-                            if (p.status == AppConstants.statusPending) ...[
-                              const SizedBox(width: 4),
-                              IconButton(
-                                tooltip: context.l10n.admin_approve_tooltip,
-                                icon: const Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.success,
-                                  size: 22,
-                                ),
-                                onPressed: () async {
-                                  final repo = PropertyRepository();
-                                  await repo.approvePropertyPublishing(p.id);
-                                  ref.refresh(searchPropertiesProvider);
-                                  ref.refresh(adminStatsProvider);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          context.l10n.admin_approved_by_admin,
-                                          style: AppFonts.cairo(),
-                                        ),
-                                        backgroundColor: AppColors.success,
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                              IconButton(
-                                tooltip: context.l10n.admin_reject_request,
-                                icon: const Icon(
-                                  Icons.cancel,
-                                  color: AppColors.error,
-                                  size: 22,
-                                ),
-                                onPressed: () async {
-                                  final repo = PropertyRepository();
-                                  await repo.rejectPropertyPublishing(
-                                    p.id,
-                                    context.l10n.admin_rejected_by_admin_review,
-                                  );
-                                  ref.refresh(searchPropertiesProvider);
-                                  ref.refresh(adminStatsProvider);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          context
-                                              .l10n
-                                              .admin_rejected_status_updated,
-                                          style: AppFonts.cairo(),
-                                        ),
-                                        backgroundColor: AppColors.error,
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ],
                             const SizedBox(width: 8),
                             PopupMenuButton<String>(
                               onSelected: (action) async {
@@ -244,7 +193,9 @@ class AdminPropertiesTab extends ConsumerWidget {
                                   value: 'delete',
                                   child: Text(
                                     context.l10n.admin_delete_permanent,
-                                    style: const TextStyle(color: AppColors.error),
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -255,7 +206,7 @@ class AdminPropertiesTab extends ConsumerWidget {
                     },
                   );
                 },
-                loading: () => const LoadingView(),
+                loading: () => const LoadingView(skeleton: true),
                 error: (err, _) => ErrorView(message: err.toString()),
               ),
             ),

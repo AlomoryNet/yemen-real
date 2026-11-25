@@ -432,6 +432,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get close => 'إغلاق';
 
   @override
+  String get auth_show_password => 'إظهار كلمة المرور';
+
+  @override
+  String get auth_hide_password => 'إخفاء كلمة المرور';
+
+  @override
   String get mark_as_read => 'تحديد كمقروء';
 
   @override
@@ -483,10 +489,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get login_resend_failed => 'تعذر إعادة الإرسال حالياً';
 
   @override
-  String get login_demo_admin_filled => 'تمت كتابة بريد المدير العام فقط. يرجى إدخال كلمة المرور يدوياً للمتابعة بأمان';
+  String get login_demo_admin_filled => 'تمت كتابة بريد المدير العام وكلمة المرور التجريبية. يمكنك المتابعة مباشرة';
 
   @override
-  String get login_demo_user_filled => 'تمت كتابة بريد المستخدم التجريبي. يرجى إدخال كلمة المرور للمتابعة';
+  String get login_demo_user_filled => 'تمت كتابة بريد المستخدم التجريبي وكلمة المرور. يمكنك المتابعة مباشرة';
 
   @override
   String get login_title => 'تسجيل الدخول';
@@ -528,10 +534,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get login_quick_demo => 'تسجيل دخول سريع بحسابات النظام:';
 
   @override
-  String get login_demo_admin => 'المدير العام (إيميل فقط)';
+  String get login_demo_admin => 'المدير العام (إيميل وكلمة مرور)';
 
   @override
-  String get login_demo_user => 'حساب معلن (إيميل فقط)';
+  String get login_demo_user => 'حساب معلن (إيميل وكلمة مرور)';
 
   @override
   String get register_confirm_title => 'تأكيد وتفعيل الحساب';
@@ -979,6 +985,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get admin_no_reports_desc => 'كافة الإعلانات المعلنة مطابقة ولم يتم الإبلاغ عن أي مخالفة.';
+
+  @override
+  String get admin_no_users => 'لا توجد حسابات مستخدمين';
 
   @override
   String get admin_details_label => 'تفاصيل';
@@ -2217,6 +2226,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get map_clear_draw => 'مسح الرسم';
 
   @override
+  String get map_clear_search => 'مسح البحث';
+
+  @override
   String get map_close => 'إغلاق';
 
   @override
@@ -2794,6 +2806,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get detail_auth_prompt_message => 'لإكمال هذه العملية، يرجى إنشاء حساب وتأكيد بريدك الإلكتروني أولاً.';
+
+  @override
+  String get detail_view_image => 'عرض الصورة';
 
   @override
   String get detail_publish_date => 'تاريخ النشر:';

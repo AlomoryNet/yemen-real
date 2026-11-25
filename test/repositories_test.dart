@@ -6,18 +6,18 @@ import 'package:yemen_real_estate_portal/repositories/auth_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/commission_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/property_repository.dart';
 import 'package:yemen_real_estate_portal/repositories/rental_request_repository.dart';
-import 'package:yemen_real_estate_portal/config/env_config.dart';
+import 'package:yemen_real_estate_portal/config/app_config.dart';
 import 'package:yemen_real_estate_portal/services/supabase_service.dart';
 
 void main() {
   setUp(() async {
     // Ensure initialized in isolated mock/demo mode for local repository unit testing
-    EnvConfig.setForceDemoModeForTesting(true);
+    AppConfig.setForceDemoModeForTesting(true);
     await SupabaseService.initialize();
   });
 
   tearDownAll(() {
-    EnvConfig.setForceDemoModeForTesting(false);
+    AppConfig.setForceDemoModeForTesting(false);
   });
 
   group('Repositories Execution Tests', () {
@@ -205,3 +205,4 @@ void main() {
     );
   });
 }
+

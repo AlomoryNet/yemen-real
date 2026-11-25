@@ -77,13 +77,43 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
         tickers. Added `test/property_map_cluster_ticker_test.dart`; verified on
         USB with repeated cluster taps and no runtime errors.
 
-- [ ] **Accessibility + loading UX**
-      - Remaining low-contrast token: `PropertyTextStyles.badge()` uses
-        `textLight` on `accent` amber at 11px (below ideal WCAG).
-      - `Semantics` on icon buttons, 48dp tap targets, keyboard focus traversal
-        for web/desktop.
-      - Skeleton/shimmer loaders instead of spinners on lists and detail.
-      - Unify empty/error states via `EmptyStateView` / `ErrorView`.
+- [x] **Accessibility + loading UX** — verified on USB (2026-11-25).
+      - [x] `PropertyTextStyles.badgeOnAccent()` + `AppColors.onAccent` keep the
+        featured badge at AA contrast on the amber fill; contrast is asserted in
+        `test/property_text_styles_test.dart`.
+      - [x] `Semantics` labels/tooltips and 48dp tap targets on icon controls,
+        plus root `FocusTraversalGroup` reading-order traversal for web/desktop.
+      - [x] Static `SkeletonLoader` via `LoadingView(skeleton: true)` on map,
+        contract, deferred screens, favorites, detail, My Properties and admin
+        tabs; no extra tickers or infinite shimmer loops.
+      - [x] Unified loading/error/empty states via `LoadingView`, `ErrorView`
+        (with optional context title + retry) and `EmptyStateView`, including
+        map, contract load failures and admin pending/users tabs.
+
+- [x] **Map filter Reset no longer empties results** (2026-11-25). Resetting
+      the bottom-sheet filters clears the governorate label that `/map` writes
+      into the search field, so the stale free-text query cannot hide every
+      listing (especially with the English label). Added a widget regression;
+      `flutter analyze` clean, 115/115 tests. Fresh USB pass: Ibb (20) → Reset
+      → Apply showed 440 with an empty search field and no runtime errors/ANR.
+
+- [x] **Map/filter + profile/readability/admin/demo-data UX batch** (2026-11-25).
+      - [x] Map default governorate follows stored location (إب fallback), is
+        reflected in the filter sheet, and participates in actual filtering;
+        filter changes fit the camera to the full filtered set with expanded
+        bounds for tiny/degenerate results. `صنعاء` + `بيت بوس` stays at 2.
+      - [x] Filter sheet labels localize with `AppLocale`, selected chips use
+        `onPrimaryContainer`; home retains its original inline search Row, with
+        the compact filter/search button icons centered inside 48dp buttons.
+      - [x] Profile is pushed with a top back button and no bottom nav; drawer
+        uses `go` only for root destinations and `push` for hierarchical pages.
+      - [x] Status/featured badges use brightness-aware fill/ink colors; admin
+        header, tabs, PDF CTA, stats and list rows wrap instead of squeezing.
+      - [x] Demo mode seeds pending approvals, commissions, rental requests,
+        reports, favorites and usable login profiles; login shortcuts fill a
+        valid password. `flutter analyze` clean, 114/114 tests. Fresh USB
+        light/dark pass confirmed map defaults, Profile back-stack, badge ink
+        and admin layout with no errors or new ANR.
 
 - [ ] **Flow / product**
       - Deep links + share for property detail (web + app links, OG meta).

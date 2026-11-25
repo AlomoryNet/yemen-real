@@ -210,6 +210,7 @@ class _MyPropertiesScreenState extends ConsumerState<MyPropertiesScreen> {
                             },
                             loading: () => LoadingView(
                               message: context.l10n.myprops_loading,
+                              skeleton: true,
                             ),
                             error: (err, _) => ErrorView(
                               message: err.toString(),

@@ -22,7 +22,8 @@ class PropertyTextStyles {
     double? fontSize,
     FontWeight? fontWeight,
     double? height,
-  }) _fontFactory = AppFonts.cairo;
+  })
+  _fontFactory = AppFonts.cairo;
 
   @visibleForTesting
   static void setFontFactoryForTesting(
@@ -31,7 +32,8 @@ class PropertyTextStyles {
       double? fontSize,
       FontWeight? fontWeight,
       double? height,
-    }) factory,
+    })
+    factory,
   ) {
     _fontFactory = factory;
     _styles.clear();
@@ -55,55 +57,52 @@ class PropertyTextStyles {
     );
   }
 
-  static TextStyle price({double size = 18, FontWeight weight = FontWeight.bold}) =>
-      _cairo(
-        size: size,
-        weight: weight,
-        color: AppColors.primaryInk,
-        height: 1.2,
-      );
+  static TextStyle price({
+    double size = 18,
+    FontWeight weight = FontWeight.bold,
+  }) => _cairo(
+    size: size,
+    weight: weight,
+    color: AppColors.primaryInk,
+    height: 1.2,
+  );
 
   static TextStyle title({
     double size = 14,
     FontWeight weight = FontWeight.w600,
-  }) =>
-      _cairo(
-        size: size,
-        weight: weight,
-        color: AppColors.textPrimary,
-        height: 1.3,
-      );
+  }) => _cairo(
+    size: size,
+    weight: weight,
+    color: AppColors.textPrimary,
+    height: 1.3,
+  );
 
   static TextStyle meta({double size = 12}) => _cairo(
-        size: size,
-        weight: FontWeight.w400,
-        color: AppColors.textSecondary,
-        height: 1.25,
-      );
+    size: size,
+    weight: FontWeight.w400,
+    color: AppColors.textSecondary,
+    height: 1.25,
+  );
 
   static TextStyle muted({double size = 11}) => _cairo(
-        size: size,
-        weight: FontWeight.w400,
-        color: AppColors.textMuted,
-        height: 1.25,
-      );
+    size: size,
+    weight: FontWeight.w400,
+    color: AppColors.textMuted,
+    height: 1.25,
+  );
 
-  static TextStyle chip({double size = 11.5}) => _cairo(
-        size: size,
-        weight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      );
+  static TextStyle chip({double size = 11.5}) =>
+      _cairo(size: size, weight: FontWeight.w600, color: AppColors.textPrimary);
 
-  static TextStyle badge({double size = 11}) => _cairo(
-        size: size,
-        weight: FontWeight.bold,
-        color: AppColors.textLight,
-      );
+  static TextStyle badge({double size = 11}) =>
+      _cairo(size: size, weight: FontWeight.bold, color: AppColors.textLight);
+
+  /// Badge text on the amber accent fill. Uses a dark ink so small labels keep
+  /// WCAG AA contrast in both light and dark themes.
+  static TextStyle badgeOnAccent({double size = 11}) =>
+      _cairo(size: size, weight: FontWeight.bold, color: AppColors.onAccent);
 
   /// Tiny teal text used for the "price confirmed" caption on the map card.
-  static TextStyle caption({double size = 11}) => _cairo(
-        size: size,
-        weight: FontWeight.w600,
-        color: AppColors.primaryInk,
-      );
+  static TextStyle caption({double size = 11}) =>
+      _cairo(size: size, weight: FontWeight.w600, color: AppColors.primaryInk);
 }

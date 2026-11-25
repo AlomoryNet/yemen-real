@@ -8,6 +8,130 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
+DONE (filter reset/chip/zoom, 2026-11-25, uncommitted, `flutter analyze` clean,
+116/116 tests):
+- `/map` writes the active governorate's localized label into the floating
+  search field, but `_filterProperties` only ignores that label while the
+  governorate filter is still active. Pressing Reset in the bottom sheet or
+  deleting the governorate chip cleared the governorate and left the label
+  behind; in English mode `Ibb` then failed to match Arabic property data, so no
+  listings were shown.
+- Extracted `_clearAutoGovernorateSearchLabel()` and `_removeFilter()`.
+  `_showFilterModal()` and every `_activeFilterChips()` removal now use them:
+  clearing a governorate drops only the matching auto-written label (user-typed
+  text survives), and every chip removal requests a fresh fit-to-results.
+- `_fitToFiltered()` no longer floors the camera at zoom 11.5; the floor is 3.0
+  so Reset-to-all can frame Yemen. Degenerate bounds are still expanded and
+  `maxZoom` stays 14 for single-area results.
+- Added two regressions to `test/yemen_map_screen_test.dart`: sheet Reset and
+  chip delete both end at 440 listings with an empty search field.
+- Also fixed a latent contrast regression in the earlier accessibility pass:
+  `PropertyTextStyles.badgeOnAccent()` used `AppColors.accentInk` (brown on amber
+  in light mode) instead of the intended AA-safe `AppColors.onAccent`. Two tests
+  (`property_text_styles_test.dart`, `accessibility_widgets_test.dart`) caught
+  it; both now pass.
+- Fresh USB `flutter run -d ZY22G4C24N`: `/map` opened with Ibb (20 listings);
+  deleting the Ibb chip and separately Filter sheet → Reset → Apply both showed
+  440 listings, no search text, inactive Filters chip and a visibly wider
+  cluster spread (camera actually zoomed out). DTD hot reload reported no runtime
+  errors; ANR list unchanged (latest still `anr_2026-11-25-03-21-45-455`).
+
+DONE (map/profile/readability/admin/demo UX batch, 2026-11-25, uncommitted,
+`flutter analyze` clean, 114/114 tests):
+- Map: `_resolveDefaultGovernorate()` derives the initial governorate from
+  stored `settings_latitude`/`settings_longitude` (nearest governorate, إب
+  fallback) and writes the localized label into the search field. Applying the
+  default now affects real filtering instead of only the filter sheet.
+  Filter changes cancel the previous camera animation and call
+  `_requestFitToFiltered()`; the competing governorate `_animatedMapMove()` was
+  removed, so fit-to-results is the only camera authority. `_fitToFiltered()`
+  expands tiny/degenerate coordinate sets (`minSpan 0.006`, zoom 11.5–14) and
+  accounts for the floating header. The full filtered set drives count, list
+  and map; no viewport clipping and no "Search this area" action.
+- `PropertyFilterSheet`: Arabic/English property-type labels follow
+  `AppLocale.isArabic`; selected chips use `colorScheme.onPrimaryContainer`.
+  Home keeps the original inline search-field/filter/search `Row`; on compact
+  widths the 48dp icon-only filter/search buttons use plain `Icon` children so
+  the icons are centered inside the buttons, with `onAccent` badge ink.
+- Navigation: `ProfileScreen` is pushed with
+  `AppHeader(title: ..., showBack: true)` and no bottom nav. `AppDrawer.rootRoutes`
+  is only `/`, `/map`, `/my-properties`, `/admin`; other tiles use `push`. The
+  desktop rail Profile shortcut also pushes `/profile`. Profile name, admin
+  badge, phone and edit rows wrap instead of clipping.
+- Contrast: brightness-aware `AppColors` status fills/inks are used by every
+  `StatusBadge` case; detail featured badge/amber CTAs use `badgeOnAccent()` /
+  `AppColors.onAccent`; drawer tints and logout follow the active theme.
+- Admin: title/manager badge, tab strip/PDF CTA (<720dp), stat grid and list
+  headers/subtitles wrap and use theme tokens instead of squeezing.
+- Demo data: stable pending approvals, commissions, rental requests, reports,
+  favorites and login profiles are seeded in `SupabaseService._initDemoData()`;
+  dashboard user stats use `demoUsers.length`. Login shortcuts fill both email
+  and password with the valid `Demo@2026`.
+- Tests: added `test/demo_data_coverage_test.dart`,
+  `test/navigation_demo_shortcuts_test.dart`, plus map default/localization
+  regressions. The new widget test exposed and fixed two login-row overflows
+  (remember-me and sign-up rows) and added a GoRouter scope to the harness.
+- Home hero correction: the intended change was only to center the icons inside
+  the compact filter/search buttons, not to move the buttons onto a second row.
+  `home_hero_section.dart` now restores the original `Row` (Expanded `TextField`,
+  8dp gaps, inline filter/search buttons). Compact widths use plain
+  `FilledButton.tonal`/`ElevatedButton` with an `Icon` child, zero padding and
+  48dp minimum size, so each icon is centered; wide widths keep the labeled
+  `.icon` buttons. Contrast fixes (`onAccent`, `textLight`, 48dp targets) stay.
+  `flutter analyze` clean, 114/114 tests; DTD hot reload on USB showed the
+  `LayoutBuilder → Row → Expanded/TextField/SizedBox/Badge/SizedBox/ElevatedButton`
+  tree with no runtime errors.
+- USB verification (fresh debug launch, VM hot reload, no code changes after
+  launch): `/map` opened with `Ibb` default and 20 listings; filter sheet showed
+  the same governorate and localized English property types. Drawer → Profile
+  pushed a hierarchical page with Back,
+  no menu and no bottom nav; Back returned home. Light→Dark→Light repainted
+  immediately; `StatusBadge` ink changed from RGB(3,105,161) in light to
+  RGB(125,211,252) in dark. Admin header/stats/title rendered without squeeze.
+  No Flutter exception, no `RenderFlex overflow`, no new ANR (latest still
+  `anr_2026-11-25-03-21-45-455`). The device has real Supabase credentials, so
+  admin pending/commission counts remain 0 there; seeded demo records are
+  asserted in `test/demo_data_coverage_test.dart`.
+
+DONE (accessibility + loading UX, 2026-11-25, `flutter analyze` clean, 105/105 tests, uncommitted):
+- Contrast: added `AppColors.onAccent` (dark ink) and
+  `PropertyTextStyles.badgeOnAccent()`; `PropertyCard`'s featured badge now uses
+  them instead of `textLight` on amber. AA contrast is asserted in
+  `test/property_text_styles_test.dart`.
+- Semantics/targets: labeled the rental-modal close, profile edit/close, detail
+  favorite and thumbnail selector, contract editor close/delete, login/register
+  password toggles and map card details trailing action. Enlarged favorite,
+  close, map header/circle/draw/search/filter and contract edit targets to
+  48dp; added `Semantics(button: true, label: ...)` to map price and cluster
+  markers. Added root `FocusTraversalGroup(ReadingOrderTraversalPolicy())` in
+  `main.dart` for deterministic web/desktop keyboard order.
+- Loading: added static `lib/shared/widgets/skeleton_loader.dart` and opt-in
+  `LoadingView(skeleton: true)`. Wired skeletons into map, contract, deferred
+  screens, favorites, property detail, My Properties and all admin tabs plus
+  pending moderation. Static placeholders were chosen over shimmer to avoid
+  adding tickers/endless animations.
+- Empty/error: unified map states on `LoadingView` / `ErrorView(title: ...)` /
+  `EmptyStateView`; added a contract `_loadError` retry path, replaced the admin
+  pending-properties banner with `EmptyStateView`, and added `admin_no_users`
+  handling in the users tab. Added ARB keys `auth_show_password`,
+  `auth_hide_password`, `admin_no_users`, `map_clear_search`, `detail_view_image`
+  and regenerated l10n.
+- USB regression fix found during verification: `YemenMapScreen` now owns one
+  reusable camera `AnimationController` (restored/reset per move, listener
+  removed and controller disposed in `dispose()`), and `PropertyMapView` guards
+  late `onPositionChanged` callbacks with `mounted`. This removes the
+  `setState() called after dispose()` animation error when a route is popped
+  during a filter/search camera move. Covered by a new
+  `test/yemen_map_screen_test.dart` pop-mid-animation case.
+- Verification: `flutter analyze` clean, `flutter test` 105/105, `dart format`
+  on changed Dart files. Fresh USB cold launch: filter `صنعاء`+`بيت بوس` returned
+  exactly 2 listings in both map and list views; detail thumbnail/favorite
+  tooltips, contract preview/editor, admin pending empty state and Users tab all
+  rendered. No `E/flutter`, `FlutterError`, `RenderFlex` overflow or
+  `setState()` errors in logcat for the current PID. ANR directory still shows
+  the 03:21:44 focus-timeout entry from earlier PID 21160; no new ANR from the
+  current PID 29901.
+
 DONE (admin list paging, 2026-11-25, `flutter analyze` clean, 100/100 tests):
 - Replaced the four unbounded admin selects (profiles, commissions, reports,
   rental requests) with bounded repository pages: `get*Page({limit, offset})`

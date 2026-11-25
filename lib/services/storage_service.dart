@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/constants/app_constants.dart';
 import '../core/exceptions/app_exception.dart';
 import '../core/l10n/app_strings.dart';
@@ -54,7 +54,7 @@ class StorageService {
       );
     }
 
-    if (EnvConfig.isDemoMode || _supabaseClient == null) {
+    if (AppConfig.isDemoMode || _supabaseClient == null) {
       // In demo mode without configured Supabase, return a high quality architectural placeholder
       return 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
     }

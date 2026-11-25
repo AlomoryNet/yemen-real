@@ -21,11 +21,8 @@ class StatusBadge extends StatelessWidget {
     final isRent = dealType == AppConstants.dealRent;
     return StatusBadge(
       text: AppConstants.getDealTypeNameAr(dealType),
-      backgroundColor: isRent ? AppColors.infoMuted : AppColors.primaryMuted,
-      // primaryInk stays readable in dark mode (bright teal vs. deep teal).
-      textColor: isRent
-          ? (AppColors.isDark ? const Color(0xFF38BDF8) : AppColors.info)
-          : AppColors.primaryInk,
+      backgroundColor: isRent ? AppColors.infoFill : AppColors.primaryFill,
+      textColor: isRent ? AppColors.infoInk : AppColors.primaryInk,
       icon: isRent ? Icons.key_outlined : Icons.sell_outlined,
     );
   }
@@ -35,25 +32,25 @@ class StatusBadge extends StatelessWidget {
     Color fg;
     switch (status) {
       case AppConstants.statusPublished:
-        bg = AppColors.successMuted;
-        fg = AppColors.success;
+        bg = AppColors.successFill;
+        fg = AppColors.successInk;
         break;
       case AppConstants.statusPending:
-        bg = AppColors.warningMuted;
-        fg = AppColors.accentInk;
+        bg = AppColors.warningFill;
+        fg = AppColors.warningInk;
         break;
       case AppConstants.statusDraft:
         bg = AppColors.surfaceVariant;
         fg = AppColors.textSecondary;
         break;
       case AppConstants.statusHidden:
-        bg = AppColors.warningMuted;
-        fg = AppColors.warning;
+        bg = AppColors.warningFill;
+        fg = AppColors.warningInk;
         break;
       case AppConstants.statusArchived:
       case AppConstants.statusRejected:
-        bg = AppColors.errorMuted;
-        fg = AppColors.error;
+        bg = AppColors.errorFill;
+        fg = AppColors.errorInk;
         break;
       default:
         bg = AppColors.surfaceVariant;
@@ -72,26 +69,26 @@ class StatusBadge extends StatelessWidget {
     Color fg;
     switch (status) {
       case AppConstants.reqStatusNew:
-        bg = AppColors.infoMuted;
-        fg = AppColors.info;
+        bg = AppColors.infoFill;
+        fg = AppColors.infoInk;
         break;
       case AppConstants.reqStatusUnderReview:
-        bg = AppColors.warningMuted;
-        fg = AppColors.warning;
+        bg = AppColors.warningFill;
+        fg = AppColors.warningInk;
         break;
       case AppConstants.reqStatusContacted:
-        bg = AppColors.primaryMuted;
-        fg = AppColors.primary;
+        bg = AppColors.primaryFill;
+        fg = AppColors.primaryInk;
         break;
       case AppConstants.reqStatusProvisionallyAccepted:
       case AppConstants.reqStatusCompleted:
-        bg = AppColors.successMuted;
-        fg = AppColors.success;
+        bg = AppColors.successFill;
+        fg = AppColors.successInk;
         break;
       case AppConstants.reqStatusRejected:
       case AppConstants.reqStatusCancelled:
-        bg = AppColors.errorMuted;
-        fg = AppColors.error;
+        bg = AppColors.errorFill;
+        fg = AppColors.errorInk;
         break;
       default:
         bg = AppColors.surfaceVariant;
@@ -110,16 +107,16 @@ class StatusBadge extends StatelessWidget {
     Color fg;
     switch (status) {
       case AppConstants.commStatusPaid:
-        bg = AppColors.successMuted;
-        fg = AppColors.success;
+        bg = AppColors.successFill;
+        fg = AppColors.successInk;
         break;
       case AppConstants.commStatusDue:
-        bg = AppColors.warningMuted;
-        fg = AppColors.warning;
+        bg = AppColors.warningFill;
+        fg = AppColors.warningInk;
         break;
       case AppConstants.commStatusCancelled:
-        bg = AppColors.errorMuted;
-        fg = AppColors.error;
+        bg = AppColors.errorFill;
+        fg = AppColors.errorInk;
         break;
       default:
         bg = AppColors.surfaceVariant;

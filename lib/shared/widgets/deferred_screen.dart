@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
-import '../../core/theme/app_colors.dart';
 import 'empty_state_view.dart';
+import 'loading_view.dart';
 
 /// Loads a deferred route library once, then builds the screen.
 ///
@@ -49,24 +48,7 @@ class _DeferredScreenState extends State<DeferredScreen> {
       future: _loadFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(
-                    widget.loadingText,
-                    style: AppFonts.cairo(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
+          return Scaffold(body: LoadingView(message: widget.loadingText));
         }
         if (snapshot.hasError) {
           return Scaffold(

@@ -35,6 +35,8 @@ class AdminCommissionsTab extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     context.l10n.admin_commissions_list_title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -49,6 +51,7 @@ class AdminCommissionsTab extends ConsumerWidget {
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accent,
+                        foregroundColor: AppColors.onAccent,
                       ),
                       icon: const Icon(Icons.add, size: 16),
                       label: Text(context.l10n.admin_add_commission),
@@ -110,8 +113,11 @@ class AdminCommissionsTab extends ConsumerWidget {
                             size: 18,
                           ),
                         ),
+                        isThreeLine: true,
                         title: Text(
                           '${Formatters.formatCurrency(c.totalAmount, c.currency)} - ${c.propertyTitle ?? context.l10n.admin_registered_property}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -119,6 +125,8 @@ class AdminCommissionsTab extends ConsumerWidget {
                         ),
                         subtitle: Text(
                           '${context.l10n.admin_liable_party}: ${AppConstants.getLiablePartyNameAr(c.liableParty)} • ${context.l10n.admin_settlement_method}: ${c.settlementMethod ?? context.l10n.admin_awaiting_collection}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
@@ -164,7 +172,7 @@ class AdminCommissionsTab extends ConsumerWidget {
                     },
                   );
                 },
-                loading: () => const LoadingView(),
+                loading: () => const LoadingView(skeleton: true),
                 error: (err, _) => ErrorView(message: err.toString()),
               ),
             ),

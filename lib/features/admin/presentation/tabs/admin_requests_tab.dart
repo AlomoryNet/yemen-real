@@ -35,6 +35,8 @@ class AdminRequestsTab extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     context.l10n.admin_requests_list_title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -97,8 +99,11 @@ class AdminRequestsTab extends ConsumerWidget {
                             size: 18,
                           ),
                         ),
+                        isThreeLine: true,
                         title: Text(
                           '${req.requestNumber} - ${req.fullName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -106,6 +111,8 @@ class AdminRequestsTab extends ConsumerWidget {
                         ),
                         subtitle: Text(
                           '${context.l10n.admin_phone_label}: ${req.phone} • ${context.l10n.admin_property_label}: ${req.propertyTitle ?? req.propertyId}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
@@ -168,7 +175,7 @@ class AdminRequestsTab extends ConsumerWidget {
                     },
                   );
                 },
-                loading: () => const LoadingView(),
+                loading: () => const LoadingView(skeleton: true),
                 error: (err, _) => ErrorView(message: err.toString()),
               ),
             ),

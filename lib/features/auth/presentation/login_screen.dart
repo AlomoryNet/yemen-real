@@ -129,7 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _fillDemoAdmin() {
     _emailController.text = 'mo772522233@gmail.com';
-    _passwordController.clear();
+    _passwordController.text = 'Demo@2026';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -144,7 +144,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _fillDemoUser() {
     _emailController.text = 'user@yemenrealestate.local';
-    _passwordController.clear();
+    _passwordController.text = 'Demo@2026';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -264,12 +264,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                             if (isUnconfirmed) {
                               boxBg = AppColors.warningMuted;
-                              borderColor = AppColors.warning.withValues(alpha: 0.3);
+                              borderColor = AppColors.warning.withValues(
+                                alpha: 0.3,
+                              );
                               textColor = AppColors.accentInk;
                               iconData = Icons.mark_email_unread_outlined;
                             } else if (isExpired || isRateLimited) {
                               boxBg = AppColors.warningMuted;
-                              borderColor = AppColors.warning.withValues(alpha: 0.3);
+                              borderColor = AppColors.warning.withValues(
+                                alpha: 0.3,
+                              );
                               textColor = AppColors.accentInk;
                               iconData = isRateLimited
                                   ? Icons.timer_outlined
@@ -393,6 +397,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           hintText: '••••••••',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? context.l10n.auth_show_password
+                                : context.l10n.auth_hide_password,
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility_off
@@ -419,11 +426,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             onChanged: (val) =>
                                 setState(() => _rememberMe = val ?? false),
                           ),
-                          Text(
-                            context.l10n.login_remember_me,
-                            style: AppFonts.cairo(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
+                          Flexible(
+                            child: Text(
+                              context.l10n.login_remember_me,
+                              maxLines: 2,
+                              style: AppFonts.cairo(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
                           const Spacer(),
@@ -473,11 +483,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            context.l10n.login_no_account,
-                            style: AppFonts.cairo(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
+                          Flexible(
+                            child: Text(
+                              context.l10n.login_no_account,
+                              maxLines: 2,
+                              style: AppFonts.cairo(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
                           TextButton(

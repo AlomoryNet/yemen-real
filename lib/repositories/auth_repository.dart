@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/constants/app_constants.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/user_profile.dart';
@@ -22,7 +22,7 @@ class AuthRepository {
 
   /// Check current active user profile
   Future<UserProfile?> getCurrentUser() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoCurrentUser;
     }
 
@@ -76,7 +76,7 @@ class AuthRepository {
   }) async {
     final cleanEmail = email.trim().toLowerCase();
 
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       if (cleanEmail == 'mo772522233@gmail.com' ||
           cleanEmail.contains('admin')) {
         SupabaseService.demoCurrentUser = UserProfile(
@@ -167,7 +167,7 @@ class AuthRepository {
     required String phone,
   }) async {
     final cleanEmail = email.trim().toLowerCase();
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final exists = SupabaseService.demoUsers.any(
         (u) => u.email?.toLowerCase() == cleanEmail,
       );
@@ -251,7 +251,7 @@ class AuthRepository {
       }
     }
 
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       _lastResendTime = DateTime.now();
       return;
     }
@@ -271,7 +271,7 @@ class AuthRepository {
   /// Verify user email (for testing or direct verification callback)
   Future<void> verifyUserEmail(String email) async {
     final cleanEmail = email.trim().toLowerCase();
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoUsers.indexWhere(
         (u) => u.email?.toLowerCase() == cleanEmail,
       );
@@ -284,7 +284,7 @@ class AuthRepository {
 
   /// Sign out
   Future<void> signOut() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       SupabaseService.demoCurrentUser = null;
       return;
     }
@@ -293,7 +293,7 @@ class AuthRepository {
 
   /// Send password reset email
   Future<void> sendPasswordReset(String email) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return;
     }
     try {
@@ -310,7 +310,7 @@ class AuthRepository {
     String? phone,
     String? avatarUrl,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       if (SupabaseService.demoCurrentUser != null) {
         SupabaseService.demoCurrentUser = SupabaseService.demoCurrentUser!
             .copyWith(fullName: fullName, phone: phone, avatarUrl: avatarUrl);
