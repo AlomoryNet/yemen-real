@@ -1643,7 +1643,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadiusGeometry.all(Radius.circular(16.0)),
         border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
