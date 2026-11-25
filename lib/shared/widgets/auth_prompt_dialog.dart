@@ -129,7 +129,7 @@ class AuthPromptDialog extends StatelessWidget {
                       'reason': message,
                     },
                   );
-                  context.push(uri.toString());
+                  context.go(uri.toString());
                 },
                 child: Text(
                   context.l10n.sh_login,
@@ -160,7 +160,7 @@ class AuthPromptDialog extends StatelessWidget {
                       'reason': message,
                     },
                   );
-                  context.push(uri.toString());
+                  context.go(uri.toString());
                 },
                 child: Text(
                   context.l10n.sh_auth_register_new,

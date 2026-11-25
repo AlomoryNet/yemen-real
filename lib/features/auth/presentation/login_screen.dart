@@ -7,7 +7,6 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../shared/widgets/app_logo.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -161,7 +160,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const AppLogo(size: 34), centerTitle: true),
+      appBar: AppBar(
+        title: Text(
+          context.l10n.login_title,
+          style: AppFonts.cairo(
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -372,6 +380,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
                         validator: Validators.email,
                         decoration: const InputDecoration(
                           hintText: 'name@example.com',
@@ -392,6 +401,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
                         validator: Validators.password,
                         decoration: InputDecoration(
                           hintText: '••••••••',
@@ -438,7 +448,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const Spacer(),
                           TextButton(
-                            onPressed: () => context.push('/forgot-password'),
+                            onPressed: () => context.go('/forgot-password'),
                             child: Text(
                               context.l10n.login_forgot_password,
                               style: AppFonts.cairo(
@@ -493,30 +503,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             ),
                           ),
-                          TextButton(
-                            onPressed: () {
-                              final redirectTo = GoRouterState.of(
-                                context,
-                              ).uri.queryParameters['redirectTo'];
-                              final reason = GoRouterState.of(
-                                context,
-                              ).uri.queryParameters['reason'];
-                              final uri = Uri(
-                                path: '/register',
-                                queryParameters: {
-                                  if (redirectTo != null)
-                                    'redirectTo': redirectTo,
-                                  if (reason != null) 'reason': reason,
-                                },
-                              );
-                              context.push(uri.toString());
-                            },
-                            child: Text(
-                              context.l10n.login_create_account,
-                              style: AppFonts.cairo(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primaryInk,
+                          Flexible(
+                            child: TextButton(
+                              onPressed: () {
+                                final redirectTo = GoRouterState.of(
+                                  context,
+                                ).uri.queryParameters['redirectTo'];
+                                final reason = GoRouterState.of(
+                                  context,
+                                ).uri.queryParameters['reason'];
+                                final uri = Uri(
+                                  path: '/register',
+                                  queryParameters: {
+                                    if (redirectTo != null)
+                                      'redirectTo': redirectTo,
+                                    if (reason != null) 'reason': reason,
+                                  },
+                                );
+                                context.go(uri.toString());
+                              },
+                              child: Text(
+                                context.l10n.login_create_account,
+                                style: AppFonts.cairo(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryInk,
+                                ),
                               ),
                             ),
                           ),

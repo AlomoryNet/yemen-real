@@ -6,7 +6,6 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../shared/widgets/app_logo.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -45,7 +44,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const AppLogo(size: 34), centerTitle: true),
+      appBar: AppBar(
+        title: Text(
+          context.l10n.forgot_title,
+          style: AppFonts.cairo(
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -136,6 +144,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
             validator: Validators.email,
             decoration: const InputDecoration(
               hintText: 'name@example.com',

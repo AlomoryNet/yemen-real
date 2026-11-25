@@ -6,7 +6,6 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../shared/widgets/app_logo.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -257,7 +256,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const AppLogo(size: 34), centerTitle: true),
+      appBar: AppBar(
+        title: Text(
+          context.l10n.register_title,
+          style: AppFonts.cairo(
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -412,6 +420,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _nameController,
+                        textInputAction: TextInputAction.next,
                         validator: (val) => Validators.requiredField(
                           val,
                           context.l10n.register_full_name,
@@ -435,6 +444,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
                         validator: Validators.email,
                         decoration: const InputDecoration(
                           hintText: 'name@example.com',
@@ -455,6 +465,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       TextFormField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.next,
                         validator: Validators.phone,
                         decoration: InputDecoration(
                           hintText: context.l10n.register_phone_hint,
@@ -494,6 +505,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                         ),
                         onFieldSubmitted: (_) => _submit(),
+                        textInputAction: TextInputAction.done,
                       ),
                       const SizedBox(height: 24),
 
@@ -502,7 +514,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textLight,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: const StadiumBorder(),
                           ),
                           onPressed: authState.isLoading ? null : _submit,
                           child: authState.isLoading
@@ -516,9 +531,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 )
                               : Text(
                                   context.l10n.register_submit,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: AppFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
+                                    color: AppColors.textLight,
                                   ),
                                 ),
                         ),
@@ -529,21 +547,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            context.l10n.register_have_account,
-                            style: AppFonts.cairo(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => context.push('/login'),
+                          Flexible(
                             child: Text(
-                              context.l10n.register_login_link,
+                              context.l10n.register_have_account,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: AppFonts.cairo(
                                 fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primaryInk,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            child: TextButton(
+                              onPressed: () => context.go('/login'),
+                              child: Text(
+                                context.l10n.register_login_link,
+                                style: AppFonts.cairo(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryInk,
+                                ),
                               ),
                             ),
                           ),

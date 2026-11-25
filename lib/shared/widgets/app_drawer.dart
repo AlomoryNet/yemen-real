@@ -240,7 +240,7 @@ class AppDrawer extends ConsumerWidget {
                             ),
                             onPressed: () {
                               Navigator.pop(context);
-                              context.push('/login');
+                              context.go('/login');
                             },
                           ),
                   ),
