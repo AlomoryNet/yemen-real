@@ -586,16 +586,23 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
     required bool selected,
     required VoidCallback onTap,
   }) {
-    final onPrimaryContainer =
-        Theme.of(context).colorScheme.onPrimaryContainer;
     return FilterChip(
       showCheckmark: false,
       selected: selected,
-      label: Text(label),
+      backgroundColor: AppColors.surfaceVariant,
+      selectedColor: AppColors.primary,
+      label: Text(
+        label,
+        style: AppFonts.cairo(
+          fontSize: 13,
+          fontWeight: selected ? FontWeight.bold : FontWeight.w700,
+          color: selected ? AppColors.textLight : AppColors.textPrimary,
+        ),
+      ),
       avatar: Icon(
         icon,
         size: 16,
-        color: selected ? onPrimaryContainer : AppColors.primaryInk,
+        color: selected ? AppColors.textLight : AppColors.primaryInk,
       ),
       onSelected: (_) => onTap(),
     );

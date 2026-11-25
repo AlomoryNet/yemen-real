@@ -10,6 +10,7 @@ import 'package:yemen_real_estate_portal/models/property.dart';
 import 'package:yemen_real_estate_portal/services/supabase_service.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/property/favorite_button.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/property_card.dart';
+import 'package:yemen_real_estate_portal/shared/widgets/property_filter_sheet.dart';
 
 void main() {
   setUp(() async {
@@ -94,7 +95,34 @@ void main() {
     expect(target.height, 48);
 
     final featured = tester.widget<Text>(find.text('Featured'));
-    expect(featured.style?.color, AppColors.onAccent);
+    expect(featured.style?.color, AppColors.onAccentBadge);
+  });
+
+  testWidgets('Filter chips use high-contrast ink in light mode', (
+    tester,
+  ) async {
+    AppColors.isDark = false;
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('en', 'US'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PropertyFilterSheet(
+              initial: PropertyFilterSelection(),
+              showAdvancedFilters: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final apartment = tester.widget<Text>(find.text('Apartments'));
+    final bedrooms = tester.widget<Text>(find.text('1+'));
+    expect(apartment.style?.color, AppColors.textPrimary);
+    expect(bedrooms.style?.color, AppColors.textPrimary);
   });
 }
 

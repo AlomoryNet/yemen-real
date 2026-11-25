@@ -8,6 +8,30 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
+DONE (readability fix, 2026-11-25, uncommitted, `flutter analyze` clean,
+125/125 tests):
+- `PropertyFilterSheet._buildFilterChip()` now sets explicit label styles.
+  Unselected chips use `AppColors.textPrimary` on `AppColors.surfaceVariant`
+  instead of the theme's muted `textSecondary`, which was too faint in light
+  mode; selected chips and their icons use white on `AppColors.primary`.
+  This covers both the property-type options and the advanced minimum-bedroom
+  options because they share the same chip builder.
+- Added `AppColors.accentBadgeFill` (`#92400E`) and `AppColors.onAccentBadge`
+  (white). `PropertyCard` and the property-detail header now render the small
+  Featured badge with white text on that deeper amber fill in both themes. The
+  previous bright `#D97706` fill with dark ink was hard to read; the bright fill
+  and dark `onAccent` token remain for the hero count badge and admin/detail/
+  profile icons where they already read well.
+- Renamed `PropertyTextStyles.badgeOnAccent()` to `featuredBadge()` to reflect
+  the new fill/ink pair, and updated its AA-contrast regression. Added a widget
+  regression asserting light-mode filter chip labels use `textPrimary`.
+- Verification: `flutter analyze` clean; `flutter test` 125/125. Fresh USB run
+  on `ZY22G4C24N` with DTD hot reload: the filter sheet's property chips were
+  live with the new label widget (widget inspector pointed at
+  `property_filter_sheet.dart:594`), and Featured cards rendered after switching
+  to Dark in Settings. No runtime errors and no new ANR (latest remains
+  `anr_2026-11-25-03-21-45-455`).
+
 DONE (unified map query, 2026-11-25, uncommitted, `flutter analyze` clean,
 124/124 tests):
 - Replaced the map screen's private filter fields with one immutable

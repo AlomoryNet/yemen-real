@@ -55,14 +55,15 @@ void main() {
       expect(PropertyTextStyles.muted().height, 1.25);
       expect(PropertyTextStyles.chip().height, isNull);
       expect(PropertyTextStyles.badge().height, isNull);
-      expect(PropertyTextStyles.badgeOnAccent().height, isNull);
+      expect(PropertyTextStyles.featuredBadge().height, isNull);
       expect(PropertyTextStyles.caption().height, isNull);
     });
 
-    test('badgeOnAccent keeps AA contrast on the amber fill', () {
-      expect(PropertyTextStyles.badgeOnAccent().color, AppColors.onAccent);
+    test('featuredBadge keeps AA contrast on the deep amber fill', () {
+      expect(PropertyTextStyles.featuredBadge().color, AppColors.onAccentBadge);
 
-      final contrast = _contrastRatio(AppColors.onAccent, AppColors.accent);
+      final contrast =
+          _contrastRatio(AppColors.onAccentBadge, AppColors.accentBadgeFill);
       expect(contrast, greaterThanOrEqualTo(4.5));
     });
   });

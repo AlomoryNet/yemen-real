@@ -423,12 +423,12 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.accent,
+                            color: AppColors.accentBadgeFill,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             context.l10n.sh_property_featured,
-                            style: PropertyTextStyles.badgeOnAccent(),
+                            style: PropertyTextStyles.featuredBadge(),
                           ),
                         ),
                     ],

@@ -66,6 +66,21 @@ flutter test      → suite (last known: 124 tests)
 ```
 
 ## Status — latest
+- Readability fix (uncommitted, after `f85d78b` was committed/pushed): filter
+  sheet chips (property type + minimum bedrooms) now set explicit label styles
+  instead of relying on the theme's muted `textSecondary`: unselected labels use
+  `AppColors.textPrimary` on `AppColors.surfaceVariant`, selected labels and
+  icons use white on `AppColors.primary`. The featured badge in `PropertyCard`
+  and property detail now pairs white ink (`AppColors.onAccentBadge`) with a
+  deeper amber fill (`AppColors.accentBadgeFill`) so it reads in both themes;
+  the old bright-amber/dark-ink pair was hard to read. Renamed
+  `PropertyTextStyles.badgeOnAccent()` → `featuredBadge()`, added contrast and
+  chip-label regressions (125/125 tests), and kept the bright-amber/dark-ink
+  token for the other amber badges (hero count, admin/detail/profile icons).
+  Fresh USB run + DTD hot reload: filter sheet remained readable in light mode
+  (inspector confirmed the new label widget), Featured cards rendered in dark
+  mode, no runtime errors and no new ANR (latest remains
+  `anr_2026-11-25-03-21-45-455`).
 - Env config moved off the exposed Dart file to `.env` (uncommitted): removed
   `lib/config/env_config.dart` entirely; Supabase URL/key now read directly via
   `String.fromEnvironment('SUPABASE_URL'/'SUPABASE_ANON_KEY', defaultValue: '')` at

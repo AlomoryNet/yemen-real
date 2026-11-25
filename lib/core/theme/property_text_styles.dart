@@ -97,10 +97,15 @@ class PropertyTextStyles {
   static TextStyle badge({double size = 11}) =>
       _cairo(size: size, weight: FontWeight.bold, color: AppColors.textLight);
 
-  /// Badge text on the amber accent fill. Uses a dark ink so small labels keep
-  /// WCAG AA contrast in both light and dark themes.
-  static TextStyle badgeOnAccent({double size = 11}) =>
-      _cairo(size: size, weight: FontWeight.bold, color: AppColors.onAccent);
+  /// White badge text on the deep amber featured-badge fill.
+  ///
+  /// The brighter [AppColors.accent] fill needs dark ink, but the tiny
+  /// "Featured" label reads much more clearly in white on this darker surface.
+  static TextStyle featuredBadge({double size = 11}) => _cairo(
+        size: size,
+        weight: FontWeight.bold,
+        color: AppColors.onAccentBadge,
+      );
 
   /// Tiny teal text used for the "price confirmed" caption on the map card.
   static TextStyle caption({double size = 11}) =>

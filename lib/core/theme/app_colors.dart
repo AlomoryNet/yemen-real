@@ -71,6 +71,12 @@ class AppColors {
   /// Kept white for text over images/gradients/footers in either theme.
   static const Color textLight = Color(0xFFF8FAFC);
 
+  /// Deep amber used behind the small "Featured" badge. The brighter [accent]
+  /// fill only works with dark ink; white text needs this darker surface to
+  /// stay legible in both themes.
+  static const Color accentBadgeFill = Color(0xFF92400E);
+  static const Color onAccentBadge = textLight;
+
   /// Mirror of the effective app brightness, set from `main.dart`.
   /// Screens read the semantic getters below; they never need a BuildContext.
   static bool isDark = false;
