@@ -1,6 +1,6 @@
 import 'package:csv/csv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/constants/app_constants.dart';
 import '../models/admin_list_page.dart';
 import '../core/exceptions/app_exception.dart';
@@ -39,7 +39,7 @@ class AdminRepository {
 
   /// Fetch dashboard analytical summary
   Future<AdminDashboardStats> getDashboardStats() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final totalProps = SupabaseService.demoProperties.length;
       final pubProps = SupabaseService.demoProperties
           .where((p) => p.status == AppConstants.statusPublished)
@@ -63,7 +63,7 @@ class AdminRepository {
         totalProperties: totalProps,
         publishedProperties: pubProps,
         pendingProperties: pendingProps,
-        totalUsers: 14,
+        totalUsers: SupabaseService.demoUsers.length,
         pendingRentalRequests: pendingReqs,
         openReports: openReps,
         totalCommissions: totalComms,
@@ -156,7 +156,7 @@ class AdminRepository {
   }
 
   Future<int> countUsers() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoUsers.length;
     }
 
@@ -171,7 +171,7 @@ class AdminRepository {
     required int limit,
     required int offset,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return pageAdminDemo(
         SupabaseService.demoUsers,
         offset,
@@ -213,7 +213,7 @@ class AdminRepository {
 
   /// Change user role (Super Admin action)
   Future<void> updateUserRole(String userId, String newRole) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return;
     }
 

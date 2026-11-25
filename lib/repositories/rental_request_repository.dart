@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/constants/app_constants.dart';
 import '../models/admin_list_page.dart';
 import '../core/exceptions/app_exception.dart';
@@ -27,7 +27,7 @@ class RentalRequestRepository {
     final randomSuffix = 1000 + Random().nextInt(9000);
     final requestNumber = 'REQ-${DateTime.now().year}-$randomSuffix';
 
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final newReq = RentalRequest(
         id: 'req-${DateTime.now().millisecondsSinceEpoch}',
         requestNumber: requestNumber,
@@ -80,7 +80,7 @@ class RentalRequestRepository {
 
   /// Get user's submitted rental requests
   Future<List<RentalRequest>> getUserRentalRequests(String userId) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoRentalRequests
           .where(
             (r) =>
@@ -137,7 +137,7 @@ class RentalRequestRepository {
   }
 
   Future<int> countRentalRequests() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoRentalRequests.length;
     }
 
@@ -152,7 +152,7 @@ class RentalRequestRepository {
     required int limit,
     required int offset,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return pageAdminDemo(
         SupabaseService.demoRentalRequests,
         offset,
@@ -205,7 +205,7 @@ class RentalRequestRepository {
     required String status,
     String? adminNotes,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoRentalRequests.indexWhere(
         (r) => r.id == requestId,
       );

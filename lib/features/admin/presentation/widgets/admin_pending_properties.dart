@@ -6,6 +6,7 @@ import '../../../../core/l10n/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../providers/admin_provider.dart';
 import '../../../../providers/property_provider.dart';
+import '../../../../shared/widgets/empty_state_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 
@@ -51,12 +52,12 @@ class _AdminPendingPropertiesSectionState
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
+                    color: AppColors.warningFill,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.rate_review_rounded,
-                    color: Colors.amber.shade900,
+                    color: AppColors.warningInk,
                     size: 24,
                   ),
                 ),
@@ -70,6 +71,8 @@ class _AdminPendingPropertiesSectionState
                           Flexible(
                             child: Text(
                               context.l10n.admin_pending_title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: AppFonts.cairo(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -99,7 +102,7 @@ class _AdminPendingPropertiesSectionState
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
                                   style: AppFonts.cairo(
-                                    color: AppColors.textLight,
+                                    color: AppColors.onAccent,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -138,37 +141,9 @@ class _AdminPendingPropertiesSectionState
             pendingAsync.when(
               data: (pendingList) {
                 if (pendingList.isEmpty) {
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 24,
-                      horizontal: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant.withAlpha(120),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.check_circle_outline,
-                          color: AppColors.success,
-                          size: 26,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            context.l10n.admin_no_pending,
-                            style: AppFonts.cairo(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  return EmptyStateView(
+                    icon: Icons.check_circle_outline,
+                    title: context.l10n.admin_no_pending,
                   );
                 }
 
@@ -209,13 +184,9 @@ class _AdminPendingPropertiesSectionState
                   ],
                 );
               },
-              loading: () => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: LoadingView(
-                    message: context.l10n.admin_loading_pending,
-                  ),
-                ),
+              loading: () => LoadingView(
+                message: context.l10n.admin_loading_pending,
+                skeleton: true,
               ),
               error: (err, _) => ErrorView(
                 message: err.toString(),

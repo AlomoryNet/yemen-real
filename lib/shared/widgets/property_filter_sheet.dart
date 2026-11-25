@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/l10n/app_locale.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/property_filter_selection.dart';
@@ -514,7 +515,9 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
           .map(
             (type) => (
               id: type.id,
-              label: type.nameAr,
+              label: AppLocale.isArabic
+                  ? type.nameAr
+                  : (type.nameEn.isNotEmpty ? type.nameEn : type.nameAr),
               icon: _typeIcon(type.id),
             ),
           )
@@ -583,7 +586,8 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
     required bool selected,
     required VoidCallback onTap,
   }) {
-    final onPrimary = Theme.of(context).colorScheme.onPrimary;
+    final onPrimaryContainer =
+        Theme.of(context).colorScheme.onPrimaryContainer;
     return FilterChip(
       showCheckmark: false,
       selected: selected,
@@ -591,7 +595,7 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
       avatar: Icon(
         icon,
         size: 16,
-        color: selected ? onPrimary : AppColors.primaryInk,
+        color: selected ? onPrimaryContainer : AppColors.primaryInk,
       ),
       onSelected: (_) => onTap(),
     );

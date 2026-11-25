@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yemen_real_estate_portal/config/env_config.dart';
+import 'package:yemen_real_estate_portal/config/app_config.dart';
 import 'package:yemen_real_estate_portal/core/constants/app_constants.dart';
 import 'package:yemen_real_estate_portal/models/property.dart';
 import 'package:yemen_real_estate_portal/models/user_profile.dart';
@@ -8,12 +8,12 @@ import 'package:yemen_real_estate_portal/services/supabase_service.dart';
 
 void main() {
   setUp(() async {
-    EnvConfig.setForceDemoModeForTesting(true);
+    AppConfig.setForceDemoModeForTesting(true);
     await SupabaseService.initialize();
   });
 
   tearDownAll(() {
-    EnvConfig.setForceDemoModeForTesting(false);
+    AppConfig.setForceDemoModeForTesting(false);
   });
 
   group('Sole Publishing Admin & Review Lifecycle Tests', () {

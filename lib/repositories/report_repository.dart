@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/admin_list_page.dart';
 import '../models/report_item.dart';
@@ -16,7 +16,7 @@ class ReportRepository {
     required String reason,
     String? details,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final report = ReportItem(
         id: 'rep-${DateTime.now().millisecondsSinceEpoch}',
         propertyId: propertyId,
@@ -67,7 +67,7 @@ class ReportRepository {
   }
 
   Future<int> countReports() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoReports.length;
     }
 
@@ -82,7 +82,7 @@ class ReportRepository {
     required int limit,
     required int offset,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return pageAdminDemo(
         SupabaseService.demoReports,
         offset,
@@ -134,7 +134,7 @@ class ReportRepository {
     String? adminActionTaken,
     String? adminId,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoReports.indexWhere(
         (r) => r.id == reportId,
       );

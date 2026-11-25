@@ -7,6 +7,7 @@ import '../../../../core/l10n/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../providers/admin_provider.dart';
 import '../../../../providers/auth_provider.dart';
+import '../../../../shared/widgets/empty_state_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 
@@ -85,6 +86,8 @@ class AdminUsersTab extends ConsumerWidget {
                       Flexible(
                         child: Text(
                           context.l10n.admin_users_list_title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -161,6 +164,12 @@ class AdminUsersTab extends ConsumerWidget {
             Expanded(
               child: usersPaginator.when(
                 data: (page) {
+                  if (page.items.isEmpty) {
+                    return EmptyStateView(
+                      icon: Icons.people_outline,
+                      title: context.l10n.admin_no_users,
+                    );
+                  }
                   return AdminPagedList(
                     items: page.items,
                     hasMore: page.hasMore,
@@ -186,8 +195,11 @@ class AdminUsersTab extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        isThreeLine: true,
                         title: Text(
                           u.fullName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -195,6 +207,8 @@ class AdminUsersTab extends ConsumerWidget {
                         ),
                         subtitle: Text(
                           '${context.l10n.admin_account_label}: $accountEmail • ${context.l10n.admin_created_at}: ${u.createdAt.toString().split(' ').first}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -234,7 +248,7 @@ class AdminUsersTab extends ConsumerWidget {
                     },
                   );
                 },
-                loading: () => const LoadingView(),
+                loading: () => LoadingView(skeleton: true),
                 error: (err, _) => ErrorView(message: err.toString()),
               ),
             ),

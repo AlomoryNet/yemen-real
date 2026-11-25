@@ -98,8 +98,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     context.push(
       '/map',
-      extra: MapScreenArgs(
-        initialListView: true,
+      extra: MapScreenArgs.search(
         searchQuery: query,
         dealType: dashboardFilter.dealType,
         propertyTypeId: dashboardFilter.typeId,
@@ -136,7 +135,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
     context.push(
       '/map',
-      extra: MapScreenArgs(initialListView: true, dealType: dealType),
+      extra: MapScreenArgs.category(dealType: dealType),
+    );
+  }
+
+  void _openFeatured() {
+    context.push('/map', extra: MapScreenArgs.featured());
+  }
+
+  void _openNearby(latlong.LatLng center, double radiusKm) {
+    context.push(
+      '/map',
+      extra: MapScreenArgs.nearby(center: center, radiusKm: radiusKm),
     );
   }
 
@@ -150,6 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final forRentAsync = ref.watch(propertiesForRentProvider);
     final nearbyProperties = ref.watch(nearbyPropertiesProvider);
     final center = ref.watch(homeCenterProvider);
+    final radiusKm = ref.watch(homeSearchRadiusProvider);
     final dashboardFilter = ref.watch(dashboardFilterProvider);
 
     final usingFallback =
@@ -207,6 +218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     nearbyProperties: nearbyProperties,
                     usingFallback: usingFallback,
                     locationResolved: true,
+                    onViewAll: () => _openNearby(center, radiusKm),
                   ),
                 ),
               ),
@@ -232,21 +244,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               '${properties.length} ${l10n.map_properties_available}',
                           properties: properties,
                           icon: Icons.star_rounded,
-                          onViewAll: () => _openCategory(null),
+                          onViewAll: _openFeatured,
                         ),
                         loading: () => PropertyCategorySection.loading(
                           title: l10n.dash_featured_title,
                           subtitle: l10n.dash_featured_subtitle,
                           loadingMessage: l10n.dash_loading_featured,
                           icon: Icons.star_rounded,
-                          onViewAll: () => _openCategory(null),
+                          onViewAll: _openFeatured,
                         ),
                         error: (error, _) => PropertyCategorySection.error(
                           title: l10n.dash_featured_title,
                           subtitle: l10n.dash_featured_subtitle,
                           message: error.toString(),
                           icon: Icons.star_rounded,
-                          onViewAll: () => _openCategory(null),
+                          onViewAll: _openFeatured,
                           onRetry: () =>
                               ref.refresh(featuredPropertiesProvider),
                         ),

@@ -3,7 +3,7 @@ import 'package:yemen_real_estate_portal/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
-import 'package:yemen_real_estate_portal/config/env_config.dart';
+import 'package:yemen_real_estate_portal/config/app_config.dart';
 import 'package:yemen_real_estate_portal/core/exceptions/app_exception.dart';
 import 'package:yemen_real_estate_portal/features/auth/presentation/auth_callback_screen.dart';
 import 'package:yemen_real_estate_portal/models/user_profile.dart';
@@ -13,7 +13,7 @@ import 'package:yemen_real_estate_portal/shared/widgets/auth_prompt_dialog.dart'
 
 void main() {
   setUp(() {
-    EnvConfig.setForceDemoModeForTesting(true);
+    AppConfig.setForceDemoModeForTesting(true);
   });
 
   group('1. AppException Supabase Error Distinction Tests', () {
@@ -359,3 +359,4 @@ void main() {
     );
   });
 }
+

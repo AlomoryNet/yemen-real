@@ -28,7 +28,9 @@ class FavoriteButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isFavorite = ref.watch(favoritesProvider).maybeWhen(
+    final isFavorite = ref
+        .watch(favoritesProvider)
+        .maybeWhen(
           data: (list) => list.any((p) => p.id == propertyId),
           orElse: () => false,
         );
@@ -44,7 +46,7 @@ class FavoriteButton extends ConsumerWidget {
             : context.l10n.save_favorite,
         iconSize: iconSize,
         padding: const EdgeInsets.all(6),
-        constraints: const BoxConstraints(),
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         icon: Icon(
           isFavorite ? Icons.favorite : Icons.favorite_border,
           color: isFavorite ? AppColors.error : AppColors.textSecondary,

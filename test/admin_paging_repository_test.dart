@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yemen_real_estate_portal/config/env_config.dart';
+import 'package:yemen_real_estate_portal/config/app_config.dart';
 import 'package:yemen_real_estate_portal/models/admin_list_page.dart';
 import 'package:yemen_real_estate_portal/models/commission.dart';
 import 'package:yemen_real_estate_portal/models/report_item.dart';
@@ -46,12 +46,12 @@ Future<List<T>> collectChunks<T>(
 
 void main() {
   setUpAll(() async {
-    EnvConfig.setForceDemoModeForTesting(true);
+    AppConfig.setForceDemoModeForTesting(true);
     await SupabaseService.initialize();
   });
 
   tearDownAll(() {
-    EnvConfig.setForceDemoModeForTesting(false);
+    AppConfig.setForceDemoModeForTesting(false);
   });
 
   test('admin user pages are bounded and export stream is complete', () async {

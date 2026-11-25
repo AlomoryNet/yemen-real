@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/location_item.dart';
 import '../models/property_type.dart';
@@ -10,7 +10,7 @@ class LocationRepository {
 
   /// Fetch all active property types
   Future<List<PropertyType>> getPropertyTypes() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return List<PropertyType>.from(SupabaseService.demoPropertyTypes);
     }
 
@@ -31,7 +31,7 @@ class LocationRepository {
 
   /// Fetch all active locations (Governorates and Districts)
   Future<List<LocationItem>> getLocations() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return List<LocationItem>.from(SupabaseService.demoLocations);
     }
 

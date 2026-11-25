@@ -25,6 +25,10 @@ class AppColors {
   /// Foreground amber for text/icons on surfaces (bright in dark mode).
   static Color get accentInk => isDark ? accentLight : accentDark;
 
+  /// High-contrast foreground for text/icons placed on the amber accent fill.
+  /// `accent` stays the same amber in both themes, so this also stays dark.
+  static const Color onAccent = darkTextPrimary;
+
   // Light palette (explicit — used by AppTheme.lightTheme)
   static const Color lightBackground = Color(0xFFF8FAFC);
   static const Color lightSurface = Color(0xFFFFFFFF);
@@ -54,6 +58,14 @@ class AppColors {
   static const Color info = Color(0xFF0284C7);
   static const Color infoMuted = Color(0xFFE0F2FE);
 
+  // Dark-status fills. The light muted fills above stay near-white, so using
+  // them under bright dark-mode ink produced unreadable badges.
+  static const Color darkPrimaryFill = Color(0xFF0B3B37);
+  static const Color darkSuccessFill = Color(0xFF14532D);
+  static const Color darkWarningFill = Color(0xFF7C2D12);
+  static const Color darkErrorFill = Color(0xFF7F1D1D);
+  static const Color darkInfoFill = Color(0xFF0C4A6E);
+
   /// Kept white for text over images/gradients/footers in either theme.
   static const Color textLight = Color(0xFFF8FAFC);
 
@@ -75,6 +87,26 @@ class AppColors {
   static Color get primaryMuted =>
       isDark ? darkPrimaryMuted : lightPrimaryMuted;
 
+  /// Fills and inks for compact status badges. Both ends flip with the theme
+  /// so text never lands on a near-white fill in dark mode.
+  static Color get primaryFill => isDark ? darkPrimaryFill : lightPrimaryMuted;
+  static Color get successFill => isDark ? darkSuccessFill : successMuted;
+  static Color get warningFill => isDark ? darkWarningFill : warningMuted;
+  static Color get errorFill => isDark ? darkErrorFill : errorMuted;
+  static Color get infoFill => isDark ? darkInfoFill : infoMuted;
+
+  static Color get successInk =>
+      isDark ? const Color(0xFF86EFAC) : const Color(0xFF15803D);
+  static Color get warningInk =>
+      isDark ? const Color(0xFFFDBA74) : const Color(0xFFC2410C);
+  static Color get errorInk =>
+      isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C);
+  static Color get infoInk =>
+      isDark ? const Color(0xFF7DD3FC) : const Color(0xFF0369A1);
+  static Color get violetInk =>
+      isDark ? const Color(0xFFC4B5FD) : const Color(0xFF6D28D9);
+
   /// Elevation shadow tint, tuned per theme.
-  static Color get shadow => isDark ? const Color(0x66000000) : const Color(0x1C000000);
+  static Color get shadow =>
+      isDark ? const Color(0x66000000) : const Color(0x1C000000);
 }

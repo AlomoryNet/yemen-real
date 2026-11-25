@@ -1,10 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:yemen_real_estate_portal/l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yemen_real_estate_portal/core/constants/app_constants.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/app_logo.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/empty_state_view.dart';
+import 'package:yemen_real_estate_portal/shared/widgets/error_view.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/loading_view.dart';
+import 'package:yemen_real_estate_portal/shared/widgets/skeleton_loader.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/status_badge.dart';
 
 void main() {
@@ -12,7 +14,12 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Scaffold(body: AppLogo(size: 40))),
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('ar', 'YE'),
+        home: Scaffold(body: AppLogo(size: 40)),
+      ),
     );
 
     expect(find.text(AppConstants.appNameAr), findsOneWidget);
@@ -24,7 +31,10 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: const Locale('ar', 'YE'), home: Scaffold(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('ar', 'YE'),
+        home: Scaffold(
           body: Column(
             children: [
               StatusBadge.dealType(AppConstants.dealSale),
@@ -47,7 +57,10 @@ void main() {
     bool clicked = false;
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: const Locale('ar', 'YE'), home: Scaffold(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('ar', 'YE'),
+        home: Scaffold(
           body: EmptyStateView(
             title: 'لا توجد نتائج',
             description: 'يرجى المحاولة لاحقاً',
@@ -71,11 +84,51 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: Locale('ar', 'YE'), home: Scaffold(body: LoadingView(message: 'جاري التحميل...')),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('ar', 'YE'),
+        home: Scaffold(body: LoadingView(message: 'جاري التحميل...')),
       ),
     );
 
     expect(find.text('جاري التحميل...'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
+  testWidgets('LoadingView skeleton replaces the spinner with placeholders', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('ar', 'YE'),
+        home: Scaffold(
+          body: LoadingView(message: 'جاري التحميل...', skeleton: true),
+        ),
+      ),
+    );
+
+    expect(find.byType(SkeletonLoader), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('جاري التحميل...'), findsOneWidget);
+  });
+
+  testWidgets('ErrorView can show a context-specific title', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('en', 'US'),
+        home: Scaffold(
+          body: ErrorView(title: 'Map failed', message: 'Retry later'),
+        ),
+      ),
+    );
+
+    expect(find.text('Map failed'), findsOneWidget);
+    expect(find.text('Retry later'), findsOneWidget);
   });
 }

@@ -112,54 +112,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         const SizedBox(height: 24),
                         const AdminPendingPropertiesSection(),
                         const SizedBox(height: 28),
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 12,
-                          runSpacing: 10,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceVariant,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: TabBar(
-                                controller: _tabController,
-                                isScrollable: true,
-                                tabAlignment: TabAlignment.start,
-                                labelColor: AppColors.primaryInk,
-                                unselectedLabelColor: AppColors.textSecondary,
-                                indicatorColor: AppColors.primary,
-                                labelStyle: AppFonts.cairo(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13.5,
-                                ),
-                                tabs: [
-                                  Tab(
-                                    icon: const Icon(Icons.apartment, size: 18),
-                                    text: context.l10n.admin_tab_properties,
-                                  ),
-                                  Tab(
-                                    icon: const Icon(Icons.assignment, size: 18),
-                                    text: context.l10n.admin_tab_requests,
-                                  ),
-                                  Tab(
-                                    icon: const Icon(Icons.monetization_on,
-                                        size: 18),
-                                    text: context.l10n.admin_tab_commissions,
-                                  ),
-                                  Tab(
-                                    icon: const Icon(Icons.flag, size: 18),
-                                    text: context.l10n.admin_tab_reports,
-                                  ),
-                                  Tab(
-                                    icon: const Icon(Icons.people, size: 18),
-                                    text: context.l10n.admin_tab_users,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            ElevatedButton.icon(
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tabBar = _buildTabBar(context);
+                            final pdfButton = ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: AppColors.textLight,
@@ -185,8 +141,32 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   fontSize: 13,
                                 ),
                               ),
-                            ),
-                          ],
+                            );
+
+                            // On phones the five labelled tabs need the full
+                            // width; forcing the export CTA beside them squeezed
+                            // every label to a few glyphs.
+                            if (constraints.maxWidth < 720) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  tabBar,
+                                  const SizedBox(height: 10),
+                                  Align(
+                                    alignment: AlignmentDirectional.centerEnd,
+                                    child: pdfButton,
+                                  ),
+                                ],
+                              );
+                            }
+                            return Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 12,
+                              runSpacing: 10,
+                              children: [tabBar, pdfButton],
+                            );
+                          },
                         ),
                         const SizedBox(height: 20),
                         SizedBox(
@@ -215,62 +195,129 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
+  Widget _buildTabBar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        labelColor: AppColors.primaryInk,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.primary,
+        labelStyle: AppFonts.cairo(
+          fontWeight: FontWeight.bold,
+          fontSize: 13.5,
+        ),
+        tabs: [
+          Tab(
+            icon: const Icon(Icons.apartment, size: 18),
+            text: context.l10n.admin_tab_properties,
+          ),
+          Tab(
+            icon: const Icon(Icons.assignment, size: 18),
+            text: context.l10n.admin_tab_requests,
+          ),
+          Tab(
+            icon: const Icon(Icons.monetization_on, size: 18),
+            text: context.l10n.admin_tab_commissions,
+          ),
+          Tab(
+            icon: const Icon(Icons.flag, size: 18),
+            text: context.l10n.admin_tab_reports,
+          ),
+          Tab(
+            icon: const Icon(Icons.people, size: 18),
+            text: context.l10n.admin_tab_users,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTitle() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final titleBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.admin_panel_settings,
-                    color: AppColors.primaryInk,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      context.l10n.admin_title,
-                      style: AppFonts.cairo(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                context.l10n.admin_subtitle,
+        Row(
+          children: [
+            Icon(
+              Icons.admin_panel_settings,
+              color: AppColors.primaryInk,
+              size: 28,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.l10n.admin_title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: AppFonts.cairo(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.accentLight.withAlpha(140),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            context.l10n.admin_general_manager,
-            style: AppFonts.cairo(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: AppColors.accentDark,
             ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          context.l10n.admin_subtitle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: AppFonts.cairo(
+            fontSize: 13,
+            color: AppColors.textSecondary,
           ),
         ),
       ],
+    );
+    final managerBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.accentLight.withAlpha(140),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        context.l10n.admin_general_manager,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: AppFonts.cairo(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: AppColors.accentInk,
+        ),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 620) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              titleBlock,
+              const SizedBox(height: 10),
+              managerBadge,
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: titleBlock),
+            const SizedBox(width: 12),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220),
+              child: managerBadge,
+            ),
+          ],
+        );
+      },
     );
   }
 }

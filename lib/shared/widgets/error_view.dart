@@ -7,7 +7,10 @@ class ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
 
-  const ErrorView({super.key, required this.message, this.onRetry});
+  /// Optional context-specific headline; defaults to the generic error title.
+  final String? title;
+
+  const ErrorView({super.key, required this.message, this.onRetry, this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +34,7 @@ class ErrorView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              context.l10n.sh_error_unexpected,
+              title ?? context.l10n.sh_error_unexpected,
               style: AppFonts.cairo(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

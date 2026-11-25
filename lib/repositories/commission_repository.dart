@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/constants/app_constants.dart';
 import '../models/admin_list_page.dart';
 import '../core/exceptions/app_exception.dart';
@@ -34,7 +34,7 @@ class CommissionRepository {
   }
 
   Future<int> countCommissions() async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return SupabaseService.demoCommissions.length;
     }
 
@@ -49,7 +49,7 @@ class CommissionRepository {
     required int limit,
     required int offset,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       return pageAdminDemo(
         SupabaseService.demoCommissions,
         offset,
@@ -108,7 +108,7 @@ class CommissionRepository {
     String? adminUserId,
     String? propertyTitle,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final newComm = Commission(
         id: 'comm-${DateTime.now().millisecondsSinceEpoch}',
         propertyId: propertyId,
@@ -170,7 +170,7 @@ class CommissionRepository {
     required String status,
     String? settlementMethod,
   }) async {
-    if (EnvConfig.isDemoMode || _client == null) {
+    if (AppConfig.isDemoMode || _client == null) {
       final idx = SupabaseService.demoCommissions.indexWhere(
         (c) => c.id == commissionId,
       );

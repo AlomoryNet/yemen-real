@@ -18,6 +18,8 @@ import '../../../models/property_contract.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/contract_service.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
+import '../../../shared/widgets/error_view.dart';
+import '../../../shared/widgets/loading_view.dart';
 
 class ContractPreviewScreen extends ConsumerStatefulWidget {
   final Property property;
@@ -37,6 +39,7 @@ class ContractPreviewScreen extends ConsumerStatefulWidget {
 class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
   late PropertyContract _contract;
   bool _isLoading = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -47,15 +50,28 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
   Future<void> _loadContract() async {
     if (widget.initialContract != null) {
       _contract = widget.initialContract!;
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _loadError = null;
+      });
       return;
     }
 
-    final loaded = await ContractService.getPropertyContract(widget.property);
-    setState(() {
-      _contract = loaded;
-      _isLoading = false;
-    });
+    try {
+      final loaded = await ContractService.getPropertyContract(widget.property);
+      if (!mounted) return;
+      setState(() {
+        _contract = loaded;
+        _loadError = null;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   void _openContractEditor() {
@@ -63,8 +79,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     if (!auth.isAuthenticated) {
       AuthPromptDialog.show(
         context,
-        message:
-            context.l10n.contract_auth_prompt_message,
+        message: context.l10n.contract_auth_prompt_message,
         redirectTo: '/property/${widget.property.id}',
       );
       return;
@@ -75,8 +90,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      barrierColor:
-          Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
       builder: (ctx) => _ContractEditorSheet(
         contract: _contract,
         property: widget.property,
@@ -119,7 +133,9 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     buffer.writeln(
       '${context.l10n.contract_phone} ${_contract.ownerPhone.isNotEmpty ? _contract.ownerPhone : widget.property.contactPhone}',
     );
-    buffer.writeln('${context.l10n.contract_address} ${_contract.ownerAddress}');
+    buffer.writeln(
+      '${context.l10n.contract_address} ${_contract.ownerAddress}',
+    );
     buffer.writeln('');
     buffer.writeln(
       '${context.l10n.contract_second_party} ${_contract.tenantName.isNotEmpty ? _contract.tenantName : "........................................"}',
@@ -132,7 +148,9 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     buffer.writeln(
       '${context.l10n.contract_property_in_governorate} ${AppConstants.getGovernorateNameAr(widget.property.city)} ${context.l10n.contract_district_label} ${AppConstants.getDistrictNameAr(widget.property.district)} - ${widget.property.addressDetails ?? ""}',
     );
-    buffer.writeln('${context.l10n.contract_specifications} ${widget.property.title}');
+    buffer.writeln(
+      '${context.l10n.contract_specifications} ${widget.property.title}',
+    );
     buffer.writeln('');
     buffer.writeln(context.l10n.contract_terms_title);
     buffer.writeln(
@@ -146,14 +164,20 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
         '3. ${context.l10n.contract_clause3_title} ${Formatters.formatCurrency(_contract.securityDeposit, _contract.currency)} ${context.l10n.contract_deposit_return}',
       );
     }
-    buffer.writeln('4. ${context.l10n.contract_clause4_title} ${_contract.utilitiesPayableBy}.');
-    buffer.writeln('5. ${context.l10n.contract_clause5_title} ${_contract.maintenanceLiability}.');
+    buffer.writeln(
+      '4. ${context.l10n.contract_clause4_title} ${_contract.utilitiesPayableBy}.',
+    );
+    buffer.writeln(
+      '5. ${context.l10n.contract_clause5_title} ${_contract.maintenanceLiability}.',
+    );
     if (_contract.forbidSubleasing) {
       buffer.writeln(
         '6. ${context.l10n.contract_clause6_title} ${context.l10n.contract_sublease_ban_text}',
       );
     }
-    buffer.writeln('7. ${context.l10n.contract_clause7_title} ${_contract.latePaymentPolicy}.');
+    buffer.writeln(
+      '7. ${context.l10n.contract_clause7_title} ${_contract.latePaymentPolicy}.',
+    );
 
     if (_contract.customClauses.isNotEmpty) {
       buffer.writeln(context.l10n.contract_clause8_title);
@@ -165,9 +189,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     buffer.writeln('');
     buffer.writeln(context.l10n.contract_owner_signature);
     buffer.writeln(context.l10n.contract_tenant_signature);
-    buffer.writeln(
-      context.l10n.contract_witnesses_line,
-    );
+    buffer.writeln(context.l10n.contract_witnesses_line);
     return buffer.toString();
   }
 
@@ -224,8 +246,9 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     // generated document stays internally consistent in English mode too.
     final isRtl = Directionality.of(context) == TextDirection.rtl;
     final pdfDirection = isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr;
-    final clauseAlignment =
-        isRtl ? pw.Alignment.centerRight : pw.Alignment.centerLeft;
+    final clauseAlignment = isRtl
+        ? pw.Alignment.centerRight
+        : pw.Alignment.centerLeft;
 
     final pdf = pw.Document();
     final fontData = await rootBundle.load('assets/fonts/Cairo.ttf');
@@ -505,8 +528,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     if (!auth.isAuthenticated) {
       AuthPromptDialog.show(
         context,
-        message:
-            context.l10n.contract_auth_prompt_message,
+        message: context.l10n.contract_auth_prompt_message,
         redirectTo: '/property/${widget.property.id}',
       );
       return;
@@ -600,7 +622,17 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: LoadingView(message: context.l10n.loading),
+      );
+    }
+
+    if (_loadError != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: ErrorView(message: _loadError!, onRetry: _loadContract),
+      );
     }
 
     return Scaffold(
@@ -875,7 +907,8 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                       title: context.l10n.contract_first_party_box,
                       name: _contract.ownerName.isNotEmpty
                           ? _contract.ownerName
-                          : (widget.property.owner?.fullName ?? context.l10n.misc_owner),
+                          : (widget.property.owner?.fullName ??
+                                context.l10n.misc_owner),
                       phone: _contract.ownerPhone.isNotEmpty
                           ? _contract.ownerPhone
                           : widget.property.contactPhone,
@@ -922,9 +955,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                     const SizedBox(height: 20),
 
                     // Contract Clauses
-                    _buildSectionTitle(
-                      context.l10n.contract_section_clauses,
-                    ),
+                    _buildSectionTitle(context.l10n.contract_section_clauses),
                     const SizedBox(height: 10),
 
                     _buildClauseItem(
@@ -967,8 +998,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                       _buildClauseItem(
                         number: '6',
                         title: context.l10n.contract_sublease_screen_title,
-                        body:
-                            context.l10n.contract_sublease_ban_screen_text,
+                        body: context.l10n.contract_sublease_ban_screen_text,
                       ),
 
                     _buildClauseItem(
@@ -990,7 +1020,10 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                       const SizedBox(height: 4),
                       ..._contract.customClauses.map(
                         (clause) => Padding(
-                          padding: const EdgeInsetsDirectional.only(bottom: 6, end: 12),
+                          padding: const EdgeInsetsDirectional.only(
+                            bottom: 6,
+                            end: 12,
+                          ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1016,13 +1049,19 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                     const SizedBox(height: 30),
 
                     // Signatures Section
-                    _buildSectionTitle(context.l10n.contract_section_signatures),
+                    _buildSectionTitle(
+                      context.l10n.contract_section_signatures,
+                    ),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildSignatureBox(context.l10n.contract_owner_signature_short),
-                        _buildSignatureBox(context.l10n.contract_tenant_signature_short),
+                        _buildSignatureBox(
+                          context.l10n.contract_owner_signature_short,
+                        ),
+                        _buildSignatureBox(
+                          context.l10n.contract_tenant_signature_short,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -1119,8 +1158,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                       horizontal: 8,
                       vertical: 2,
                     ),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    minimumSize: const Size(0, 48),
                   ),
                   onPressed: onEdit,
                   icon: Icon(
@@ -1255,10 +1293,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
           children: [
             Text(
               role,
-              style: AppFonts.cairo(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppFonts.cairo(fontSize: 11, fontWeight: FontWeight.bold),
             ),
             Text(
               context.l10n.contract_signature_stamp,
@@ -1506,9 +1541,13 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                   ],
                 ),
                 IconButton(
+                  tooltip: context.l10n.close,
                   icon: const Icon(Icons.close),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -1663,7 +1702,9 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                                   child: _buildField(
                                     context.l10n.contract_owner_phone_label,
                                     _ownerPhoneController,
-                                    hint: context.l10n.contract_contact_phone_hint,
+                                    hint: context
+                                        .l10n
+                                        .contract_contact_phone_hint,
                                   ),
                                 ),
                               ],
@@ -1686,7 +1727,10 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                         ScrollViewKeyboardDismissBehavior.manual,
                     padding: const EdgeInsets.only(bottom: 16),
                     children: [
-                      _buildField(context.l10n.contract_formal_title_label, _titleController),
+                      _buildField(
+                        context.l10n.contract_formal_title_label,
+                        _titleController,
+                      ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -1823,6 +1867,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                                 ),
                               ),
                               IconButton(
+                                tooltip: context.l10n.delete,
                                 icon: const Icon(
                                   Icons.delete_outline,
                                   size: 18,
@@ -1984,10 +2029,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
           style: AppFonts.cairo(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppFonts.cairo(
-              fontSize: 11,
-              color: AppColors.textMuted,
-            ),
+            hintStyle: AppFonts.cairo(fontSize: 11, color: AppColors.textMuted),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 11,

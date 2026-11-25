@@ -75,7 +75,7 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
     if (settings.themeMode == ThemeMode.system) {
       AppColors.isDark =
           WidgetsBinding.instance.platformDispatcher.platformBrightness ==
-              Brightness.dark;
+          Brightness.dark;
       setState(() {});
     }
   }
@@ -93,8 +93,8 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
     final effectiveBrightness = settings.themeMode == ThemeMode.system
         ? systemBrightness
         : (settings.themeMode == ThemeMode.dark
-            ? Brightness.dark
-            : Brightness.light);
+              ? Brightness.dark
+              : Brightness.light);
     AppColors.isDark = effectiveBrightness == Brightness.dark;
 
     return MaterialApp.router(
@@ -111,18 +111,18 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
       routeInformationParser: appRouter.routeInformationParser,
       routerDelegate: appRouter.routerDelegate,
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(settings.textScaleFactor),
-        ),
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(settings.textScaleFactor)),
         child: GlobalAppBackHandler(
           child: GestureDetector(
             // Tap anywhere outside the focused field (and on non-interactive
             // surfaces) dismisses the keyboard — standard mobile behaviour.
             // Only receive taps that no interactive child (e.g. a TextField)
-          // consumed. `translucent` also fired for taps *on* fields, so
-          // focusing the bottom register fields instantly unfocused them and
-          // hid the keyboard.
-          behavior: HitTestBehavior.deferToChild,
+            // consumed. `translucent` also fired for taps *on* fields, so
+            // focusing the bottom register fields instantly unfocused them and
+            // hid the keyboard.
+            behavior: HitTestBehavior.deferToChild,
             onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
@@ -131,7 +131,12 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
                 }
                 return false; // let other listeners (e.g. scroll controllers) see it
               },
-              child: child ?? const SizedBox.shrink(),
+              // Explicit reading-order traversal gives web/desktop keyboard
+              // users a deterministic tab order through every route.
+              child: FocusTraversalGroup(
+                policy: ReadingOrderTraversalPolicy(),
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
         ),

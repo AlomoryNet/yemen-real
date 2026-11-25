@@ -11,15 +11,20 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../models/map_query.dart';
 import '../../../models/property.dart';
 import '../../../models/property_type.dart';
 import '../../../providers/location_provider.dart';
+import '../../../providers/map_query_provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/add_property_fab.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_page_body.dart';
+import '../../../shared/widgets/empty_state_view.dart';
+import '../../../shared/widgets/error_view.dart';
+import '../../../shared/widgets/loading_view.dart';
 import '../../../core/theme/property_text_styles.dart';
 import '../../../shared/widgets/property_card.dart';
 import '../../../shared/widgets/property_filter_sheet.dart';
@@ -47,6 +52,9 @@ class YemenGovernorateCoord {
   });
 }
 
+/// Public route widget. It gives every map visit its own [mapQueryProvider]
+/// scope, seeded before the first frame, so dashboard arguments and direct
+/// visits share one query source without mutating a provider in initState.
 class YemenMapScreen extends ConsumerStatefulWidget {
   /// Dashboard FAB opens the map/list view in list mode. Direct /map visits
   /// keep the map as the initial view.
@@ -62,26 +70,75 @@ class YemenMapScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<YemenMapScreen> createState() => _YemenMapScreenState();
+  ConsumerState<YemenMapScreen> createState() => _YemenMapScreenScopeState();
 }
 
-class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
+class _YemenMapScreenScopeState extends ConsumerState<YemenMapScreen> {
+  late final MapQuery _initialQuery;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialQuery = _YemenMapScreenState.seedQuery(
+      incoming: widget.initialFilters,
+      initialListView: widget.initialListView,
+      settings: ref.read(settingsProvider),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ProviderScope(
+      overrides: [
+        mapQueryProvider.overrideWith(
+          (_) => MapQueryNotifier(_initialQuery),
+        ),
+      ],
+      child: YemenMapView(
+        initialListView: widget.initialListView,
+        initialFilters: widget.initialFilters,
+      ),
+    );
+  }
+}
+
+class YemenMapView extends ConsumerStatefulWidget {
+  const YemenMapView({
+    super.key,
+    this.initialListView = false,
+    this.initialFilters,
+  });
+
+  final bool initialListView;
+  final MapScreenArgs? initialFilters;
+
+  @override
+  ConsumerState<YemenMapView> createState() => _YemenMapScreenState();
+}
+
+class _YemenMapScreenState extends ConsumerState<YemenMapView>
     with TickerProviderStateMixin {
   late final MapController _mapController;
   final TextEditingController _searchController = TextEditingController();
 
-  Property? _selectedProperty;
-  String _selectedDealType = ''; // '' = all, 'sale', 'rent'
-  String? _selectedTypeId; // null = all
-  String? _selectedGovName; // null = all yemen
-  String? _selectedDistrict; // null = all districts
-  double? _minPrice;
-  double? _maxPrice;
-  int? _minBedrooms;
-  bool _onlyExactCoordinates = false;
+  // One reusable camera animation: filter/search moves restart it instead of
+  // creating a new controller (and ticker) per call, and dispose() can stop it
+  // when the route is popped mid-flight.
+  late final AnimationController _cameraAnimationController;
+  double _cameraLatFrom = 0;
+  double _cameraLatTo = 0;
+  double _cameraLngFrom = 0;
+  double _cameraLngTo = 0;
+  double _cameraZoomFrom = _defaultZoom;
+  double _cameraZoomTo = _defaultZoom;
+  bool _hasCameraAnimation = false;
 
-  bool _isListView =
-      false; // overwritten from widget.initialListView in initState
+  Property? _selectedProperty;
+
+  /// Remembered so the async SharedPreferences refinement does not overwrite a
+  /// governorate the user picked before it completed.
+  String? _seededGovernorate;
+
   double _currentZoom = _defaultZoom;
   LatLng? _lastSearchCenter;
   LatLng? _initialFocus;
@@ -126,6 +183,35 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       _headerGap +
       _headerChipHeight +
       _headerGap;
+
+  /// Nearest governorate centre to a stored device location. Squared degree
+  /// distance is enough at this scale and avoids creating a Distance object on
+  /// every map open.
+  static YemenGovernorateCoord _governorateForLocation(LatLng location) {
+    var best = _governorates.first;
+    var bestDistance = double.infinity;
+    for (final gov in _governorates) {
+      final latDelta = gov.latitude - location.latitude;
+      final lngDelta = gov.longitude - location.longitude;
+      final distance = latDelta * latDelta + lngDelta * lngDelta;
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = gov;
+      }
+    }
+    return best;
+  }
+
+  static YemenGovernorateCoord? _governorateForName(String name) {
+    for (final gov in _governorates) {
+      if (gov.name == name ||
+          gov.name.contains(name) ||
+          name.contains(gov.name)) {
+        return gov;
+      }
+    }
+    return null;
+  }
 
   static const List<YemenGovernorateCoord> _governorates = [
     YemenGovernorateCoord(
@@ -262,48 +348,88 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     ),
   ];
 
+  /// Build the one immutable query used by the whole map surface. Called once
+  /// per route from the outer scope so it never overwrites live user filters.
+  static MapQuery seedQuery({
+    required MapScreenArgs? incoming,
+    required bool initialListView,
+    required SettingsState settings,
+  }) {
+    final storedLocation =
+        settings.latitude != null && settings.longitude != null
+        ? LatLng(settings.latitude!, settings.longitude!)
+        : _ibbCenter;
+    final defaultGovernorate = _governorateForLocation(storedLocation);
+
+    final view = incoming != null
+        ? (incoming.initialListView ? MapViewMode.list : MapViewMode.map)
+        : initialListView || settings.defaultMapView == 'list'
+        ? MapViewMode.list
+        : MapViewMode.map;
+
+    if (incoming != null) {
+      return MapQuery(
+        freeText: incoming.searchQuery ?? '',
+        dealType: incoming.dealType ?? '',
+        propertyTypeId: incoming.propertyTypeId,
+        governorate: (incoming.city == null || incoming.city!.isEmpty)
+            ? null
+            : incoming.city,
+        district: (incoming.district == null || incoming.district!.isEmpty)
+            ? null
+            : incoming.district,
+        onlyFeatured: incoming.onlyFeatured,
+        nearbyCenter: incoming.nearbyCenter,
+        radiusKm: incoming.radiusKm,
+        view: view,
+        source: incoming.source,
+      );
+    }
+
+    // Direct /map visits start scoped to the user's city. Only the chip shows
+    // that scope; the search field stays user-owned.
+    return MapQuery(
+      governorate: defaultGovernorate.name,
+      view: view,
+      source: MapQuerySource.general,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
-    _isListView = widget.initialListView;
-    // Respect the user's default map view preference from Settings for direct
-    // /map visits (not when the dashboard explicitly requests list mode).
-    if (widget.initialFilters == null && !widget.initialListView) {
-      final settings = ref.read(settingsProvider);
-      _isListView = settings.defaultMapView == 'list';
+    _cameraAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    )..addListener(_applyCameraAnimation);
+
+    // The outer route scope has already seeded this provider before the first
+    // frame; the screen never mutates it during a widget lifecycle.
+    final seed = ref.read(mapQueryProvider);
+    final settings = ref.read(settingsProvider);
+    final storedLocation =
+        settings.latitude != null && settings.longitude != null
+        ? LatLng(settings.latitude!, settings.longitude!)
+        : _ibbCenter;
+    final defaultGovernorate = _governorateForLocation(storedLocation);
+
+    if (seed.governorate != null) {
+      final gov = _governorateForName(seed.governorate!) ?? defaultGovernorate;
+      _initialFocus = LatLng(gov.latitude, gov.longitude);
+      _initialZoom = gov.defaultZoom;
+    } else if (seed.nearbyCenter != null) {
+      _initialFocus = seed.nearbyCenter;
+      _initialZoom = _defaultZoom;
     }
 
-    final incoming = widget.initialFilters;
-    if (incoming != null) {
-      _pendingFitToFiltered = true;
-      if (incoming.searchQuery != null && incoming.searchQuery!.isNotEmpty) {
-        _searchController.text = incoming.searchQuery!;
-      }
-      _selectedDealType = incoming.dealType ?? '';
-      _selectedTypeId = incoming.propertyTypeId;
-      _selectedGovName = (incoming.city == null || incoming.city!.isEmpty)
-          ? null
-          : incoming.city;
-      _selectedDistrict =
-          (incoming.district == null || incoming.district!.isEmpty)
-          ? null
-          : incoming.district;
-      if (_selectedGovName != null) {
-        for (final gov in _governorates) {
-          if (gov.name == _selectedGovName ||
-              gov.name.contains(_selectedGovName!) ||
-              _selectedGovName!.contains(gov.name)) {
-            _initialFocus = LatLng(gov.latitude, gov.longitude);
-            _initialZoom = gov.defaultZoom;
-            break;
-          }
-        }
-      }
-    }
+    _seededGovernorate = seed.governorate;
+    _searchController.text = seed.freeText;
+    _requestFitToFiltered();
 
-    // Use the requested focus, or the user's stored location (Ibb fallback).
-    if (_initialFocus == null) _initMapCenter();
+    // The provider may still be loading persisted coordinates; _initMapCenter
+    // refines the default governorate once SharedPreferences is available.
+    _initMapCenter();
     _listScrollController.addListener(() {
       if (!_listScrollController.hasClients || !mounted) return;
       final position = _listScrollController.position;
@@ -319,79 +445,100 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     });
   }
 
-  /// Initialize map center and zoom based on user's stored location (or Ibb fallback).
+  /// Initialize map center and zoom. Dashboard presets keep their own focus;
+  /// only plain /map visits refine the default governorate from SharedPreferences.
   Future<void> _initMapCenter() async {
-    final requestedFocus = _initialFocus;
-    if (requestedFocus != null) {
-      _lastSearchCenter = requestedFocus;
+    final current = ref.read(mapQueryProvider);
+    if (current.source != MapQuerySource.general) {
+      if (_initialFocus == null) return;
+      _lastSearchCenter = _initialFocus;
       _currentZoom = _initialZoom ?? _defaultZoom;
       if (mounted) setState(() {});
       return;
     }
+
+    var location = _ibbCenter;
     try {
       final prefs = await SharedPreferences.getInstance();
       final lat = prefs.getDouble('settings_latitude');
       final lng = prefs.getDouble('settings_longitude');
-      if (lat != null && lng != null) {
-        _lastSearchCenter = LatLng(lat, lng);
-        _currentZoom = _defaultZoom;
-      } else {
-        _lastSearchCenter = _ibbCenter;
-        _currentZoom = _defaultZoom;
-      }
+      if (lat != null && lng != null) location = LatLng(lat, lng);
     } catch (_) {
-      _lastSearchCenter = _ibbCenter;
-      _currentZoom = _defaultZoom;
+      // Fall back to Ibb when preferences are unavailable.
     }
-    if (mounted) setState(() {});
+
+    if (!mounted) return;
+    final latest = ref.read(mapQueryProvider);
+    // Do not overwrite a governorate the user changed while prefs were loading.
+    if (latest.source != MapQuerySource.general ||
+        latest.governorate != _seededGovernorate) {
+      return;
+    }
+
+    final governorate = _governorateForLocation(location);
+    setState(() {
+      _initialFocus = LatLng(governorate.latitude, governorate.longitude);
+      _initialZoom = governorate.defaultZoom;
+      _lastSearchCenter = _initialFocus;
+      _currentZoom = governorate.defaultZoom;
+    });
+    if (latest.governorate != governorate.name) {
+      ref
+          .read(mapQueryProvider.notifier)
+          .update((query) => query.copyWith(governorate: governorate.name));
+    }
   }
 
   @override
   void dispose() {
+    _cameraAnimationController
+      ..stop()
+      ..removeListener(_applyCameraAnimation)
+      ..dispose();
     _listScrollController.dispose();
     _searchController.dispose();
     _mapController.dispose();
     super.dispose();
   }
 
+  void _applyCameraAnimation() {
+    if (!mounted || !_hasCameraAnimation) return;
+    final t = Curves.easeInOutCubic.transform(_cameraAnimationController.value);
+    _mapController.move(
+      LatLng(
+        _cameraLatFrom + (_cameraLatTo - _cameraLatFrom) * t,
+        _cameraLngFrom + (_cameraLngTo - _cameraLngFrom) * t,
+      ),
+      _cameraZoomFrom + (_cameraZoomTo - _cameraZoomFrom) * t,
+    );
+  }
+
   void _animatedMapMove(LatLng destLocation, double destZoom) {
-    final latTween = Tween<double>(
-      begin: _mapController.camera.center.latitude,
-      end: destLocation.latitude,
-    );
-    final lngTween = Tween<double>(
-      begin: _mapController.camera.center.longitude,
-      end: destLocation.longitude,
-    );
-    final zoomTween = Tween<double>(
-      begin: _mapController.camera.zoom,
-      end: destZoom,
-    );
+    if (!mounted) return;
+    final camera = _mapController.camera;
+    _cameraLatFrom = camera.center.latitude;
+    _cameraLatTo = destLocation.latitude;
+    _cameraLngFrom = camera.center.longitude;
+    _cameraLngTo = destLocation.longitude;
+    _cameraZoomFrom = camera.zoom;
+    _cameraZoomTo = destZoom;
+    _hasCameraAnimation = true;
+    _cameraAnimationController
+      ..reset()
+      ..forward();
+  }
 
-    final controller = AnimationController(
-      duration: const Duration(milliseconds: 650),
-      vsync: this,
-    );
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: Curves.easeInOutCubic,
-    );
+  /// A filter change makes fit-to-results the only camera authority. Leaving a
+  /// governorate move running used to overwrite the fit on the next tick.
+  void _stopCameraAnimation() {
+    if (!_hasCameraAnimation) return;
+    _cameraAnimationController.stop();
+    _hasCameraAnimation = false;
+  }
 
-    controller.addListener(() {
-      _mapController.move(
-        LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-        zoomTween.evaluate(animation),
-      );
-    });
-
-    animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
-        controller.dispose();
-      }
-    });
-
-    controller.forward();
+  void _requestFitToFiltered() {
+    _stopCameraAnimation();
+    _pendingFitToFiltered = true;
   }
 
   (double, double) _getPropertyCoords(Property prop) {
@@ -415,120 +562,58 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     final points = filtered.map((p) {
       final coords = _getPropertyCoords(p);
       return LatLng(coords.$1, coords.$2);
+    }).where((point) {
+      return point.latitude.isFinite && point.longitude.isFinite;
     }).toList();
+    if (points.isEmpty) return;
+
+    var minLat = points.map((p) => p.latitude).reduce(math.min);
+    var maxLat = points.map((p) => p.latitude).reduce(math.max);
+    var minLng = points.map((p) => p.longitude).reduce(math.min);
+    var maxLng = points.map((p) => p.longitude).reduce(math.max);
+
+    // Two listings in the same street produce a near-zero span. Expanding it
+    // keeps the fit at a readable neighbourhood zoom instead of the cap.
+    const minSpan = 0.006;
+    final latCenter = (minLat + maxLat) / 2;
+    final lngCenter = (minLng + maxLng) / 2;
+    if (maxLat - minLat < minSpan) {
+      minLat = latCenter - minSpan / 2;
+      maxLat = latCenter + minSpan / 2;
+    }
+    if (maxLng - minLng < minSpan) {
+      minLng = lngCenter - minSpan / 2;
+      maxLng = lngCenter + minSpan / 2;
+    }
+
+    // Only guard against a world-level camera. The old 11.5 floor made a
+    // Reset-to-all-Yemen fit impossible even though the bounds were correct.
+    // Tiny result sets are handled above by expanding the bounds instead.
+    const minFitZoom = 3.0;
+    const maxFitZoom = 14.0;
     try {
       _mapController.fitCamera(
         CameraFit.coordinates(
-          coordinates: points,
-          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 96),
-          maxZoom: 14.5,
+          coordinates: [LatLng(minLat, minLng), LatLng(maxLat, maxLng)],
+          padding: EdgeInsets.only(
+            left: 48,
+            right: 48,
+            top: _headerBottom(context) + 16,
+            bottom: _selectedProperty != null ? 180 : 96,
+          ),
+          minZoom: minFitZoom,
+          maxZoom: maxFitZoom,
         ),
       );
       final camera = _mapController.camera;
       _lastSearchCenter = camera.center;
-      _currentZoom = camera.zoom;
+      _currentZoom = camera.zoom.clamp(minFitZoom, maxFitZoom).toDouble();
     } catch (_) {
       // Camera may not be attached yet (first frame / list mode); the pending
       // flag keeps the request for the next map build.
-      _pendingFitToFiltered = true;
+      _requestFitToFiltered();
       if (mounted) setState(() {});
     }
-  }
-
-  // Point in polygon ray-casting test for freehand drawing filter
-  bool _isPointInPolygon(LatLng point, List<LatLng> polygon) {
-    if (polygon.length < 3) return true;
-    bool inside = false;
-    int j = polygon.length - 1;
-    for (int i = 0; i < polygon.length; i++) {
-      final xi = polygon[i].latitude;
-      final yi = polygon[i].longitude;
-      final xj = polygon[j].latitude;
-      final yj = polygon[j].longitude;
-
-      final intersect =
-          ((yi > point.longitude) != (yj > point.longitude)) &&
-          (point.latitude <
-              (xj - xi) * (point.longitude - yi) / (yj - yi) + xi);
-      if (intersect) inside = !inside;
-      j = i;
-    }
-    return inside;
-  }
-
-  List<Property> _filterProperties(List<Property> all) {
-    final query = _searchController.text.trim().toLowerCase();
-    // Applying a governorate filter also writes its localized label into the
-    // search box. That label is display text, not a raw Arabic data key, so
-    // skip the free-text pass when it exactly mirrors the active filter.
-    final queryIsActiveGovernorateLabel =
-        _selectedGovName != null &&
-        query ==
-            AppConstants.getGovernorateNameAr(_selectedGovName!)
-                .toLowerCase();
-
-    return all.where((p) {
-      if (p.status != AppConstants.statusPublished) return false;
-
-      // Filter deal type
-      if (_selectedDealType.isNotEmpty && p.dealType != _selectedDealType) {
-        return false;
-      }
-
-      // Filter property type
-      if (_selectedTypeId != null &&
-          _selectedTypeId!.isNotEmpty &&
-          p.propertyTypeId != _selectedTypeId) {
-        return false;
-      }
-
-      // Filter governorate. Sana'a City and Sana'a Governorate are treated as
-      // one area, so choosing "صنعاء" also finds listings stored under
-      // "أمانة العاصمة" (e.g. بيت بوس).
-      if (!AppConstants.governorateMatches(_selectedGovName, p.city)) {
-        return false;
-      }
-
-      // Filter district
-      if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
-        final matchesDist =
-            p.district == _selectedDistrict ||
-            p.district.contains(_selectedDistrict!) ||
-            _selectedDistrict!.contains(p.district);
-        if (!matchesDist) return false;
-      }
-
-      // Filter text query (city, district, addressDetails, title)
-      if (query.isNotEmpty && !queryIsActiveGovernorateLabel) {
-        final inCity = p.city.toLowerCase().contains(query);
-        final inDist = p.district.toLowerCase().contains(query);
-        final inTitle = p.title.toLowerCase().contains(query);
-        final inAddr = (p.addressDetails ?? '').toLowerCase().contains(query);
-        if (!inCity && !inDist && !inTitle && !inAddr) return false;
-      }
-
-      // Filter price
-      if (_minPrice != null && p.price < _minPrice!) return false;
-      if (_maxPrice != null && p.price > _maxPrice!) return false;
-
-      // Filter bedrooms
-      if (_minBedrooms != null && p.bedrooms < _minBedrooms!) return false;
-
-      // Filter exact coordinates only
-      if (_onlyExactCoordinates && !MapClusterService.hasExactCoordinates(p)) {
-        return false;
-      }
-
-      // Filter by custom drawn polygon if active
-      if (_drawnPolygon.length > 2) {
-        final coords = _getPropertyCoords(p);
-        if (!_isPointInPolygon(LatLng(coords.$1, coords.$2), _drawnPolygon)) {
-          return false;
-        }
-      }
-
-      return true;
-    }).toList();
   }
 
   Future<void> _makeCall(String phone) async {
@@ -628,47 +713,16 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         ref.read(propertyTypesProvider).value ?? const <PropertyType>[];
     final result = await showPropertyFilterSheet(
       context: context,
-      initial: PropertyFilterSelection(
-        dealType: _selectedDealType,
-        typeId: _selectedTypeId,
-        governorate: _selectedGovName,
-        district: _selectedDistrict,
-        minPrice: _minPrice,
-        maxPrice: _maxPrice,
-        minBedrooms: _minBedrooms,
-        onlyExactCoordinates: _onlyExactCoordinates,
-      ),
+      initial: ref.read(mapQueryProvider).toSelection,
       propertyTypes: propertyTypes,
       showAdvancedFilters: true,
       title: context.l10n.map_filter_title,
     );
     if (result == null || !mounted) return;
 
-    setState(() {
-      // Reframe on the filtered coordinates after this rebuild.
-      _pendingFitToFiltered = true;
-      _selectedDealType = result.dealType;
-      _selectedTypeId = result.typeId;
-      _selectedGovName = result.governorate;
-      _selectedDistrict = result.district;
-      _minBedrooms = result.minBedrooms;
-      _minPrice = result.minPrice;
-      _maxPrice = result.maxPrice;
-      _onlyExactCoordinates = result.onlyExactCoordinates;
-      _selectedProperty = null;
-
-      if (_selectedGovName != null) {
-        _searchController.text =
-            AppConstants.getGovernorateNameAr(_selectedGovName!);
-        final govCoord = _governorates.firstWhere(
-          (g) => g.name == _selectedGovName,
-          orElse: () => _governorates.first,
-        );
-        _lastSearchCenter = LatLng(govCoord.latitude, govCoord.longitude);
-        _currentZoom = govCoord.defaultZoom;
-        _animatedMapMove(_lastSearchCenter!, govCoord.defaultZoom);
-      }
-    });
+    // Apply/Reset is one commit. The provider listener updates chips, results
+    // and the camera; the search field is never rewritten with a location label.
+    ref.read(mapQueryProvider.notifier).applySelection(result);
   }
 
   void _onPropertyTap(Property prop, LatLng centroid) {
@@ -682,6 +736,28 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   @override
   Widget build(BuildContext context) {
     final propertiesAsync = ref.watch(allMapPropertiesProvider);
+    final query = ref.watch(mapQueryProvider);
+
+    // One subscription for every committed query change: keep the text field
+    // in sync and reframe the camera. Free-text typing is excluded from the
+    // camera key and reframes only on explicit submit.
+    ref.listen<MapQuery>(mapQueryProvider, (previous, next) {
+      if (!mounted) return;
+      if (previous?.freeText != next.freeText &&
+          _searchController.text != next.freeText) {
+        _searchController.text = next.freeText;
+        _searchController.selection = TextSelection.collapsed(
+          offset: next.freeText.length,
+        );
+      }
+      if (previous != null && previous.cameraKey == next.cameraKey) return;
+      _requestFitToFiltered();
+      if (_selectedProperty != null) {
+        setState(() => _selectedProperty = null);
+      }
+    });
+
+    final isListView = query.view == MapViewMode.list;
     // Keep property types cached for the shared filter sheet.
     ref.watch(propertyTypesProvider);
     final settings = ref.watch(settingsProvider);
@@ -702,13 +778,23 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 ? SupabaseService.demoProperties
                 : DemoPropertiesGenerator.cachedDemoProperties;
 
-            final filteredProperties = _filterProperties(effectiveList);
+            final filteredProperties = filterMapProperties(
+              listings: effectiveList,
+              query: query,
+              drawnPolygon: _drawnPolygon,
+            );
             _filteredCount = filteredProperties.length;
 
-            if (_pendingFitToFiltered && !_isListView) {
+            if (_pendingFitToFiltered && !isListView) {
               _pendingFitToFiltered = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) _fitToFiltered(_filterProperties(_allListings()));
+                if (mounted) {
+                  _fitToFiltered(filterMapProperties(
+                    listings: _allListings(),
+                    query: ref.read(mapQueryProvider),
+                    drawnPolygon: _drawnPolygon,
+                  ));
+                }
               });
             }
 
@@ -719,18 +805,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             final mapProperties = filteredProperties;
 
             // Reset pagination whenever the filters change.
-            final filterKey = [
-              _searchController.text,
-              _selectedDealType,
-              _selectedTypeId,
-              _selectedGovName,
-              _selectedDistrict,
-              _minPrice,
-              _maxPrice,
-              _minBedrooms,
-              _onlyExactCoordinates,
-              _drawnPolygon.length,
-            ].join('|');
+            final filterKey = '${query.filterKey}|${_drawnPolygon.length}';
             if (filterKey != _lastFilterKey) {
               _lastFilterKey = filterKey;
               _visibleCount = _pageSize;
@@ -746,7 +821,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             return Stack(
               children: [
                 // 1. Full Screen Interactive Map or List View
-                if (!_isListView)
+                if (!isListView)
                   GestureDetector(
                     // Handlers for freehand drawing feature
                     onPanStart: _isDrawingMode
@@ -787,7 +862,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       maxZoom: 18.0,
                       isSatellite: _isSatellite,
                       selectedPropertyId: _selectedProperty?.id,
-                      highlightGovernorate: _selectedGovName,
+                      highlightGovernorate: query.governorate,
                       drawnPolygon: _drawnPolygon,
                       showBoundaries: true,
                       interactionFlags: _isDrawingMode
@@ -851,8 +926,10 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                                   property: prop,
                                   layout: PropertyCardLayout.row,
                                   onTap: () {
+                                    ref
+                                        .read(mapQueryProvider.notifier)
+                                        .setView(MapViewMode.map);
                                     setState(() {
-                                      _isListView = false;
                                       _selectedProperty = prop;
                                       _activeCardImageIndex = 0;
                                     });
@@ -987,22 +1064,28 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                               ),
                             ),
                             const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _drawnPolygon.clear();
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceVariant,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.close,
-                                  size: 14,
-                                  color: AppColors.textPrimary,
+                            Tooltip(
+                              message: context.l10n.map_clear_draw,
+                              child: Material(
+                                color: AppColors.surfaceVariant,
+                                shape: const CircleBorder(),
+                                clipBehavior: Clip.antiAlias,
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () {
+                                    setState(() {
+                                      _drawnPolygon.clear();
+                                    });
+                                  },
+                                  child: SizedBox(
+                                    width: 48,
+                                    height: 48,
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -1024,14 +1107,14 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                       // Primary list action: compact add-property FAB. It is
                       // deliberately hidden over the map, where draw/layers
                       // controls already occupy this stack.
-                      if (_isListView) ...[
+                      if (isListView) ...[
                         const AddPropertyFab(
                           key: ValueKey('map_add_property_fab'),
                           heroTag: 'map_add_property',
                         ),
                         const SizedBox(height: 8),
                       ],
-                      if (!_isListView) ...[
+                      if (!isListView) ...[
                         _buildSmallMapFab(
                           heroTag: 'map_draw_area',
                           icon: Icons.draw_rounded,
@@ -1071,36 +1154,30 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                         foregroundColor: AppColors.textLight,
                         elevation: 4,
                         icon: Icon(
-                          _isListView
+                          isListView
                               ? Icons.map_rounded
                               : Icons.format_list_bulleted_rounded,
                           size: 18,
                         ),
                         label: Text(
-                          _isListView
+                          isListView
                               ? context.l10n.map_show_map
                               : context.l10n.map_show_list,
                           style: PropertyTextStyles.badge(size: 13),
                         ),
                         onPressed: () {
-                          final showingList = _isListView;
-                          setState(() => _isListView = !showingList);
-                          if (showingList && _pendingFitToFiltered) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted) {
-                                _fitToFiltered(
-                                  _filterProperties(_allListings()),
-                                );
-                              }
-                            });
-                          }
+                          final showingList = isListView;
+                          ref.read(mapQueryProvider.notifier).setView(
+                                showingList ? MapViewMode.map : MapViewMode.list,
+                              );
+                          if (showingList) _requestFitToFiltered();
                         },
                       ),
                     ],
                   ),
                 ),
                 // 8. Selected Property Card
-                if (_selectedProperty != null && !_isListView)
+                if (_selectedProperty != null && !isListView)
                   Positioned(
                     bottom: 10,
                     left: isMobile ? 8 : 20,
@@ -1115,27 +1192,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               ],
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 12),
-                  Text(
-                    context.l10n.map_load_error,
-                    style: AppFonts.cairo(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () => ref.refresh(allMapPropertiesProvider),
-                    child: Text(context.l10n.map_retry),
-                  ),
-                ],
-              ),
-            ),
+          loading: () => LoadingView(message: context.l10n.loading),
+          error: (err, stack) => ErrorView(
+            title: context.l10n.map_load_error,
+            message: err.toString(),
+            onRetry: () => ref.refresh(allMapPropertiesProvider),
           ),
         ),
       ),
@@ -1144,16 +1205,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   // Unified Map Header & Filter Bar (RTL, Responsive, High Contrast)
   Widget _buildMapHeader() {
-    final hasActiveFilters =
-        _selectedTypeId != null ||
-        _minBedrooms != null ||
-        _selectedGovName != null ||
-        _selectedDistrict != null ||
-        _minPrice != null ||
-        _maxPrice != null ||
-        _onlyExactCoordinates ||
-        _selectedDealType.isNotEmpty ||
-        _searchController.text.trim().isNotEmpty;
+    final query = ref.read(mapQueryProvider);
+    final hasActiveFilters = query.hasActiveFilters;
 
     return SafeArea(
       bottom: false,
@@ -1311,19 +1364,29 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
               ),
-              onChanged: (val) => setState(() {}),
-              onSubmitted: (_) => setState(() => _pendingFitToFiltered = true),
+              onChanged: (val) =>
+                  ref.read(mapQueryProvider.notifier).setFreeText(val),
+              onSubmitted: (val) {
+                ref.read(mapQueryProvider.notifier).setFreeText(val);
+                _requestFitToFiltered();
+              },
               textInputAction: TextInputAction.search,
             ),
           ),
           if (_searchController.text.isNotEmpty)
-            GestureDetector(
-              onTap: () => setState(() => _searchController.clear()),
-              child: Icon(
+            IconButton(
+              tooltip: context.l10n.map_clear_search,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              icon: Icon(
                 Icons.close_rounded,
                 color: AppColors.textSecondary,
                 size: 19,
               ),
+              onPressed: () {
+                ref.read(mapQueryProvider.notifier).setFreeText('');
+                _requestFitToFiltered();
+              },
             ),
         ],
       ),
@@ -1345,8 +1408,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
           customBorder: const CircleBorder(),
           onTap: onPressed,
           child: SizedBox(
-            width: 46,
-            height: 46,
+            width: 48,
+            height: 48,
             child: Icon(icon, color: AppColors.primaryInk, size: 22),
           ),
         ),
@@ -1354,76 +1417,82 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     );
   }
 
-  /// الفلاتر المختارة تظهر كشيكات صغيرة بجوار زر الفلاتر في شريط الرأس.
+  /// Chips are a pure rendering of the committed query. Every removal is a
+  /// single provider commit, so results, count and camera stay in lockstep.
   List<Widget> _activeFilterChips() {
+    final query = ref.read(mapQueryProvider);
+    final notifier = ref.read(mapQueryProvider.notifier);
     final chips = <Widget>[];
 
-    if (_selectedDealType.isNotEmpty) {
+    void add(String label, MapQuery Function(MapQuery current) clear) {
       chips.add(
         _buildSelectedFilterChip(
-          _selectedDealType == AppConstants.dealSale
-              ? context.l10n.map_for_sale
-              : context.l10n.map_for_rent,
-          onRemoved: () => setState(() => _selectedDealType = ''),
+          label,
+          onRemoved: () => notifier.update(clear),
         ),
       );
     }
 
-    if (_selectedTypeId != null && _selectedTypeId!.isNotEmpty) {
-      chips.add(
-        _buildSelectedFilterChip(
-          _propertyTypeLabel(_selectedTypeId!),
-          onRemoved: () => setState(() => _selectedTypeId = null),
-        ),
+    if (query.onlyFeatured) {
+      add(context.l10n.sh_property_featured, (q) => q.copyWith(onlyFeatured: false));
+    }
+
+    if (query.nearbyCenter != null && query.radiusKm != null) {
+      add(context.l10n.near_you, (q) => q.copyWith(
+            nearbyCenter: null,
+            radiusKm: null,
+          ));
+    }
+
+    if (query.dealType.isNotEmpty) {
+      add(
+        query.dealType == AppConstants.dealSale
+            ? context.l10n.map_for_sale
+            : context.l10n.map_for_rent,
+        (q) => q.copyWith(dealType: ''),
       );
     }
 
-    if (_selectedGovName != null && _selectedGovName!.isNotEmpty) {
-      chips.add(
-        _buildSelectedFilterChip(
-          AppConstants.getGovernorateNameAr(_selectedGovName!),
-          onRemoved: () => setState(() => _selectedGovName = null),
-        ),
+    if (query.propertyTypeId != null && query.propertyTypeId!.isNotEmpty) {
+      add(_propertyTypeLabel(query.propertyTypeId!), (q) => q.copyWith(
+            propertyTypeId: null,
+          ));
+    }
+
+    if (query.governorate != null && query.governorate!.isNotEmpty) {
+      add(AppConstants.getGovernorateNameAr(query.governorate!), (q) => q.copyWith(
+            governorate: null,
+          ));
+    }
+
+    if (query.district != null && query.district!.isNotEmpty) {
+      add(AppConstants.getDistrictNameAr(query.district!), (q) => q.copyWith(
+            district: null,
+          ));
+    }
+
+    if (query.minBedrooms != null) {
+      add('${query.minBedrooms} ${context.l10n.map_bedrooms}', (q) => q.copyWith(
+            minBedrooms: null,
+          ));
+    }
+
+    if (query.minPrice != null || query.maxPrice != null) {
+      add(
+        '${Formatters.formatCurrency(query.minPrice ?? 0, AppConstants.currencyYer)} – '
+        '${Formatters.formatCurrency(query.maxPrice ?? 0, AppConstants.currencyYer)}',
+        (q) => q.copyWith(minPrice: null, maxPrice: null),
       );
     }
 
-    if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
-      chips.add(
-        _buildSelectedFilterChip(
-          AppConstants.getDistrictNameAr(_selectedDistrict!),
-          onRemoved: () => setState(() => _selectedDistrict = null),
-        ),
-      );
+    if (query.onlyExactCoordinates) {
+      add(context.l10n.map_exact_gps_only, (q) => q.copyWith(
+            onlyExactCoordinates: false,
+          ));
     }
 
-    if (_minBedrooms != null) {
-      chips.add(
-        _buildSelectedFilterChip(
-          '$_minBedrooms ${context.l10n.map_bedrooms}',
-          onRemoved: () => setState(() => _minBedrooms = null),
-        ),
-      );
-    }
-
-    if (_minPrice != null || _maxPrice != null) {
-      chips.add(
-        _buildSelectedFilterChip(
-          '${Formatters.formatCurrency(_minPrice ?? 0, AppConstants.currencyYer)} – ${Formatters.formatCurrency(_maxPrice ?? 0, AppConstants.currencyYer)}',
-          onRemoved: () => setState(() {
-            _minPrice = null;
-            _maxPrice = null;
-          }),
-        ),
-      );
-    }
-
-    if (_onlyExactCoordinates) {
-      chips.add(
-        _buildSelectedFilterChip(
-          context.l10n.map_exact_gps_only,
-          onRemoved: () => setState(() => _onlyExactCoordinates = false),
-        ),
-      );
+    if (chips.length > 1) {
+      add(context.l10n.clear_all, (q) => q.resetFilters());
     }
 
     return chips;
@@ -1447,9 +1516,6 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       backgroundColor: AppColors.surfaceVariant,
       side: BorderSide.none,
       shape: const StadiumBorder(),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
       labelPadding: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
@@ -1483,7 +1549,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 36,
+        height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: isActive
@@ -1491,7 +1557,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                     ? AppColors.primaryMuted.withAlpha(140)
                     : AppColors.primaryMuted)
               : AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1546,54 +1612,26 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(21),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
-          width: 38,
-          height: 38,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: color, width: 1.5),
             color: color.withAlpha(12),
           ),
-          child: Icon(icon, color: color, size: 18),
+          child: Icon(icon, color: color, size: 20),
         ),
       ),
     );
   }
 
   Widget _buildEmptyAreaView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.location_off_outlined,
-              size: 56,
-              color: AppColors.textMuted,
-            ),
-            const SizedBox(height: 14),
-            Text(
-              context.l10n.map_no_properties_in_area,
-              style: AppFonts.cairo(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              context.l10n.map_no_properties_area_hint,
-              textAlign: TextAlign.center,
-              style: AppFonts.cairo(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return EmptyStateView(
+      icon: Icons.location_off_outlined,
+      title: context.l10n.map_no_properties_in_area,
+      description: context.l10n.map_no_properties_area_hint,
     );
   }
 
@@ -1677,7 +1715,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       extraBadges: [discountPill],
       trailing: IconButton(
         padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         icon: Icon(Icons.more_horiz, color: AppColors.textMuted),
         tooltip: l10n.map_view_details,
         onPressed: () => context.push('/property/${prop.id}'),

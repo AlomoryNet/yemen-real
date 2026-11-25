@@ -29,11 +29,15 @@ class AdminReportsTab extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  context.l10n.admin_reports_list_title,
-                  style: AppFonts.cairo(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Expanded(
+                  child: Text(
+                    context.l10n.admin_reports_list_title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ],
@@ -70,8 +74,11 @@ class AdminReportsTab extends ConsumerWidget {
                             size: 18,
                           ),
                         ),
+                        isThreeLine: true,
                         title: Text(
                           rep.reason,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -79,6 +86,8 @@ class AdminReportsTab extends ConsumerWidget {
                         ),
                         subtitle: Text(
                           '${context.l10n.admin_details_label}: ${rep.details ?? context.l10n.admin_none} • ${context.l10n.admin_status_label}: ${rep.status}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
@@ -109,7 +118,7 @@ class AdminReportsTab extends ConsumerWidget {
                     },
                   );
                 },
-                loading: () => const LoadingView(),
+                loading: () => const LoadingView(skeleton: true),
                 error: (err, _) => ErrorView(message: err.toString()),
               ),
             ),
