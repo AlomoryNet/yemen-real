@@ -205,7 +205,8 @@ void main() {
           widget.decoration?.hintText ==
               'Search by governorate, neighborhood, or property name...',
     );
-    expect(tester.widget<TextField>(searchField).controller!.text, 'Ibb');
+    expect(tester.widget<TextField>(searchField).controller!.text, isEmpty);
+    expect(find.widgetWithText(Chip, 'Ibb'), findsOneWidget);
 
     await tester.tap(find.text('Filters ✓'));
     await tester.pump();
@@ -220,14 +221,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump();
 
-    // The reset must drop the auto-written "Ibb" label, otherwise it becomes
-    // a stale free-text query that matches none of the Arabic-keyed listings.
+    // Reset clears the governorate chip without ever injecting its label into
+    // the user-owned search field, so all Arabic-keyed listings remain visible.
     expect(tester.widget<TextField>(searchField).controller!.text, isEmpty);
     expect(find.text('Filters'), findsOneWidget);
     expect(find.text('440 properties available'), findsOneWidget);
   });
 
-  testWidgets('removing the governorate chip clears the auto search label', (
+  testWidgets('removing the governorate chip leaves free text untouched', (
     tester,
   ) async {
     final previousLocale = AppLocale.current;
@@ -257,7 +258,7 @@ void main() {
           widget.decoration?.hintText ==
               'Search by governorate, neighborhood, or property name...',
     );
-    expect(tester.widget<TextField>(searchField).controller!.text, 'Ibb');
+    expect(tester.widget<TextField>(searchField).controller!.text, isEmpty);
 
     final governorateChip = find.widgetWithText(Chip, 'Ibb');
     expect(governorateChip, findsOneWidget);

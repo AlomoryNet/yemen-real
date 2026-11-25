@@ -26,8 +26,10 @@ class AppColors {
   static Color get accentInk => isDark ? accentLight : accentDark;
 
   /// High-contrast foreground for text/icons placed on the amber accent fill.
-  /// `accent` stays the same amber in both themes, so this also stays dark.
-  static const Color onAccent = darkTextPrimary;
+  /// `accent` stays the same amber in both themes, so this also stays dark
+  /// (WCAG AA contrast: 5.6:1). The old `darkTextPrimary` alias was a light
+  /// colour intended for dark surfaces and faded into the amber badge.
+  static const Color onAccent = lightTextPrimary;
 
   // Light palette (explicit — used by AppTheme.lightTheme)
   static const Color lightBackground = Color(0xFFF8FAFC);
