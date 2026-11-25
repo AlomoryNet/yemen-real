@@ -213,8 +213,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             actions: [
               TextButton(
                 onPressed: () {
+                  final router = GoRouter.of(context);
                   Navigator.of(ctx).pop();
-                  context.go('/');
+                  router.go('/');
                 },
                 child: Text(
                   context.l10n.register_browse_guest,
@@ -227,17 +228,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   foregroundColor: AppColors.textLight,
                 ),
                 onPressed: () {
-                  Navigator.of(ctx).pop();
+                  final router = GoRouter.of(context);
                   final redirectTo = GoRouterState.of(
                     context,
                   ).uri.queryParameters['redirectTo'];
+                  Navigator.of(ctx).pop();
                   final uri = Uri(
                     path: '/login',
                     queryParameters: {
                       if (redirectTo != null) 'redirectTo': redirectTo,
                     },
                   );
-                  context.go(uri.toString());
+                  router.pushReplacement(uri.toString());
                 },
                 child: Text(
                   context.l10n.register_go_login,
@@ -259,10 +261,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       appBar: AppBar(
         title: Text(
           context.l10n.register_title,
-          style: AppFonts.cairo(
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
-          ),
+          style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: true,
       ),
@@ -390,7 +389,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 SizedBox(
                                   width: double.infinity,
                                   child: TextButton.icon(
-                                    onPressed: () => context.go('/login'),
+                                    onPressed: () =>
+                                        context.pushReplacement('/login'),
                                     icon: const Icon(Icons.login, size: 18),
                                     label: Text(
                                       context.l10n.register_go_login_now,
@@ -561,7 +561,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                           Flexible(
                             child: TextButton(
-                              onPressed: () => context.go('/login'),
+                              onPressed: () =>
+                                  context.pushReplacement('/login'),
                               child: Text(
                                 context.l10n.register_login_link,
                                 style: AppFonts.cairo(

@@ -163,10 +163,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       appBar: AppBar(
         title: Text(
           context.l10n.login_title,
-          style: AppFonts.cairo(
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
-          ),
+          style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: true,
       ),
@@ -448,7 +445,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const Spacer(),
                           TextButton(
-                            onPressed: () => context.go('/forgot-password'),
+                            onPressed: () => context.push('/forgot-password'),
                             child: Text(
                               context.l10n.login_forgot_password,
                               style: AppFonts.cairo(
@@ -466,7 +463,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textLight,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: const StadiumBorder(),
                           ),
                           onPressed: authState.isLoading ? null : _submit,
                           child: authState.isLoading
@@ -480,9 +480,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 )
                               : Text(
                                   context.l10n.login_submit,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: AppFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
+                                    color: AppColors.textLight,
                                   ),
                                 ),
                         ),
@@ -520,7 +523,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     if (reason != null) 'reason': reason,
                                   },
                                 );
-                                context.go(uri.toString());
+                                // Replace the auth page instead of stacking
+                                // login↔register toggles, while preserving the
+                                // app screen underneath for Android Back.
+                                context.pushReplacement(uri.toString());
                               },
                               child: Text(
                                 context.l10n.login_create_account,

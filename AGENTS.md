@@ -65,7 +65,48 @@ flutter run -d ZY22G4C24N   (USB, preferred)
 flutter test      → suite (last known: 124 tests)
 ```
 
-## Status — latest
+## Status - latest
+- Auth back-stack + exit-info placement fix (committed 2026-11-26, after `bfdc870`):
+  the exit hint now uses a new `exitInfoSnackBar()` helper with
+  `SnackBarBehavior.fixed` and **no margin**, so it sits at the bottom above the
+  bottom nav (official Flutter docs define SnackBar as bottom feedback; `floating`
+  + margin was lifting it toward the middle). Auth destinations opened from
+  inside the app now keep a real stack: drawer CTA, auth-prompt dialog buttons
+  (router captured before the dialog pop), desktop rail login CTA, login→forgot
+  and register→login use `push`; login↔register switches use `pushReplacement`
+  so they do not reverse-endlessly. `appBackPress()` now trusts `nav.canPop()`
+  as the stack signal and only applies root/exit policy when there is nothing to
+  pop. Post-auth success and `/auth-callback` redirects still use `go`.
+  Added `test/app_back_navigation_test.dart` (fixed/no-margin SnackBar + pushed
+  auth route pop via native-policy helper).
+  - USB `ZY22G4C24N` verified: Home→drawer→Login→Back returned Home (no exit
+    hint); drawer→Login→Create account→Back returned Home; Login→Forgot→Back
+    returned Login; favorite auth-prompt→Create account→Back returned Home;
+    register phone field still opened the IME (`mInputShown=true`). Home single
+    back showed the teal hint only at y≈1320–1396 (bottom, above the 1516 nav
+    bar), activity stayed resumed; two quick backs returned to the Motorola
+    launcher. No runtime errors and no new ANR (latest remains
+    `anr_2026-11-25-03-21-45-455`).
+  - `flutter analyze` clean; `flutter test` 128/128. Committed and pushed.
+- Back-button regression fixed via root `didPopRoute` (uncommitted, after `bfdc870`):
+  the native Android back key was destroying the activity again (task fell to the
+  Moto launcher / engine disconnect) even though the exit-snackbar flow had been
+  verified before. Root cause: `GlobalAppBackHandler`'s `PopScope` is mounted in
+  `MaterialApp.router.builder`, i.e. ABOVE the GoRouter `Navigator`, so it never
+  registers with a `ModalRoute` and its `canPop: false` veto never applies; the pop
+  disposition bubbles up → default → `SystemNavigator.pop()` → activity destroyed.
+  Fix: back handling now lives in `_YemenRealEstateAppState.didPopRoute`
+  (`WidgetsBindingObserver`, registered ahead of the framework/dispatcher chain) and
+  delegates to a new shared top-level `appBackPress()` in `lib/config/app_router.dart`
+  (overlay pop / history-back / root-or-auth exit policy: single back → exit snackbar,
+  double back → `SystemNavigator.pop()`). `GlobalAppBackHandler._handleBackPress` now
+  delegates to the same shared policy; back history + last-back-press timestamp moved to
+  top-level `appBackNavigationHistory` / `appLastBackPressTime`.
+  - Verified on `ZY22G4C24N` with the fixed build: back key (`adb shell input keyevent 4`)
+    on Home (root) → handled, activity stayed resumed (task `t281`), engine pid alive;
+    second back within ~1s → app exited properly (resumed activity returned to Moto
+    launcher via handled `SystemNavigator.pop`). Previously: back destroyed the activity.
+  - `flutter analyze` clean; `flutter test` 125/125; no runtime errors in logs.
 - Sign-up / create-account / auth screens fix (committed `ee4903c`, pushed to
   `origin/main`, after `12e1930`): Login, Register and Forgot-password screens
   now render a real localized AppBar title (`login_title` / `register_title` /

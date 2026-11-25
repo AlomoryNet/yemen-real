@@ -8,6 +8,61 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
+DONE (auth back-stack + exit-info placement, 2026-11-26, committed/pushed, after
+`bfdc870`; `flutter analyze` clean, `flutter test` 128/128):
+
+- Exit-hint placement: added top-level `exitInfoSnackBar()` in
+  `lib/config/app_router.dart` using `SnackBarBehavior.fixed` and no `margin`.
+  Official Flutter docs define SnackBar as brief bottom feedback; `fixed` anchors
+  it above `BottomNavigationBar`/`NavigationBar`, while `floating` plus a
+  symmetric margin was lifting the hint toward the middle of the screen. The
+  shared `appBackPress()` now uses this helper for the single-back root hint.
+- Auth navigation: in-app entries to `/login`, `/register` and
+  `/forgot-password` now preserve a real Navigator stack. Drawer CTA and
+  `AuthPromptDialog` capture `GoRouter.of(context)` before closing the
+  drawer/dialog, then `router.push(...)`; desktop rail login uses
+  `context.push('/login')`; login→forgot-password uses `push`; login↔register
+  and forgot→login use `pushReplacement` so switching auth screens does not
+  build a reversing stack. Post-auth success and `/auth-callback` redirects stay
+  root-level `go`.
+- Back policy: `appBackPress()` now treats `nav.canPop()` as the authoritative
+  signal for a poppable overlay/pushed screen and only applies the root/auth
+  exit policy when the navigator has nothing to pop. This lets auth screens
+  popped natively return to the screen they were opened from, while a cold
+  direct link to an auth route still gets the exit-hint/double-exit policy.
+- Regression: `test/app_back_navigation_test.dart` checks the fixed/no-margin
+  SnackBar config, auth-location classification, and that `appBackPress()` pops
+  a pushed auth route back to the previous screen.
+- USB `ZY22G4C24N` verified: drawer→Login→Back = Home; drawer→Login→Create
+  account→Back = Home; Login→Forgot→Back = Login; favorite auth prompt→Create
+  account→Back = Home; register phone tap kept the IME open (`mInputShown=true`).
+  Home single back showed the teal hint only at y≈1320–1396 (above the 1516 nav
+  bar, app still resumed); two quick backs returned to the Motorola launcher.
+  No runtime errors, no new ANR (latest remains `anr_2026-11-25-03-21-45-455`).
+
+DONE (back-button destroy regression fix, 2026-11-26, uncommitted, after `bfdc870`;
+`flutter analyze` clean, `flutter test` 125/125):
+
+- Native Android back key (`adb shell input keyevent 4`) was destroying the app
+  activity again (engine disconnect, task fell to Moto launcher) even though the
+  exit-snackbar flow had been verified earlier - the back press was not handled
+  anymore and fell through to the default `SystemNavigator.pop()`.
+- Root cause: `GlobalAppBackHandler`'s `PopScope` is mounted in
+  `MaterialApp.router.builder`, i.e. ABOVE the GoRouter `Navigator`, so it never
+  registers with a `ModalRoute` and its `canPop: false` veto never applies; the pop
+  disposition bubbles - default - activity destroyed.
+- Fix: back handling moved into `_YemenRealEstateAppState.didPopRoute`
+  (`WidgetsBindingObserver`, ahead of the framework/dispatcher chain) delegating to
+  a new shared top-level `appBackPress()` in `lib/config/app_router.dart` (overlay
+  pop / history-back / root-or-auth exit policy; single back -> exit snackbar,
+  double back -> `SystemNavigator.pop()`). `GlobalAppBackHandler._handleBackPress`
+  delegates to the same shared policy; history + timestamp moved to top-level
+  `appBackNavigationHistory` / `appLastBackPressTime`.
+- Verified on `ZY22G4C24N` with the fixed build: back on Home (root) -> handled,
+  activity stayed resumed (task `t281`), engine alive; second back within ~1s ->
+  app exited properly via handled `SystemNavigator.pop()`. Previously: back
+  destroyed the activity (engine disconnect + launcher resumed).
+
 DONE (sign-up / create-account / auth screens fix, 2026-11-25, committed `ee4903c`,
 pushed to `origin/main`, after `12e1930`; `flutter analyze` clean, 125/125 tests):
 - Login / Register / Forgot-password screens now render a real localized AppBar

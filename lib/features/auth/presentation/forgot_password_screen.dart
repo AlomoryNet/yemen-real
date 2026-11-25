@@ -47,10 +47,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       appBar: AppBar(
         title: Text(
           context.l10n.forgot_title,
-          style: AppFonts.cairo(
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
-          ),
+          style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: true,
       ),
@@ -67,7 +64,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(28),
-                child: _sent ? _buildSentView(context) : _buildFormView(context),
+                child: _sent
+                    ? _buildSentView(context)
+                    : _buildFormView(context),
               ),
             ),
           ),
@@ -94,16 +93,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         Text(
           context.l10n.forgot_check_inbox,
           textAlign: TextAlign.center,
-          style: AppFonts.cairo(
-            fontSize: 13,
-            color: AppColors.textSecondary,
-          ),
+          style: AppFonts.cairo(fontSize: 13, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () => context.go('/login'),
+            onPressed: () => context.pushReplacement('/login'),
             child: Text(context.l10n.forgot_back_to_login),
           ),
         ),
@@ -129,10 +125,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 6),
           Text(
             context.l10n.forgot_instructions,
-            style: AppFonts.cairo(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
+            style: AppFonts.cairo(fontSize: 13, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 24),
 
@@ -158,7 +151,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textLight,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: const StadiumBorder(),
               ),
               onPressed: _isSending ? null : _submit,
               child: _isSending
@@ -166,18 +162,27 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AppColors.textLight,
                         strokeWidth: 2,
                       ),
                     )
-                  : Text(context.l10n.forgot_send_link),
+                  : Text(
+                      context.l10n.forgot_send_link,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.cairo(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.textLight,
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: 16),
 
           Center(
             child: TextButton(
-              onPressed: () => context.pop(),
+              onPressed: () => context.pushReplacement('/login'),
               child: Text(context.l10n.forgot_return_to_login),
             ),
           ),

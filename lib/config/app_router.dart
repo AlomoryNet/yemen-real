@@ -28,6 +28,117 @@ import '../shared/widgets/empty_state_view.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// سجل تنقل التطبيق للرجوع (آخر مسار + المسارات السابقة التي زارتها).
+final List<String> appBackNavigationHistory = <String>['/'];
+
+/// آخر وقت الضغط على زر الرجوع (لمك الم الضغطين المتتاليين للخروج).
+DateTime? appLastBackPressTime;
+
+/// هل المسار المعطى إحدى شاشات التسجيل/الدخول/استعادة كلمة المرور؟
+///
+/// عند فتح هذه الشاشات من داخل التطبيق تُدفع فوق الشاشة الحالية (push)،
+/// فيملك المعالج سجل حقيقياً يعود إليه. أما إذا كانت أول صفحة في التطبيق
+/// (رابط مباشر/فتحة باردة) فلا يوجد ما يُ-pop، وتُعامل كجذرة: الضغط مرة
+/// يُظهر تنبيه الخروج، والضغط مرتين متتاليتين يخرج من التطبيق.
+bool isAuthFlowLocation(String location) {
+  final path = location.split('?').first;
+  return path == '/login' ||
+      path == '/register' ||
+      path == '/forgot-password' ||
+      path == '/login-callback' ||
+      path == '/auth-callback';
+}
+
+/// شريط تنبيه الخروج.
+///
+/// Flutter يعرّف الـ SnackBar كرسالة قصيرة تظهر أسفل الشاشة، ويضع
+/// `SnackBarBehavior.fixed` عند الحافة السفلية (فوق شريط التنقل إن وُجد).
+/// نستخدم `fixed` بلا `margin` هنا حتى لا يرتفع التنبيه إلى منتصف الشاشة
+/// بسبب سلوك `floating`/هوامش إضافية.
+SnackBar exitInfoSnackBar({required String message}) {
+  return SnackBar(
+    content: Text(
+      message,
+      textAlign: TextAlign.center,
+      style: AppFonts.cairo(
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textLight,
+      ),
+    ),
+    duration: const Duration(seconds: 2),
+    backgroundColor: AppColors.primary,
+    behavior: SnackBarBehavior.fixed,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  );
+}
+
+/// مركزية سياسة الرجوع (Back) عبر التطبيق.
+///
+/// تُستدعى من [GlobalAppBackHandler] (الذي يستمع عبر PopScope داخل الـ
+/// MaterialApp) ومن مسار `WidgetsBindingObserver.didPopRoute` الخاص بواجهة
+/// التطبيق، بحيث لا يلغي أي منهما الآخر المعالجة الافتراضية للـ back على
+/// Android (والتي كانت تُخرج من التطبيق بدل معالجة مسارياً).
+///
+/// الخطوات:
+/// 1. إغلاق الـ overlay/الشاشة المدعومة popup إن وُجدت.
+/// 2. العودة خطوة واحدة للخلف عبر سجل التنقل للشاشات المدعومة.
+/// 3. سياسة الخروج من الجذرة (أو شاشة دخول بلا سجل): تنبيه ثم خروج مزدوج.
+///
+/// يعيد `handled: true` دائماً لأن المُستدعٍ هو من يقرر كيف يُعالَج الـ back.
+Future<({bool handled, DateTime? lastBackPressTime})> appBackPress({
+  required String currentLocation,
+  required NavigatorState? nav,
+  required List<String> navigationHistory,
+  required BuildContext context,
+  required DateTime? lastBackPressTime,
+}) async {
+  final isAuthFlow = isAuthFlowLocation(currentLocation);
+  final isRoot =
+      currentLocation == '/' || currentLocation.isEmpty || isAuthFlow;
+  // `canPop` is the reliable signal for a real Navigator stack: root has no
+  // route to pop, while a pushed auth screen/dialog/bottom sheet always does.
+  final canPopOverlay = nav != null && nav.canPop();
+  if (canPopOverlay) {
+    nav.pop();
+    return (handled: true, lastBackPressTime: lastBackPressTime);
+  }
+
+  if (!isRoot) {
+    final history = List<String>.from(navigationHistory);
+    while (history.isNotEmpty && history.last == currentLocation) {
+      history.removeLast();
+    }
+    if (history.isNotEmpty && history.last != currentLocation) {
+      final target = history.removeLast();
+      appRouter.go(target);
+    } else {
+      // العودة إلى الصفحة الرئيسية كخيار افتراضي آمن
+      appRouter.go('/');
+    }
+    return (handled: true, lastBackPressTime: lastBackPressTime);
+  }
+
+  // الجذرة / شاشة دخول: تنبيه مرة واحدة، وخروج بتكرار الضغطين.
+  final now = DateTime.now();
+  final isDouble =
+      lastBackPressTime != null &&
+      now.difference(lastBackPressTime) < const Duration(seconds: 2);
+  if (isDouble) {
+    await SystemNavigator.pop();
+    return (handled: true, lastBackPressTime: lastBackPressTime);
+  }
+  final ctx = rootNavigatorKey.currentContext ?? context;
+  final messenger = ScaffoldMessenger.maybeOf(ctx);
+  if (messenger != null) {
+    messenger.removeCurrentSnackBar();
+    messenger.showSnackBar(
+      exitInfoSnackBar(message: ctx.l10n.sh_back_exit_snackbar),
+    );
+  }
+  return (handled: true, lastBackPressTime: now);
+}
+
 /// Fade-through page used for bottom-nav / rail destinations.
 ///
 /// Sliding in from the side would imply a hierarchical push, which is wrong
@@ -233,9 +344,6 @@ class GlobalAppBackHandler extends StatefulWidget {
 }
 
 class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
-  DateTime? _lastBackPressTime;
-  final List<String> _navigationHistory = ['/'];
-
   @override
   void initState() {
     super.initState();
@@ -252,10 +360,11 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
     try {
       final location = appRouter.routerDelegate.currentConfiguration.uri
           .toString();
-      if (_navigationHistory.isEmpty || _navigationHistory.last != location) {
-        _navigationHistory.add(location);
-        if (_navigationHistory.length > 40) {
-          _navigationHistory.removeAt(0);
+      if (appBackNavigationHistory.isEmpty ||
+          appBackNavigationHistory.last != location) {
+        appBackNavigationHistory.add(location);
+        if (appBackNavigationHistory.length > 40) {
+          appBackNavigationHistory.removeAt(0);
         }
       }
     } catch (_) {}
@@ -272,76 +381,17 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
           .toString();
     } catch (_) {}
 
-    // 2. ديالوج/قائمة منبثقة فوق أي شاشة: تُغلق أولاً ولا يُلمس المسار.
-    //    على الجذر لا نعتبر صفحة GoRouter نفسها قابلة للإغلاق.
-    final isRoot = currentLocation == '/' || currentLocation.isEmpty;
-    final canPopOverlay =
-        nav != null && nav.canPop() && (!isRoot || nav.widget.pages.length > 1);
-    if (canPopOverlay) {
-      nav.pop();
-      return true;
-    }
-
-    // 3. إذا لم تكن في الصفحة الرئيسية، ارجع خطوة واحدة إلى الخلف!
-    if (!isRoot) {
-      _lastBackPressTime = null;
-      // إزالة المسار الحالي من سجل التنقل
-      while (_navigationHistory.isNotEmpty &&
-          _navigationHistory.last == currentLocation) {
-        _navigationHistory.removeLast();
-      }
-
-      if (_navigationHistory.isNotEmpty &&
-          _navigationHistory.last != currentLocation) {
-        final target = _navigationHistory.removeLast();
-        appRouter.go(target);
-      } else {
-        // العودة إلى الصفحة الرئيسية كخيار افتراضي آمن
-        appRouter.go('/');
-      }
-      return true;
-    }
-
-    // 4. إذا كنت في الصفحة الرئيسية ('/')
-    // الضغط مرة واحدة: إشعار
-    // الضغط مرتين متتاليتين خلال ثانيتين: خروج من التطبيق
-    final now = DateTime.now();
-    final isDouble =
-        _lastBackPressTime != null &&
-        now.difference(_lastBackPressTime!) < const Duration(seconds: 2);
-
-    if (isDouble) {
-      await SystemNavigator.pop();
-      return true;
-    } else {
-      _lastBackPressTime = now;
-      final ctx = rootNavigatorKey.currentContext ?? context;
-      final messenger = ScaffoldMessenger.maybeOf(ctx);
-      if (messenger != null) {
-        messenger.removeCurrentSnackBar();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              ctx.l10n.sh_back_exit_snackbar,
-              textAlign: TextAlign.center,
-              style: AppFonts.cairo(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textLight,
-              ),
-            ),
-            duration: const Duration(seconds: 2),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          ),
-        );
-      }
-      return true;
-    }
+    final result = await appBackPress(
+      currentLocation: currentLocation,
+      nav: nav,
+      navigationHistory: appBackNavigationHistory,
+      context: context,
+      lastBackPressTime: appLastBackPressTime,
+    );
+    final handled = result.handled;
+    final newLastBackPressTime = result.lastBackPressTime;
+    appLastBackPressTime = newLastBackPressTime;
+    return handled;
   }
 
   @override

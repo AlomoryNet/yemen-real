@@ -8,11 +8,7 @@ class AuthPromptDialog extends StatelessWidget {
   final String message;
   final String? redirectTo;
 
-  const AuthPromptDialog({
-    super.key,
-    required this.message,
-    this.redirectTo,
-  });
+  const AuthPromptDialog({super.key, required this.message, this.redirectTo});
 
   static Future<void> show(
     BuildContext context, {
@@ -23,8 +19,7 @@ class AuthPromptDialog extends StatelessWidget {
     return showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor:
-          Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.32),
       builder: (ctx) =>
           AuthPromptDialog(message: resolvedMessage, redirectTo: redirectTo),
     );
@@ -121,6 +116,9 @@ class AuthPromptDialog extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 10),
                 ),
                 onPressed: () {
+                  // Capture the router while this dialog context is valid; the
+                  // pushed auth route keeps the current screen on the stack.
+                  final router = GoRouter.of(context);
                   Navigator.of(context).pop();
                   final uri = Uri(
                     path: '/login',
@@ -129,7 +127,7 @@ class AuthPromptDialog extends StatelessWidget {
                       'reason': message,
                     },
                   );
-                  context.go(uri.toString());
+                  router.push(uri.toString());
                 },
                 child: Text(
                   context.l10n.sh_login,
@@ -152,6 +150,7 @@ class AuthPromptDialog extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 10),
                 ),
                 onPressed: () {
+                  final router = GoRouter.of(context);
                   Navigator.of(context).pop();
                   final uri = Uri(
                     path: '/register',
@@ -160,7 +159,7 @@ class AuthPromptDialog extends StatelessWidget {
                       'reason': message,
                     },
                   );
-                  context.go(uri.toString());
+                  router.push(uri.toString());
                 },
                 child: Text(
                   context.l10n.sh_auth_register_new,
@@ -179,10 +178,7 @@ class AuthPromptDialog extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               context.l10n.sh_auth_continue_guest,
-              style: AppFonts.cairo(
-                fontSize: 12,
-                color: AppColors.textMuted,
-              ),
+              style: AppFonts.cairo(fontSize: 12, color: AppColors.textMuted),
             ),
           ),
         ),

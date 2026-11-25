@@ -83,8 +83,8 @@ class AppNavigationRail extends ConsumerWidget {
     var bestMatchLength = -1;
     for (var i = 0; i < destinations.length; i++) {
       final destinationRoute = destinations[i].route;
-      final matches = route == destinationRoute ||
-          route.startsWith('$destinationRoute/');
+      final matches =
+          route == destinationRoute || route.startsWith('$destinationRoute/');
       if (matches && destinationRoute.length > bestMatchLength) {
         selectedIndex = i;
         bestMatchLength = destinationRoute.length;
@@ -126,10 +126,7 @@ class AppNavigationRail extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
               onTap: () => context.push('/profile'),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Row(
                   children: [
                     Icon(
@@ -177,7 +174,9 @@ class AppNavigationRail extends ConsumerWidget {
             ),
           ] else
             TextButton.icon(
-              onPressed: () => context.go('/login'),
+              // Keep the current destination underneath so Android Back
+              // returns here instead of treating Login as a new root.
+              onPressed: () => context.push('/login'),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.primaryInk,
                 alignment: AlignmentDirectional.centerStart,

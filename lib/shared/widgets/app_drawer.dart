@@ -201,10 +201,7 @@ class AppDrawer extends ConsumerWidget {
                         ? OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: logoutColor,
-                              side: BorderSide(
-                                color: logoutColor,
-                                width: 1.5,
-                              ),
+                              side: BorderSide(color: logoutColor, width: 1.5),
                               padding: const EdgeInsets.symmetric(vertical: 13),
                               shape: const StadiumBorder(),
                             ),
@@ -239,8 +236,11 @@ class AppDrawer extends ConsumerWidget {
                               ),
                             ),
                             onPressed: () {
+                              // Capture the router before closing the drawer;
+                              // push keeps Home underneath so Back returns here.
+                              final router = GoRouter.of(context);
                               Navigator.pop(context);
-                              context.go('/login');
+                              router.push('/login');
                             },
                           ),
                   ),

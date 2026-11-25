@@ -80,6 +80,38 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
     }
   }
 
+  /// معالجة الضغط على زر الرجوع (Back) من نخبة التطبيق.
+  ///
+  /// المسار: نظام التشغيل → الـ engine → WidgetsBinding.handlePopRoute →
+  /// هذه المستخدمة هنا أولاً (قبل المسارات الأخرى المتاحة للـ dispatcher) →
+  /// إذا عُدِمنا الـ handling هنا، تستمر التسلسلات الأخرى (WidgetsApp /
+  /// GoRouter BackButtonDispatcher / Navigator) وقد تصل إلى
+  /// SystemNavigator.pop() وتُخرج التطبيق بدل معالجة مسارياً.
+  ///
+  /// تُستدعى هذه الطريقة عند كل ظهور لـ back؛ نعالج عبر السياسة المشتركة
+  /// `appBackPress` (إغلاق overlay/عودة تاريخ/سياسة خروج الجذرة) ونثبت
+  /// المعالجة هنا (نرجع `true`) حتى لا يُترك الظهور للـ default.
+  @override
+  Future<bool> didPopRoute() async {
+    final nav = rootNavigatorKey.currentState;
+    String currentLocation = '/';
+    try {
+      currentLocation = appRouter.routerDelegate.currentConfiguration.uri
+          .toString();
+    } catch (_) {}
+    final result = await appBackPress(
+      currentLocation: currentLocation,
+      nav: nav,
+      navigationHistory: appBackNavigationHistory,
+      context: context,
+      lastBackPressTime: appLastBackPressTime,
+    );
+    final handled = result.handled;
+    final newLastBackPressTime = result.lastBackPressTime;
+    appLastBackPressTime = newLastBackPressTime;
+    return handled;
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
@@ -124,19 +156,11 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
             // hid the keyboard.
             behavior: HitTestBehavior.deferToChild,
             onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                if (notification is ScrollUpdateNotification) {
-                  FocusManager.instance.primaryFocus?.unfocus();
-                }
-                return false; // let other listeners (e.g. scroll controllers) see it
-              },
+            child: FocusTraversalGroup(
               // Explicit reading-order traversal gives web/desktop keyboard
               // users a deterministic tab order through every route.
-              child: FocusTraversalGroup(
-                policy: ReadingOrderTraversalPolicy(),
-                child: child ?? const SizedBox.shrink(),
-              ),
+              policy: ReadingOrderTraversalPolicy(),
+              child: child ?? const SizedBox.shrink(),
             ),
           ),
         ),
