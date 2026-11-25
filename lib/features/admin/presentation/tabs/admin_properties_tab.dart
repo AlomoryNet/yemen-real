@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/context_l10n.dart';
@@ -36,7 +36,7 @@ class AdminPropertiesTab extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     context.l10n.admin_properties_list_title,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -89,14 +89,14 @@ class AdminPropertiesTab extends ConsumerWidget {
                         ),
                         title: Text(
                           p.title,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
                         subtitle: Text(
                           '${p.city} - ${p.district} • ${Formatters.formatCurrency(p.price, p.currency)} • ${context.l10n.admin_status_label}: ${AppConstants.getPropertyStatusNameAr(p.status)}',
-                          style: GoogleFonts.cairo(fontSize: 12),
+                          style: AppFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -121,7 +121,7 @@ class AdminPropertiesTab extends ConsumerWidget {
                                       SnackBar(
                                         content: Text(
                                           context.l10n.admin_approved_by_admin,
-                                          style: GoogleFonts.cairo(),
+                                          style: AppFonts.cairo(),
                                         ),
                                         backgroundColor: AppColors.success,
                                       ),
@@ -151,7 +151,7 @@ class AdminPropertiesTab extends ConsumerWidget {
                                           context
                                               .l10n
                                               .admin_rejected_status_updated,
-                                          style: GoogleFonts.cairo(),
+                                          style: AppFonts.cairo(),
                                         ),
                                         backgroundColor: AppColors.error,
                                       ),

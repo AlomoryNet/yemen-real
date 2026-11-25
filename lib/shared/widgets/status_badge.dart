@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -150,7 +150,7 @@ class StatusBadge extends StatelessWidget {
           ],
           Text(
             text,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: textColor,

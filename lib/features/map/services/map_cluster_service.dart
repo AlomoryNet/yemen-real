@@ -95,6 +95,18 @@ class MapClusterService {
       return LatLng(pair.$1, pair.$2);
     });
 
+    // Spatial hash: a point within `radiusDeg` can only be in the seed's own
+    // cell or one of the 8 neighbours. This keeps large result sets near O(n)
+    // instead of the previous O(n²) all-pairs scan.
+    final buckets = <(int, int), List<int>>{};
+    for (var i = 0; i < coords.length; i++) {
+      final key = (
+        (coords[i].latitude / radiusDeg).floor(),
+        (coords[i].longitude / radiusDeg).floor(),
+      );
+      buckets.putIfAbsent(key, () => <int>[]).add(i);
+    }
+
     for (int i = 0; i < properties.length; i++) {
       if (visited[i]) continue;
 
@@ -107,38 +119,50 @@ class MapClusterService {
       double minLng = coords[i].longitude;
       double maxLng = coords[i].longitude;
 
+      final seedCellLat = (coords[i].latitude / radiusDeg).floor();
+      final seedCellLng = (coords[i].longitude / radiusDeg).floor();
+
       // Group nearby properties into the cluster
-      for (int j = i + 1; j < properties.length; j++) {
-        if (visited[j]) continue;
+      for (var dLatCell = -1; dLatCell <= 1; dLatCell++) {
+        for (var dLngCell = -1; dLngCell <= 1; dLngCell++) {
+          final bucket =
+              buckets[(seedCellLat + dLatCell, seedCellLng + dLngCell)];
+          if (bucket == null) continue;
+          for (final j in bucket) {
+            if (j <= i || visited[j]) continue;
 
-        final dLat = coords[i].latitude - coords[j].latitude;
-        final dLng = coords[i].longitude - coords[j].longitude;
-        final distSq = (dLat * dLat) + (dLng * dLng);
+            final dLat = coords[i].latitude - coords[j].latitude;
+            final dLng = coords[i].longitude - coords[j].longitude;
+            final distSq = (dLat * dLat) + (dLng * dLng);
 
-        if (distSq <= radiusSq) {
-          visited[j] = true;
-          clusterProperties.add(properties[j]);
-          sumLat += coords[j].latitude;
-          sumLng += coords[j].longitude;
+            if (distSq <= radiusSq) {
+              visited[j] = true;
+              clusterProperties.add(properties[j]);
+              sumLat += coords[j].latitude;
+              sumLng += coords[j].longitude;
 
-          minLat = math.min(minLat, coords[j].latitude);
-          maxLat = math.max(maxLat, coords[j].latitude);
-          minLng = math.min(minLng, coords[j].longitude);
-          maxLng = math.max(maxLng, coords[j].longitude);
+              minLat = math.min(minLat, coords[j].latitude);
+              maxLat = math.max(maxLat, coords[j].latitude);
+              minLng = math.min(minLng, coords[j].longitude);
+              maxLng = math.max(maxLng, coords[j].longitude);
+            }
+          }
         }
       }
 
       final count = clusterProperties.length;
       final centroid = LatLng(sumLat / count, sumLng / count);
 
-      clusters.add(PropertyCluster(
-        centroid: centroid,
-        properties: clusterProperties,
-        minLat: minLat,
-        maxLat: maxLat,
-        minLng: minLng,
-        maxLng: maxLng,
-      ));
+      clusters.add(
+        PropertyCluster(
+          centroid: centroid,
+          properties: clusterProperties,
+          minLat: minLat,
+          maxLat: maxLat,
+          minLng: minLng,
+          maxLng: maxLng,
+        ),
+      );
     }
 
     return clusters;

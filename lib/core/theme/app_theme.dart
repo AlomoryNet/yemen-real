@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'app_colors.dart';
+import 'app_fonts.dart';
 
 /// Material 3 Expressive-informed themes.
 ///
@@ -9,8 +10,8 @@ import 'app_colors.dart';
 /// Tokens exposed by [AppColors] are brightness-aware for screens that style
 /// text directly.
 class AppTheme {
-  // Building both themes calls GoogleFonts dozens of times. Cache the results
-  // so root rebuilds (settings/auth changes) do not recreate every text style.
+  // Building both themes creates dozens of text styles. Cache the results so
+  // root rebuilds (settings/auth changes) do not recreate every style.
   static final ThemeData lightTheme = _build(const _Palette.light());
   static final ThemeData darkTheme = _build(const _Palette.dark());
 }
@@ -92,7 +93,7 @@ class _Palette {
 }
 
 ThemeData _build(_Palette p) {
-  final base = GoogleFonts.cairoTextTheme();
+  final base = AppFonts.cairoTextTheme();
 
   TextStyle cairo({
     required double fontSize,
@@ -100,7 +101,7 @@ ThemeData _build(_Palette p) {
     Color? color,
     double height = 1.25,
   }) =>
-      GoogleFonts.cairo(
+      AppFonts.cairo(
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color ?? p.textPrimary,

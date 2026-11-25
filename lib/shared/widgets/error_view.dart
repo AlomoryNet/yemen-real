@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -32,7 +32,7 @@ class ErrorView extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               context.l10n.sh_error_unexpected,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -42,7 +42,7 @@ class ErrorView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 13,
                 color: AppColors.textSecondary,
               ),

@@ -5,8 +5,13 @@ import 'package:latlong2/latlong.dart';
 class DeviceLocationResult {
   final LatLng? position;
   final bool granted;
+  final bool permanentlyDenied;
 
-  const DeviceLocationResult({this.position, required this.granted});
+  const DeviceLocationResult({
+    this.position,
+    required this.granted,
+    this.permanentlyDenied = false,
+  });
 
   bool get hasPosition => position != null;
 }
@@ -31,13 +36,19 @@ class DeviceLocationService {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.deniedForever) {
+        return const DeviceLocationResult(
+          granted: false,
+          permanentlyDenied: true,
+        );
+      }
+      if (permission == LocationPermission.denied) {
         return const DeviceLocationResult(granted: false);
       }
 
-      final position = await Geolocator.getCurrentPosition()
-          .timeout(const Duration(seconds: 10));
+      final position = await Geolocator.getCurrentPosition().timeout(
+        const Duration(seconds: 10),
+      );
       return DeviceLocationResult(
         granted: true,
         position: LatLng(position.latitude, position.longitude),
@@ -46,4 +57,7 @@ class DeviceLocationService {
       return const DeviceLocationResult(granted: false);
     }
   }
+
+  /// Opens the OS app settings so a denied-forever permission can be retried.
+  static Future<bool> openAppSettings() => Geolocator.openAppSettings();
 }

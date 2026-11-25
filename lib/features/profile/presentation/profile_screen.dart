@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
@@ -69,7 +69,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             success
                 ? context.l10n.prof_update_success
                 : context.l10n.prof_update_failure,
-            style: GoogleFonts.cairo(),
+            style: AppFonts.cairo(),
           ),
           backgroundColor: success ? AppColors.success : AppColors.error,
         ),
@@ -146,7 +146,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     user.fullName.isNotEmpty
                                         ? user.fullName[0]
                                         : 'U',
-                                    style: GoogleFonts.cairo(
+                                    style: AppFonts.cairo(
                                       fontSize: 28,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.primaryInk,
@@ -166,7 +166,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                               user.fullName,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.cairo(
+                                              style: AppFonts.cairo(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
                                                 color: AppColors.textPrimary,
@@ -194,7 +194,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                                           .l10n
                                                           .prof_super_admin
                                                     : context.l10n.prof_admin,
-                                                style: GoogleFonts.cairo(
+                                                style: AppFonts.cairo(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.white,
@@ -208,7 +208,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       Text(
                                         user.phone ??
                                             context.l10n.prof_no_phone,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontSize: 13,
                                           color: AppColors.textSecondary,
                                         ),
@@ -216,7 +216,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       const SizedBox(height: 2),
                                       Text(
                                         '${context.l10n.prof_member_since} ${Formatters.formatDate(user.createdAt)}',
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontSize: 11,
                                           color: AppColors.textMuted,
                                         ),
@@ -255,7 +255,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   children: [
                                     Text(
                                       context.l10n.prof_edit_account,
-                                      style: GoogleFonts.cairo(
+                                      style: AppFonts.cairo(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.textPrimary,
@@ -264,7 +264,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     const SizedBox(height: 14),
                                     Text(
                                       context.l10n.prof_full_name_required,
-                                      style: GoogleFonts.cairo(
+                                      style: AppFonts.cairo(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13,
                                       ),
@@ -285,7 +285,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     const SizedBox(height: 14),
                                     Text(
                                       context.l10n.prof_phone_required,
-                                      style: GoogleFonts.cairo(
+                                      style: AppFonts.cairo(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13,
                                       ),
@@ -342,7 +342,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // Account Shortcuts
                         Text(
                           context.l10n.prof_manage_activities,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
@@ -447,7 +447,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         title: Text(
           title,
-          style: GoogleFonts.cairo(
+          style: AppFonts.cairo(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             color: isAccent ? AppColors.accentDark : AppColors.textPrimary,
@@ -455,7 +455,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.cairo(
+          style: AppFonts.cairo(
             fontSize: 12,
             color: AppColors.textSecondary,
           ),

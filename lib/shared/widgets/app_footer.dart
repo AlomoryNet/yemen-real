@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -37,7 +37,7 @@ class AppFooter extends StatelessWidget {
                 children: [
                   Text(
                     context.l10n.admin_pdf_copyright,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       color: AppColors.accentLight,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -45,7 +45,7 @@ class AppFooter extends StatelessWidget {
                   ),
                   Text(
                     context.l10n.sh_footer_republic,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       color: AppColors.textLight.withAlpha(200),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -74,7 +74,7 @@ class AppFooter extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 context.l10n.sh_footer_tagline_desktop,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   color: AppColors.textLight.withAlpha(190),
                   fontSize: 13,
                   height: 1.6,
@@ -92,7 +92,7 @@ class AppFooter extends StatelessWidget {
             children: [
               Text(
                 context.l10n.sh_footer_quick_links,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   color: Colors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -130,7 +130,7 @@ class AppFooter extends StatelessWidget {
             children: [
               Text(
                 context.l10n.sh_footer_my_account,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   color: Colors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -164,7 +164,7 @@ class AppFooter extends StatelessWidget {
             children: [
               Text(
                 context.l10n.sh_footer_contact,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   color: Colors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -181,7 +181,7 @@ class AppFooter extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     '+967 770 000 000',
-                    style: GoogleFonts.outfit(
+                    style: AppFonts.cairo(
                       color: AppColors.textLight,
                       fontSize: 13,
                     ),
@@ -199,7 +199,7 @@ class AppFooter extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'support@yemenrealestate.local',
-                    style: GoogleFonts.outfit(
+                    style: AppFonts.cairo(
                       color: AppColors.textLight,
                       fontSize: 13,
                     ),
@@ -221,7 +221,7 @@ class AppFooter extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           context.l10n.sh_footer_tagline_mobile,
-          style: GoogleFonts.cairo(
+          style: AppFonts.cairo(
             color: AppColors.textLight.withAlpha(190),
             fontSize: 13,
             height: 1.5,
@@ -264,7 +264,7 @@ class AppFooter extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
           child: Text(
             title,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               color: AppColors.textLight.withAlpha(220),
               fontSize: 13,
               fontWeight: FontWeight.w500,

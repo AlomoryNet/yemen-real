@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../../core/l10n/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -18,7 +18,7 @@ class AdminReportsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reportsAsync = ref.watch(adminReportsProvider);
+    final reportsPaginator = ref.watch(adminReportsPaginatorProvider);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -31,7 +31,7 @@ class AdminReportsTab extends ConsumerWidget {
               children: [
                 Text(
                   context.l10n.admin_reports_list_title,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -42,8 +42,9 @@ class AdminReportsTab extends ConsumerWidget {
             const Divider(height: 1),
             const SizedBox(height: 12),
             Expanded(
-              child: reportsAsync.when(
-                data: (reports) {
+              child: reportsPaginator.when(
+                data: (page) {
+                  final reports = page.items;
                   if (reports.isEmpty) {
                     return EmptyStateView(
                       icon: Icons.check_circle_outline,
@@ -53,6 +54,11 @@ class AdminReportsTab extends ConsumerWidget {
                   }
                   return AdminPagedList(
                     items: reports,
+                    hasMore: page.hasMore,
+                    isLoadingMore: page.isLoadingMore,
+                    onLoadMore: ref
+                        .read(adminReportsPaginatorProvider.notifier)
+                        .loadMore,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, rep, index) {
                       return ListTile(
@@ -66,14 +72,14 @@ class AdminReportsTab extends ConsumerWidget {
                         ),
                         title: Text(
                           rep.reason,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
                         subtitle: Text(
                           '${context.l10n.admin_details_label}: ${rep.details ?? context.l10n.admin_none} • ${context.l10n.admin_status_label}: ${rep.status}',
-                          style: GoogleFonts.cairo(fontSize: 12),
+                          style: AppFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -84,10 +90,15 @@ class AdminReportsTab extends ConsumerWidget {
                                 await ReportRepository().updateReportStatus(
                                   reportId: rep.id,
                                   status: 'resolved',
-                                  adminActionTaken: context.l10n.admin_verified_closed,
+                                  adminActionTaken:
+                                      context.l10n.admin_verified_closed,
                                   adminId: authUser?.id,
                                 );
-                                ref.refresh(adminReportsProvider);
+                                await ref
+                                    .read(
+                                      adminReportsPaginatorProvider.notifier,
+                                    )
+                                    .reload();
                                 ref.refresh(adminStatsProvider);
                               },
                               child: Text(context.l10n.admin_process),

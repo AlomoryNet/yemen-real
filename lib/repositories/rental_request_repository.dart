@@ -2,9 +2,11 @@ import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/env_config.dart';
 import '../core/constants/app_constants.dart';
+import '../models/admin_list_page.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/rental_request.dart';
 import '../services/supabase_service.dart';
+import 'admin_paging.dart';
 
 class RentalRequestRepository {
   final SupabaseClient? _client = SupabaseService.client;
@@ -111,10 +113,53 @@ class RentalRequestRepository {
     }
   }
 
-  /// Get all rental requests (Admin access)
-  Future<List<RentalRequest>> getAllRentalRequests() async {
+  /// Get all rental requests for export, in bounded chunks (Admin access).
+  Future<List<RentalRequest>> getAllRentalRequests() =>
+      collectAdminStream(streamAllRentalRequestsForExport());
+
+  /// One bounded page for the admin rental requests tab.
+  Future<AdminListPage<RentalRequest>> getRentalRequestsPage({
+    int limit = 12,
+    int offset = 0,
+  }) async {
+    final pageOffset = normalizeAdminOffset(offset);
+    final pageLimit = normalizeAdminLimit(limit);
+    final results = await Future.wait<dynamic>([
+      _fetchRentalRequestsPage(limit: pageLimit, offset: pageOffset),
+      countRentalRequests(),
+    ]);
+
+    return AdminListPage<RentalRequest>(
+      items: results[0] as List<RentalRequest>,
+      total: results[1] as int,
+      offset: pageOffset,
+    );
+  }
+
+  Future<int> countRentalRequests() async {
     if (EnvConfig.isDemoMode || _client == null) {
-      return List<RentalRequest>.from(SupabaseService.demoRentalRequests);
+      return SupabaseService.demoRentalRequests.length;
+    }
+
+    try {
+      return await _client.from('rental_requests').count();
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  Future<List<RentalRequest>> _fetchRentalRequestsPage({
+    required int limit,
+    required int offset,
+  }) async {
+    if (EnvConfig.isDemoMode || _client == null) {
+      return pageAdminDemo(
+        SupabaseService.demoRentalRequests,
+        offset,
+        limit,
+        (request) => request.createdAt,
+        (request) => request.id,
+      );
     }
 
     try {
@@ -128,13 +173,29 @@ class RentalRequestRepository {
               currency
             )
           ''')
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .order('id', ascending: false)
+          .range(offset, offset + limit - 1);
 
       return (data as List)
           .map((item) => RentalRequest.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Complete request list for PDF/CSV export without an unbounded select.
+  Stream<List<RentalRequest>> streamAllRentalRequestsForExport({
+    int pageSize = 200,
+  }) async* {
+    final total = await countRentalRequests();
+    final size = normalizeAdminLimit(pageSize);
+
+    for (var offset = 0; offset < total; offset += size) {
+      final page = await _fetchRentalRequestsPage(limit: size, offset: offset);
+      if (page.isEmpty) break;
+      yield page;
     }
   }
 

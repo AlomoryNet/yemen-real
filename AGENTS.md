@@ -62,10 +62,93 @@ demo/offline fallback (DemoPropertiesGenerator). State: Riverpod. Routing: GoRou
 ```
 flutter analyze   → expect "No issues found!"
 flutter run -d ZY22G4C24N   (USB, preferred)
-flutter test      → suite (last known: 71 tests)
+flutter test      → suite (last known: 100 tests)
 ```
 
 ## Status — latest
+- Admin list paging completed: the four previously unbounded admin selects
+  (profiles, commissions, reports, rental requests) now use bounded
+  `get*Page()` queries with stable secondary `id` ordering and separate counts.
+  `AdminListPaginator` + new paginator providers feed the four admin tabs;
+  `AdminPagedList` supports external `hasMore/isLoadingMore/onLoadMore`. CSV
+  buttons and PDF sections await separate full-list providers that collect
+  chunked `streamAll*ForExport()` streams, so exports still contain every row.
+  Added `test/admin_paging_repository_test.dart`,
+  `test/admin_list_paginator_test.dart` and external-paging widget tests;
+  `flutter analyze` clean, 100/100 tests. Fresh USB cold launch + DTD hot
+  restart: all four admin tabs opened, requests/commissions CSV dialogs and
+  PDF sections 1–4 (properties/requests/commissions/reports/users) exported
+  successfully; no Flutter runtime errors and no new `data_app_anr` entry
+  (latest remains 2026-11-25 00:41:13). Demo lists fit one page, so device
+  "Load more" was covered by the external-paging widget tests.
+- Map cluster-animation regression fixed: `_PropertyMapViewState` now reuses a
+  single `AnimationController` for cluster zoom taps, interpolating from the
+  camera's current position instead of creating a new controller (and ticker)
+  per tap. Added `test/property_map_cluster_ticker_test.dart`; `flutter analyze`
+  clean, 92/92 tests. Fresh USB cold launch + DTD hot reload + repeated cluster
+  taps/menu/back had no runtime errors and no new `data_app_anr` entry (latest
+  remains 2026-11-25 00:41:13).
+- Local Cairo font, no runtime fetch: `assets/fonts/Cairo.ttf` is bundled as
+  family `CairoLocal`; `core/theme/app_fonts.dart` maps `FontWeight` to the
+  variable font's `wght` axis (200–1000) and all former
+  `GoogleFonts.cairo`/`outfit`/`amiri` call sites now use `AppFonts.cairo`.
+  `main.dart` sets `GoogleFonts.config.allowRuntimeFetching = false`, so a
+  future missed call fails instead of downloading a font. Added
+  `test/app_fonts_test.dart`; `flutter analyze` clean, 91/91 tests; fresh USB
+  cold launch with the new asset plus menu tap/back had no runtime errors.
+- Contract locale defaults: `PropertyContract.defaultTemplate()` now generates
+  the title, owner address, payment/duration text and legal clauses from
+  `AppLocale` at creation time via `models/contract_default_text.dart`. The
+  generated text is stored in the existing contract fields, so saved contracts
+  keep their original language and no schema/JSON migration was needed. Added
+  `test/contract_locale_defaults_test.dart`; `flutter analyze` clean, 87/87
+  tests; fresh USB launch + DTD hot restart + menu tap/back had no runtime
+  errors.
+- i18n place names + PDF direction: contract/admin PDFs derive `pw.TextDirection`
+  and alignment from `Directionality.of(context)` instead of forcing RTL.
+  `AppLabelsEn` now owns English governorate/district labels; the display-only
+  getters in `AppConstants` keep Arabic as the canonical data/filter key and are
+  consumed by filter sheets, cards, detail, add/edit, map chips/caption and
+  contract text. Demo `LocationItem.nameEn` uses the display label instead of a
+  slug. Map governorate search text shows the localized label while skipping
+  the redundant free-text pass so English mode still finds Arabic listings.
+  Added `test/display_name_localization_test.dart` plus an English `/map`
+  filter regression in `test/yemen_map_screen_test.dart`. `flutter analyze`
+  clean, 83/83 tests; USB cold launch + DTD hot restart + menu tap/back had no
+  runtime errors and no new `data_app_anr` entry (latest remains 2026-11-25
+  00:41:13).
+- Dashboard FAB stack alignment: the compact add-property FAB now shares the
+  extended map FAB's trailing edge (`CrossAxisAlignment.end`) instead of being
+  centered over it. The old centered look came from `Column`'s default
+  `crossAxisAlignment: center` while `Scaffold` keeps the FAB at `endFloat`.
+- ANR/input-dispatch mitigation: moved the dashboard's 440-listing nearby scan
+  out of `HomeScreen.build` into cached `nearbyPropertiesProvider`; capped
+  grid/management image decode width; delayed the first-run location prompt's
+  SharedPreferences write until after the OS permission result; cached all
+  distinct Cairo `TextStyle` variants keyed by exact size/weight/colour/height.
+  Fixed two async regressions found on USB: reading Riverpod after the Home
+  State was disposed, and calling `ProviderScope.containerOf` from `initState`.
+  The location callback now captures settings/center notifiers with `ref.read`
+  in `initState`. `flutter analyze` clean, 78/78 tests, USB hot restart after
+  the fix had no runtime errors; menu tap + back produced no exceptions.
+  Fresh USB cold launch installed cleanly with no Flutter exception and no new
+  `data_app_anr` entry (latest remains 2026-11-25 00:41:13). Debug cold start
+  still logs `Choreographer: Skipped frames` / `Davey` warnings on this device.
+- Map filter/add-action correction: `AppConstants.governorateMatches` treats
+  `صنعاء` and `أمانة العاصمة` as one area, so Governorate=صنعاء +
+  District=بيت بوس now returns the 2 demo listings. The map count/list no longer
+  clips filtered results to the current viewport. Added a shared compact
+  `AddPropertyFab` (small FAB, `add_home_outlined`) shown on Home and only in the
+  map's list view — never over the map. `flutter analyze` clean, 74/74 tests,
+  USB hot restart with no runtime errors.
+- Web deferred loading + clustering pass: `/admin` and `/map` now use deferred
+  imports in `app_router.dart` behind a shared `DeferredScreen` (localized
+  loading/error/retry). `MapScreenArgs` moved to a tiny file so Home does not
+  eagerly import the map screen. `MapClusterService` now uses a spatial hash
+  instead of an all-pairs scan. Added `test/deferred_screen_test.dart` and
+  `test/map_cluster_service_test.dart`; `flutter analyze` clean, 74/74 tests,
+  `flutter build web --release` succeeded with three deferred JS parts.
+- Back/filter/settings UI pass: root back now shows the exit snackbar before exiting (verified twice on USB: first back keeps the app, second finishes the activity); global tap-to-dismiss uses `deferToChild` so register fields keep the keyboard; map filters fit the camera to the filtered coordinates, show a live count chip, drop "Search this area", and clamp list pagination; the add-property style setting now drives the hero button and a map-screen FAB; publisher/drawer map CTAs removed; first-run location consent + Settings retry added (USB log shows the OS permission dialog; it was cancelled so permission remains denied, retry is in Settings); search-radius intent documented. `flutter analyze` clean, 74/74 tests, fresh USB run + DTD hot restart with no runtime errors. See `AGENTS_HISTORY.md`.
 - Settings screen verified functional and expanded: currency (YER/SAR/USD),
   distance unit (km/miles), text size (small/medium/large) and default map view
   (list/map) added with SharedPreferences persistence via settingsProvider.
@@ -85,8 +168,8 @@ flutter test      → suite (last known: 71 tests)
   Verified on USB: Dark→Light and Light→Dark both repaint dashboard scaffold,
   surfaces, header and bottom nav immediately; no runtime errors. Added a
   widget regression test in `test/settings_test.dart`.
-- Current focus: performance quick wins (next: web deferred loading / map
-  clustering; bundled Cairo font deferred until its `wght` axis can be set safely).
+- Current focus: remaining performance/UX work (bundled Cairo font deferred until
+  its `wght` axis can be set safely; admin query paging as a coordinated unit).
   Full roadmap in `TODO.md`.
 - `getDashboardStats()` now uses PostgREST `sum()`/`count()` aggregates for commission
   totals with a client-side fallback; no longer downloads every commission row.

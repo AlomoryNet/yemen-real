@@ -7,11 +7,10 @@ import '../../../../core/theme/app_colors.dart';
 
 /// A bounded list for the admin tables.
 ///
-/// Admin data sources can contain hundreds of rows (the demo catalog alone has
-/// 440 properties). Building all of them at once makes the dashboard sluggish
-/// and buries the other sections. This widget shows [pageSize] rows initially
-/// and reveals more on demand, while callers keep access to the full list for
-/// CSV/PDF export.
+/// With only [items] and [itemBuilder], this reveals a prefix of a full list
+/// (the legacy behavior). When [onLoadMore] is supplied, the list renders only
+/// the rows that were actually fetched and asks the caller for the next page.
+/// CSV/PDF exports always use separate full-list providers.
 class AdminPagedList<T> extends StatefulWidget {
   const AdminPagedList({
     super.key,
@@ -19,9 +18,12 @@ class AdminPagedList<T> extends StatefulWidget {
     required this.itemBuilder,
     this.separatorBuilder,
     this.pageSize = 12,
+    this.hasMore,
+    this.isLoadingMore = false,
+    this.onLoadMore,
   });
 
-  /// Full, unfiltered data source (only a prefix is built at any time).
+  /// Loaded rows. With external paging this is already a bounded page.
   final List<T> items;
 
   /// Builds one row. [index] is the index within [items].
@@ -30,8 +32,17 @@ class AdminPagedList<T> extends StatefulWidget {
   /// Optional separator between rows. Defaults to a hairline divider.
   final Widget Function(BuildContext context, int index)? separatorBuilder;
 
-  /// Number of rows revealed per "Load more" tap.
+  /// Number of rows revealed per tap when using the legacy prefix mode.
   final int pageSize;
+
+  /// Whether the caller has another page to fetch. Ignored in prefix mode.
+  final bool? hasMore;
+
+  /// Shows a spinner in the button while an external page request is running.
+  final bool isLoadingMore;
+
+  /// When provided, the button fetches more rows instead of revealing a prefix.
+  final Future<void> Function()? onLoadMore;
 
   @override
   State<AdminPagedList<T>> createState() => _AdminPagedListState<T>();
@@ -39,6 +50,8 @@ class AdminPagedList<T> extends StatefulWidget {
 
 class _AdminPagedListState<T> extends State<AdminPagedList<T>> {
   late int _visibleCount = widget.pageSize;
+
+  bool get _usesExternalPaging => widget.onLoadMore != null;
 
   @override
   void didUpdateWidget(covariant AdminPagedList<T> oldWidget) {
@@ -51,8 +64,14 @@ class _AdminPagedListState<T> extends State<AdminPagedList<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final visibleCount = math.min(_visibleCount, widget.items.length);
-    final hasMore = visibleCount < widget.items.length;
+    final external = _usesExternalPaging;
+    final visibleCount = external
+        ? widget.items.length
+        : math.min(_visibleCount, widget.items.length);
+    final hasMore = external
+        ? (widget.hasMore ?? true)
+        : visibleCount < widget.items.length;
+    final loading = external && widget.isLoadingMore;
 
     return Column(
       children: [
@@ -69,13 +88,27 @@ class _AdminPagedListState<T> extends State<AdminPagedList<T>> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: OutlinedButton.icon(
-              onPressed: () => setState(() {
-                _visibleCount = math.min(
-                  _visibleCount + widget.pageSize,
-                  widget.items.length,
-                );
-              }),
-              icon: const Icon(Icons.expand_more_rounded, size: 18),
+              onPressed: loading
+                  ? null
+                  : () {
+                      if (external) {
+                        widget.onLoadMore!();
+                      } else {
+                        setState(() {
+                          _visibleCount = math.min(
+                            _visibleCount + widget.pageSize,
+                            widget.items.length,
+                          );
+                        });
+                      }
+                    },
+              icon: loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.expand_more_rounded, size: 18),
               label: Text(context.l10n.map_load_more),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primaryInk,

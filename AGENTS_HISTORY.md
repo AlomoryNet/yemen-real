@@ -8,6 +8,160 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
+DONE (admin list paging, 2026-11-25, `flutter analyze` clean, 100/100 tests):
+- Replaced the four unbounded admin selects (profiles, commissions, reports,
+  rental requests) with bounded repository pages: `get*Page({limit, offset})`
+  applies the original ordering plus a secondary `id` tie-breaker and
+  `.range(offset, offset + limit - 1)`, and a separate `count*()` supplies the
+  total. Demo data is sorted/sliced the same way via `admin_paging.dart`.
+- Added `streamAll*ForExport({pageSize: 200})` for every table. The existing
+  `getAll*()` methods now collect those chunks, so CSV/PDF can still include
+  every row without issuing one unbounded query.
+- Added `AdminListPage<T>` and `AdminListPaginator<T>`. New paginator providers
+  in `admin_provider.dart` and `rental_request_provider.dart` feed the four
+  admin tabs; mutations reload the first page instead of refreshing a full
+  list. `AdminPagedList` gained optional external paging
+  (`hasMore/isLoadingMore/onLoadMore`) while preserving the legacy prefix mode
+  used by properties/favorites.
+- CSV buttons and PDF sections now await the separate full-list providers
+  instead of reading only the loaded UI page, removing the old export
+  truncation risk. PDF localization strings are snapshotted once before the
+  async provider reads to keep the analyzer clean.
+- Added `test/admin_paging_repository_test.dart`,
+  `test/admin_list_paginator_test.dart`, and external-paging cases in
+  `test/admin_paged_list_test.dart`. `flutter analyze`: no issues;
+  `flutter test`: 100/100 passed. Fresh USB cold launch + DTD hot restart:
+  opened all four admin tabs; requests/commissions CSV dialogs and PDF sections
+  1–4 (properties, requests, commissions, reports, users) all exported with
+  success dialogs. No Flutter runtime errors in logcat and no new `data_app_anr`
+  (latest remains 2026-11-25 00:41:13). Demo tables fit one 12-row page, so the
+  device "Load more" path is covered by the external-paging widget tests.
+
+DONE (map cluster ticker fix, 2026-11-25, `flutter analyze` clean, 92/92 tests):
+- Extended USB interaction found
+  `_PropertyMapViewState is a SingleTickerProviderStateMixin but multiple
+  tickers were created` when a cluster marker was tapped repeatedly. The old
+  `_animatedMove` created and disposed a fresh `AnimationController` per tap.
+- `PropertyMapView` now owns one `AnimationController`, registered once in
+  `initState` and disposed in `dispose`. `_animatedMove` captures the camera's
+  current center/zoom and resets/restarts that controller; a single listener
+  interpolates the camera with `Curves.easeInOutCubic` and calls
+  `MapController.move`.
+- Added `test/property_map_cluster_ticker_test.dart`, which invokes a cluster
+  badge's `onTap` twice without settling the first animation and asserts no
+  exception was recorded.
+- Verified with a fresh USB cold launch, DTD hot reload, two rapid taps on the
+  large initial cluster plus four rapid taps on later clusters, then menu/back:
+  no runtime errors, no Flutter exception lines in logcat, and no new
+  `data_app_anr` entry (latest remains 2026-11-25 00:41:13).
+
+DONE (local Cairo font, 2026-11-25, `flutter analyze` clean, 91/91 tests):
+- Declared `assets/fonts/Cairo.ttf` as the `CairoLocal` font family in
+  `pubspec.yaml`. The bundled file is variable; its `fvar` table exposes
+  `wght` 200–1000, so requested weights can be rendered without downloading
+  static instances.
+- Added `core/theme/app_fonts.dart` with a `GoogleFonts.cairo`-compatible
+  `AppFonts.cairo()` helper that sets `FontVariation('wght', …)` from the
+  effective `TextStyle.fontWeight` (clamped to 200–1000) and an
+  `AppFonts.cairoTextTheme()` replacement.
+- Migrated every `GoogleFonts.cairo`, `GoogleFonts.outfit` and
+  `GoogleFonts.amiri` call in `lib/` to `AppFonts.cairo`. The two minor display
+  fonts now intentionally render with the bundled Cairo family.
+- Set `GoogleFonts.config.allowRuntimeFetching = false` in `main.dart` so any
+  future direct GoogleFonts use fails fast instead of making an HTTP request.
+- Added `test/app_fonts_test.dart` for family selection, weight-axis mapping,
+  clamping and `textStyle` merging. Also updated
+  `test/property_text_styles_test.dart` to restore `AppFonts.cairo` as the
+  default factory.
+- Verified with a fresh USB cold launch (required for the newly declared font
+  asset) plus menu tap + back: no runtime errors and no Flutter exception /
+  `google_fonts` lines in logcat.
+
+DONE (contract locale defaults, 2026-11-25, `flutter analyze` clean, 87/87 tests):
+- Added `models/contract_default_text.dart` with Arabic and English legal
+  template text (lease/sale titles, owner address, payment/duration wording,
+  indefinite sale end date, utilities/maintenance/late-payment text and
+  clause lists).
+- `PropertyContract.defaultTemplate()` now chooses
+  `ContractDefaultText.forCurrentLocale()` from the `AppLocale` mirror unless a
+  caller passes an explicit variant. The generated strings are written into
+  the existing `PropertyContract` fields, so saved contracts keep the language
+  they were created in and no schema/JSON migration was needed.
+- `ContractService.getOwnerDefaultTemplate()` still reuses a saved owner
+  template unchanged; only new contracts without a saved template follow the
+  active locale.
+- Added `test/contract_locale_defaults_test.dart` covering Arabic parity,
+  English lease/sale defaults and JSON persistence.
+- Verified with a fresh USB launch, DTD hot restart and menu tap + back: no
+  runtime errors and no Flutter exception/ANR lines in logcat.
+
+DONE (i18n PDF direction + place names, 2026-11-25, `flutter analyze` clean, 83/83 tests):
+- `contract_preview_screen.dart` and `admin_pdf_service.dart` now snapshot
+  `Directionality.of(context) == TextDirection.rtl` before the async font load.
+  Contract `pw.Directionality`, admin `pw.MultiPage`, the terms heading and the
+  admin table `cellAlignment` follow that value, so English mode no longer
+  renders RTL/right-aligned PDF content.
+- `AppLabelsEn.governorate` holds display names for all canonical Arabic
+  governorate keys plus Sana'a aliases; `AppLabelsEn.district` holds English
+  names for all 182 demo districts and the extra location aliases. Unknown
+  values deliberately fall back to their stored Arabic text.
+- `AppConstants.getGovernorateNameAr` / `getDistrictNameAr` are the one
+  locale-aware display gate. Storage, filters, `governorateMatches`, GeoJSON
+  canonicalization and `PropertyFilterSelection` values remain Arabic.
+- Display call sites migrated: shared filter sheet labels/hints, `PropertyCard`,
+  property detail, add/edit dropdown and district chips, map filter chips and
+  approximate-location caption, contract preview/PDF text. On `/map`, applying
+  a governorate filter writes the localized label into the search box; the
+  free-text pass skips that exact label so English mode still returns the
+  Arabic-keyed listings.
+- `supabase_service.dart` demo `LocationItem.nameEn` now uses
+  `AppLabelsEn.governorate[entry.value.name]` instead of `entry.value.slug`,
+  so English UI no longer shows `sanaa_capital` / `sanaa_gov`.
+- Added `test/display_name_localization_test.dart` (locale getters, alias
+  handling, no-slug regression, one English label per demo district) and an
+  English `/map` regression in `test/yemen_map_screen_test.dart` that proves
+  "Sana'a Governorate" + "Bayt Bous" still returns the two Arabic-keyed demo
+  listings.
+- Verified on USB with a fresh install, DTD hot restart and menu tap + back:
+  no Dart runtime errors, no Flutter exceptions/ANR lines in logcat, and no new
+  `data_app_anr` entry (latest remains 2026-11-25 00:41:13).
+
+DONE (Dashboard FAB alignment, 2026-11-25):
+- `HomeScreen`'s stacked FABs now set `crossAxisAlignment: CrossAxisAlignment.end`,
+  so the compact `AddPropertyFab` aligns with the trailing edge of the wider
+  extended map FAB. Previously `Column` defaulted to `center`, which made the
+  small FAB float above the middle of the extended FAB even though `Scaffold`
+  places the stack at `endFloat`.
+
+DONE (ANR/input-dispatch mitigation, 2026-11-25, `flutter analyze` clean, 78/78 tests):
+- Diagnosed the reported `"isn't responding"` dialog as input-dispatch timeout /
+  main-thread jank, not a Dart exception: DropBox showed
+  `Input dispatching timed out`, `Choreographer: Skipped 156 frames!`,
+  `OpenGLRenderer Davey! duration=2622ms`; DTD reported no runtime errors.
+- Moved the dashboard's 440-property nearby scan into pure
+  `computeNearbyProperties` plus cached `nearbyPropertiesProvider`, so
+  `HomeScreen.build` no longer scores/sorts the whole catalogue on rebuild.
+  Added `test/home_nearby_properties_test.dart`.
+- Cached every distinct Cairo `TextStyle` in `PropertyTextStyles` keyed by
+  size, exact `FontWeight`, colour and height (no `copyWith` weight reuse).
+  Added an injectable font factory so tests verify identity/line heights
+  without a runtime font download (`test/property_text_styles_test.dart`).
+- Capped `PropertyImage.memCacheWidth` for grid/management cards to 800 px.
+- Reworked the first-run location flow: persist `locationPromptShown` only
+  after the OS permission result, and set `homeCenterProvider` instead of
+  calling `setState`.
+- USB cold launch surfaced two regressions in that async flow and both were
+  fixed: (1) `ref.read` in a post-frame callback after disposal now avoided by
+  capturing settings/center notifiers with `ref.read` in `initState`;
+  (2) illegal `ProviderScope.containerOf(context)` in `initState` replaced by
+  those captured notifiers. `SettingsState` is also captured in `initState`
+  instead of reading a protected notifier `state` after the async gap.
+- Verified after the fix with DTD hot restart (`No runtime errors found.`) and
+  adb menu tap + back (no Flutter exceptions in logcat). A fresh USB cold
+  launch installed cleanly with no Flutter exception and no new `data_app_anr`
+  entry (latest remains 2026-11-25 00:41:13); debug cold start still logs
+  `Choreographer: Skipped frames` / `Davey` warnings on this device.
+
 DONE (Android build fix, v2.3.0+17 era → verified running on device):
 - Gradle 9.3.1, AGP 9.1.0, KGP 2.4.0, Java 17, pubspec floor ^3.11.0-0.
 - Root docs/ consolidation (prototype files moved to docs/).
@@ -365,6 +519,65 @@ DONE (Stale dark/light elements after theme switch, 2026-11-24, `flutter analyze
   to the dashboard. Scaffold, surfaces, header and bottom nav all matched the
   selected theme after the transition; run log had no runtime errors/overflows.
 - Release prep: bumped `pubspec.yaml` to `2.4.1+19` for the GitHub release.
+
+DONE (back/filter/settings UI pass, 2026-11-24):
+- GlobalAppBackHandler now awaits its async handler, checks route before `pop`,
+  and no longer treats the single root GoRoute as poppable — one back on the
+  dashboard shows the exit snackbar, a second within 2s exits.
+- The global tap-to-dismiss keyboard GestureDetector uses `deferToChild`
+  instead of `translucent`, so tapping a TextField no longer instantly
+  unfocuses it. Register screen bottom fields keep the keyboard open.
+- Map filtering now frames the coordinates of the filtered listings with
+  `CameraFit.coordinates`, shows a live result-count chip in the header, and
+  no longer shows the redundant "Search this area" button. List pagination is
+  clamped to the actual filtered length (fixes RangeError after filtering).
+- Settings "Add Property button" preference is now consumed: outlined option
+  replaces the hero map CTA with an outlined add-property button + helper text
+  and keeps the map FAB; FAB option adds an add-property FAB above the map
+  controls (including list view). The bottom publisher CTA and drawer map card
+  were removed as duplicated/context-free map shortcuts.
+- Location consent is requested once on the first dashboard visit; Settings
+  gained an explicit permission retry tile that opens OS app settings when the
+  permission is denied forever. Search radius now has a subtitle explaining it
+  drives Home → Properties near you.
+
+DONE (web deferred loading + clustering, 2026-11-24):
+- `AdminDashboardScreen` and `YemenMapScreen` are now deferred imports in
+  `app_router.dart`. A shared `DeferredScreen` loads the library once, shows a
+  localized loading state, and offers a retry on failure. New l10n keys
+  `sh_deferred_loading`, `sh_deferred_error`, `sh_deferred_retry` were added to
+  both ARBs and generated.
+- `MapScreenArgs` was extracted to `lib/features/map/presentation/map_screen_args.dart`;
+  `yemen_map_screen.dart` re-exports it for existing imports, while Home and the
+  router import only the tiny type. This prevents Home from pulling the heavy
+  map screen into the eagerly-loaded graph.
+- `MapClusterService.clusterProperties` now uses a `(latCell, lngCell)` spatial
+  hash and checks only the seed cell plus its 8 neighbours, replacing the
+  previous all-pairs O(n²) scan. Added `test/map_cluster_service_test.dart`
+  with a brute-force oracle across six zoom levels and a bounds/centroid check.
+- Added `test/deferred_screen_test.dart` covering the loading → ready path and
+  the error → retry path. Verification: `flutter analyze` clean, 71/71 tests,
+  `flutter build web --release` succeeded with three deferred JS parts
+  (`main.dart.js_1/2/3.part.js`; main bundle ~5.28 MB).
+
+DONE (map filter + add-action correction, 2026-11-25):
+- `AppConstants.canonicalGovernorate` / `governorateMatches` now treat
+  `صنعاء`, `أمانة العاصمة`, `أمانة العاصمة صنعاء` and `محافظة صنعاء` as one
+  search area. This fixes Governorate=صنعاء + District=بيت بوس, which previously
+  returned 0 because the two demo listings are stored under `أمانة العاصمة`.
+- Removed viewport clipping from the map count badge and synced list. They now
+  use the same `filteredProperties` list as the map markers, so correct filters
+  no longer look empty while the camera is still at the governorate centroid.
+  Deleted the unused `MapEvent` subscription / `_visibleBounds` camera fallback.
+- Added `lib/shared/widgets/add_property_fab.dart`: a compact, theme-aware
+  `FloatingActionButton.small` with `Icons.add_home_outlined`. It is shown on
+  Home and only in the map's list view; the previous extended FAB was removed
+  from the map surface. Home's map FAB now uses `AppColors` tokens instead of
+  hardcoded teal/white.
+- Added `test/governorate_filter_test.dart` and extended
+  `test/yemen_map_screen_test.dart` with the exact صنعاء/بيت بوس case and the
+  list-only add-FAB placement check. Verification: `flutter analyze` clean,
+  74/74 tests, USB hot restart with no runtime errors.
 
 ## Docs policy
 - AGENTS.md = agent memory (this file). PROJECT_SUMMARY.md = stale human snapshot, keep for context.

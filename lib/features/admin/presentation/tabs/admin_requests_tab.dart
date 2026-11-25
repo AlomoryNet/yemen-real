@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/context_l10n.dart';
@@ -21,7 +21,7 @@ class AdminRequestsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final requestsAsync = ref.watch(allRentalRequestsProvider);
+    final requestsPaginator = ref.watch(allRentalRequestsPaginatorProvider);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -35,7 +35,7 @@ class AdminRequestsTab extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     context.l10n.admin_requests_list_title,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -48,8 +48,13 @@ class AdminRequestsTab extends ConsumerWidget {
                   ),
                   icon: const Icon(Icons.download, size: 16),
                   label: Text(context.l10n.admin_export_csv),
-                  onPressed: () {
-                    final list = requestsAsync.value ?? [];
+                  onPressed: () async {
+                    // Export providers are intentionally separate from the
+                    // paginator so the CSV contains every rental request.
+                    final list = await ref.read(
+                      allRentalRequestsProvider.future,
+                    );
+                    if (!context.mounted) return;
                     final csvData = ref
                         .read(adminRepositoryProvider)
                         .exportRentalRequestsToCsv(list);
@@ -66,8 +71,9 @@ class AdminRequestsTab extends ConsumerWidget {
             const Divider(height: 1),
             const SizedBox(height: 12),
             Expanded(
-              child: requestsAsync.when(
-                data: (requests) {
+              child: requestsPaginator.when(
+                data: (page) {
+                  final requests = page.items;
                   if (requests.isEmpty) {
                     return EmptyStateView(
                       title: context.l10n.admin_no_requests,
@@ -75,6 +81,11 @@ class AdminRequestsTab extends ConsumerWidget {
                   }
                   return AdminPagedList(
                     items: requests,
+                    hasMore: page.hasMore,
+                    isLoadingMore: page.isLoadingMore,
+                    onLoadMore: ref
+                        .read(allRentalRequestsPaginatorProvider.notifier)
+                        .loadMore,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, req, index) {
                       return ListTile(
@@ -88,14 +99,14 @@ class AdminRequestsTab extends ConsumerWidget {
                         ),
                         title: Text(
                           '${req.requestNumber} - ${req.fullName}',
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
                         subtitle: Text(
                           '${context.l10n.admin_phone_label}: ${req.phone} • ${context.l10n.admin_property_label}: ${req.propertyTitle ?? req.propertyId}',
-                          style: GoogleFonts.cairo(fontSize: 12),
+                          style: AppFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -109,7 +120,12 @@ class AdminRequestsTab extends ConsumerWidget {
                                       requestId: req.id,
                                       status: newStatus,
                                     );
-                                ref.refresh(allRentalRequestsProvider);
+                                await ref
+                                    .read(
+                                      allRentalRequestsPaginatorProvider
+                                          .notifier,
+                                    )
+                                    .reload();
                                 ref.refresh(adminStatsProvider);
                               },
                               itemBuilder: (context) => [

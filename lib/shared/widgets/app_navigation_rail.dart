@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
@@ -99,12 +99,12 @@ class AppNavigationRail extends ConsumerWidget {
       trailingAtBottom: true,
       selectedIconTheme: IconThemeData(color: AppColors.primaryInk),
       unselectedIconTheme: IconThemeData(color: AppColors.textSecondary),
-      selectedLabelTextStyle: GoogleFonts.cairo(
+      selectedLabelTextStyle: AppFonts.cairo(
         color: AppColors.primaryInk,
         fontWeight: FontWeight.bold,
         fontSize: 12,
       ),
-      unselectedLabelTextStyle: GoogleFonts.cairo(
+      unselectedLabelTextStyle: AppFonts.cairo(
         color: AppColors.textSecondary,
         fontSize: 12,
       ),
@@ -146,7 +146,7 @@ class AppNavigationRail extends ConsumerWidget {
                             user.fullName.split(' ').first,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
@@ -172,7 +172,7 @@ class AppNavigationRail extends ConsumerWidget {
               icon: const Icon(Icons.logout_rounded, size: 18),
               label: Text(
                 context.l10n.sh_logout,
-                style: GoogleFonts.cairo(fontSize: 12),
+                style: AppFonts.cairo(fontSize: 12),
               ),
             ),
           ] else
@@ -186,7 +186,7 @@ class AppNavigationRail extends ConsumerWidget {
               icon: const Icon(Icons.login_rounded, size: 18),
               label: Text(
                 context.l10n.sh_rail_login,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),

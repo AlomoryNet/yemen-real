@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/utils/formatters.dart';
@@ -97,7 +97,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
           SnackBar(
             content: Text(
               '${context.l10n.req_error_prefix} ${e.toString()}',
-              style: GoogleFonts.cairo(),
+              style: AppFonts.cairo(),
             ),
             backgroundColor: AppColors.error,
           ),
@@ -146,7 +146,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
         const SizedBox(height: 16),
         Text(
           context.l10n.req_success,
-          style: GoogleFonts.cairo(
+          style: AppFonts.cairo(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
@@ -161,7 +161,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
           ),
           child: Text(
             '${context.l10n.req_reference_number} ${req.requestNumber}',
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppColors.primaryInk,
@@ -186,7 +186,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
               Expanded(
                 child: Text(
                   context.l10n.req_success_note,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 12,
                     color: AppColors.textPrimary,
                     height: 1.4,
@@ -233,7 +233,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
             children: [
               Text(
                 context.l10n.req_form_title,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -250,7 +250,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
             widget.property.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
@@ -262,7 +262,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
           // Full Name
           Text(
             context.l10n.req_full_name_required,
-            style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
+            style: AppFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           TextFormField(
@@ -279,7 +279,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
           // Phone Number
           Text(
             context.l10n.req_phone_required,
-            style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
+            style: AppFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           TextFormField(
@@ -296,7 +296,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
           // Desired Start Date
           Text(
             context.l10n.req_desired_start_date,
-            style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
+            style: AppFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           InkWell(
@@ -324,7 +324,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                     _selectedDate != null
                         ? Formatters.formatDate(_selectedDate)
                         : context.l10n.req_pick_date_hint,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       color: _selectedDate != null
                           ? AppColors.textPrimary
                           : AppColors.textMuted,
@@ -345,7 +345,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
           // Notes
           Text(
             context.l10n.req_notes_label,
-            style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
+            style: AppFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           TextFormField(

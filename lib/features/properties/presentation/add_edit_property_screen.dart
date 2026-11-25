@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
@@ -139,7 +139,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         SnackBar(
           content: Text(
             context.l10n.addprop_verified_login_required,
-            style: GoogleFonts.cairo(),
+            style: AppFonts.cairo(),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -154,7 +154,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         SnackBar(
           content: Text(
             context.l10n.addprop_ownership_pledge_required,
-            style: GoogleFonts.cairo(),
+            style: AppFonts.cairo(),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -172,7 +172,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
             Flexible(
               child: Text(
                 context.l10n.addprop_self_review_title,
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                style: AppFonts.cairo(fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -186,7 +186,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
               children: [
                 Text(
                   context.l10n.addprop_review_intro,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
@@ -232,7 +232,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                     ref.read(authProvider).isAdmin
                         ? context.l10n.addprop_admin_publish_note
                         : context.l10n.addprop_review_policy_note,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 12,
                       color: AppColors.primaryDark,
                     ),
@@ -282,7 +282,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
             width: 100,
             child: Text(
               '$label:',
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textMuted,
@@ -292,7 +292,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -311,7 +311,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         SnackBar(
           content: Text(
             context.l10n.addprop_confirm_email_required,
-            style: GoogleFonts.cairo(),
+            style: AppFonts.cairo(),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -435,7 +435,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                   : (status == AppConstants.statusPending
                         ? context.l10n.addprop_request_sent_success
                         : context.l10n.addprop_draft_saved_success),
-              style: GoogleFonts.cairo(),
+              style: AppFonts.cairo(),
             ),
             backgroundColor: AppColors.success,
           ),
@@ -449,7 +449,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           SnackBar(
             content: Text(
               '${context.l10n.addprop_save_error}: ${e.toString()}',
-              style: GoogleFonts.cairo(),
+              style: AppFonts.cairo(),
             ),
             backgroundColor: AppColors.error,
           ),
@@ -517,7 +517,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                           widget.propertyToEdit == null
                               ? context.l10n.addprop_new_title
                               : context.l10n.addprop_edit_title,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
@@ -526,7 +526,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                         const SizedBox(height: 6),
                         Text(
                           context.l10n.addprop_intro,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
@@ -540,7 +540,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                           children: [
                             Text(
                               context.l10n.addprop_title_label,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -571,7 +571,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_deal_type_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -608,7 +608,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_property_type_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -666,7 +666,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_price_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -696,7 +696,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_currency_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -739,7 +739,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_area_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -768,7 +768,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_bedrooms_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -792,7 +792,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_bathrooms_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -831,7 +831,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_governorate_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -850,7 +850,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                             .map(
                                               (gov) => DropdownMenuItem(
                                                 value: gov,
-                                                child: Text(gov),
+                                                child: Text(
+                                                  AppConstants
+                                                      .getGovernorateNameAr(gov),
+                                                ),
                                               ),
                                             )
                                             .toList(),
@@ -887,7 +890,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_district_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -930,8 +933,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${context.l10n.addprop_common_districts_intro} $currentGov ${context.l10n.addprop_common_districts_quick_pick}',
-                                        style: GoogleFonts.cairo(
+                                        '${context.l10n.addprop_common_districts_intro} ${AppConstants.getGovernorateNameAr(currentGov)} ${context.l10n.addprop_common_districts_quick_pick}',
+                                        style: AppFonts.cairo(
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.textSecondary,
@@ -947,8 +950,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                               d;
                                           return ChoiceChip(
                                             label: Text(
-                                              d,
-                                              style: GoogleFonts.cairo(
+                                              AppConstants.getDistrictNameAr(d),
+                                              style: AppFonts.cairo(
                                                 fontSize: 11,
                                                 fontWeight: isChosen
                                                   ? FontWeight.bold
@@ -979,7 +982,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                             const SizedBox(height: 14),
                             Text(
                               context.l10n.addprop_address_details_label,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -1006,7 +1009,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 Flexible(
                                   child: Text(
                                     context.l10n.addprop_map_picker_label,
-                                    style: GoogleFonts.cairo(
+                                    style: AppFonts.cairo(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
                                       color: AppColors.textPrimary,
@@ -1139,7 +1142,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                               _selectedLatitude != null
                                                   ? '${context.l10n.addprop_location_pinned} ${_selectedLatitude!.toStringAsFixed(4)}, ${_selectedLongitude!.toStringAsFixed(4)}'
                                                   : context.l10n.addprop_map_tap_hint,
-                                              style: GoogleFonts.cairo(
+                                              style: AppFonts.cairo(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.bold,
                                                 color: const Color(0xFF0F766E),
@@ -1165,7 +1168,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                           children: [
                             Text(
                               context.l10n.addprop_description_label,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -1190,7 +1193,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 Flexible(
                                   child: Text(
                                     context.l10n.addprop_photos_label,
-                                    style: GoogleFonts.cairo(
+                                    style: AppFonts.cairo(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
                                     ),
@@ -1244,7 +1247,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 child: Center(
                                   child: Text(
                                     context.l10n.addprop_no_images_hint,
-                                    style: GoogleFonts.cairo(
+                                    style: AppFonts.cairo(
                                       color: AppColors.textMuted,
                                       fontSize: 12,
                                     ),
@@ -1270,7 +1273,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_phone_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -1295,7 +1298,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     children: [
                                       Text(
                                         context.l10n.addprop_whatsapp_label,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
                                         ),
@@ -1322,7 +1325,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               controlAffinity: ListTileControlAffinity.leading,
                               title: Text(
                                 context.l10n.addprop_pledge_text,
-                                style: GoogleFonts.cairo(
+                                style: AppFonts.cairo(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textPrimary,
@@ -1344,7 +1347,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                           children: [
                             Text(
                               context.l10n.addprop_contract_intro,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 13,
                                 color: AppColors.textSecondary,
                               ),
@@ -1366,7 +1369,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               ),
                               label: Text(
                                 context.l10n.addprop_customize_contract,
-                                style: GoogleFonts.cairo(
+                                style: AppFonts.cairo(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.primaryInk,
                                 ),
@@ -1449,7 +1452,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     : const Icon(Icons.send_outlined),
                                 label: Text(
                                   context.l10n.addprop_preview_publish,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -1494,7 +1497,7 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                 Flexible(
                   child: Text(
                     title,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,

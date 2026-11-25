@@ -10,6 +10,7 @@ import '../models/rental_request.dart';
 import '../models/report_item.dart';
 import '../models/user_profile.dart';
 import '../core/constants/app_constants.dart';
+import '../core/l10n/app_labels_en.dart';
 
 class SupabaseService {
   static SupabaseClient? _client;
@@ -122,7 +123,8 @@ class SupabaseService {
         .map((entry) => LocationItem(
               id: 'loc-${entry.key + 1}',
               nameAr: entry.value.name,
-              nameEn: entry.value.slug,
+              nameEn: AppLabelsEn.governorate[entry.value.name] ??
+                  entry.value.slug,
               sortOrder: entry.key + 1,
             ))
         .toList();

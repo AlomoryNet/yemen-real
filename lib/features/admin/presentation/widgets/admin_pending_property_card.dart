@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/context_l10n.dart';
@@ -102,7 +102,7 @@ class _AdminPendingPropertyCardState
                             isRent
                                 ? context.l10n.admin_for_rent
                                 : context.l10n.admin_for_sale,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               color: AppColors.textLight,
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
@@ -124,7 +124,7 @@ class _AdminPendingPropertyCardState
                               p.propertyType?.nameAr ?? p.propertyTypeId,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
@@ -139,7 +139,7 @@ class _AdminPendingPropertyCardState
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.end,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryInk,
@@ -151,7 +151,7 @@ class _AdminPendingPropertyCardState
                     const SizedBox(height: 6),
                     Text(
                       p.title,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
@@ -171,7 +171,7 @@ class _AdminPendingPropertyCardState
                             '${p.city} - ${p.district}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 12.5,
                               color: AppColors.textSecondary,
                             ),
@@ -189,7 +189,7 @@ class _AdminPendingPropertyCardState
                             '${p.areaSqm} ${context.l10n.admin_sqm}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textSecondary,
                             ),
@@ -199,7 +199,7 @@ class _AdminPendingPropertyCardState
                           const SizedBox(width: 8),
                           Text(
                             '• ${p.bedrooms} ${context.l10n.admin_rooms}',
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textSecondary,
                             ),
@@ -234,7 +234,7 @@ class _AdminPendingPropertyCardState
                           '${context.l10n.admin_listing_owner}: ${p.owner?.fullName ?? context.l10n.admin_platform_user}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -255,7 +255,7 @@ class _AdminPendingPropertyCardState
                               : (p.owner?.phone ?? '-'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.cairo(fontSize: 12),
+                          style: AppFonts.cairo(fontSize: 12),
                         ),
                       ),
                     ],
@@ -275,7 +275,7 @@ class _AdminPendingPropertyCardState
                           Formatters.formatDate(p.createdAt),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 12,
                             color: AppColors.textMuted,
                           ),
@@ -310,7 +310,7 @@ class _AdminPendingPropertyCardState
                 icon: const Icon(Icons.check_circle, size: 18),
                 label: Text(
                   context.l10n.admin_approve_publish,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
                   ),
@@ -332,7 +332,7 @@ class _AdminPendingPropertyCardState
                 icon: const Icon(Icons.cancel_outlined, size: 18),
                 label: Text(
                   context.l10n.admin_reject_request,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
                   ),
@@ -343,7 +343,7 @@ class _AdminPendingPropertyCardState
                 icon: const Icon(Icons.visibility_outlined, size: 18),
                 label: Text(
                   context.l10n.admin_view_full_details,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
                   ),
@@ -376,7 +376,7 @@ class _AdminPendingPropertyCardState
           SnackBar(
             content: Text(
               '${context.l10n.admin_approved_prefix}${prop.title}${context.l10n.admin_approved_suffix}',
-              style: GoogleFonts.cairo(),
+              style: AppFonts.cairo(),
             ),
             backgroundColor: AppColors.success,
           ),
@@ -388,7 +388,7 @@ class _AdminPendingPropertyCardState
           SnackBar(
             content: Text(
               '${context.l10n.admin_approve_failed}: ${e.toString()}',
-              style: GoogleFonts.cairo(),
+              style: AppFonts.cairo(),
             ),
             backgroundColor: AppColors.error,
           ),
@@ -415,7 +415,7 @@ class _AdminPendingPropertyCardState
             const SizedBox(width: 8),
             Text(
               context.l10n.admin_reject_dialog_title,
-              style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+              style: AppFonts.cairo(fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -425,13 +425,13 @@ class _AdminPendingPropertyCardState
           children: [
             Text(
               context.l10n.admin_reject_reason_prompt,
-              style: GoogleFonts.cairo(fontSize: 13),
+              style: AppFonts.cairo(fontSize: 13),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: reasonController,
               maxLines: 3,
-              style: GoogleFonts.cairo(fontSize: 13),
+              style: AppFonts.cairo(fontSize: 13),
               decoration: InputDecoration(
                 hintText: context.l10n.admin_reject_hint,
                 border: const OutlineInputBorder(),
@@ -473,7 +473,7 @@ class _AdminPendingPropertyCardState
             SnackBar(
               content: Text(
                 context.l10n.admin_reject_saved,
-                style: GoogleFonts.cairo(),
+                style: AppFonts.cairo(),
               ),
               backgroundColor: AppColors.error,
             ),

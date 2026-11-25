@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/external_communication_service.dart';
@@ -47,7 +47,7 @@ class ExternalContactButtons extends StatelessWidget {
             Flexible(
               child: Text(
                 context.l10n.sh_contact_unavailable,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 12,
                   color: AppColors.textSecondary,
                 ),
@@ -75,7 +75,7 @@ class ExternalContactButtons extends StatelessWidget {
               icon: const Icon(Icons.chat_bubble_outline, size: 20),
               label: Text(
                 context.l10n.sh_contact_whatsapp,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
@@ -91,7 +91,7 @@ class ExternalContactButtons extends StatelessWidget {
                     SnackBar(
                       content: Text(
                         context.l10n.sh_contact_whatsapp_error,
-                        style: GoogleFonts.cairo(),
+                        style: AppFonts.cairo(),
                       ),
                     ),
                   );
@@ -117,7 +117,7 @@ class ExternalContactButtons extends StatelessWidget {
               icon: const Icon(Icons.phone_outlined, size: 20),
               label: Text(
                 context.l10n.sh_contact_call,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
@@ -132,7 +132,7 @@ class ExternalContactButtons extends StatelessWidget {
                     SnackBar(
                       content: Text(
                         '${context.l10n.sh_contact_call_error_prefix} $contactPhone',
-                        style: GoogleFonts.cairo(),
+                        style: AppFonts.cairo(),
                       ),
                     ),
                   );

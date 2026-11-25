@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -73,7 +73,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         context.l10n.req_title,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
@@ -82,7 +82,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                       const SizedBox(height: 6),
                       Text(
                         context.l10n.req_subtitle,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 13,
                           color: AppColors.textSecondary,
                         ),
@@ -138,7 +138,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                             ),
                                             child: Text(
                                               req.requestNumber,
-                                              style: GoogleFonts.cairo(
+                                              style: AppFonts.cairo(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.bold,
                                                 color: AppColors.primaryInk,
@@ -152,7 +152,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                       Text(
                                         req.propertyTitle ??
                                             context.l10n.req_property_fallback,
-                                        style: GoogleFonts.cairo(
+                                        style: AppFonts.cairo(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                           color: AppColors.textPrimary,
@@ -170,7 +170,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                           Flexible(
                                             child: Text(
                                               '${context.l10n.req_requested_start} ${req.requestedStartDate != null ? Formatters.formatDate(req.requestedStartDate) : context.l10n.req_not_specified}',
-                                              style: GoogleFonts.cairo(
+                                              style: AppFonts.cairo(
                                                 fontSize: 12,
                                                 color: AppColors.textSecondary,
                                               ),
@@ -183,7 +183,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                         const SizedBox(height: 8),
                                         Text(
                                           '${context.l10n.req_your_notes} ${req.notes}',
-                                          style: GoogleFonts.cairo(
+                                          style: AppFonts.cairo(
                                             fontSize: 12,
                                             color: AppColors.textSecondary,
                                           ),
@@ -211,7 +211,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                               Expanded(
                                                 child: Text(
                                                   '${context.l10n.req_owner_admin_reply} ${req.adminNotes}',
-                                                  style: GoogleFonts.cairo(
+                                                  style: AppFonts.cairo(
                                                     fontSize: 12,
                                                     color: AppColors.info,
                                                   ),
@@ -231,7 +231,7 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                           Flexible(
                                             child: Text(
                                               '${context.l10n.req_sent_on} ${Formatters.formatDateTime(req.createdAt)}',
-                                              style: GoogleFonts.cairo(
+                                              style: AppFonts.cairo(
                                                 fontSize: 11,
                                                 color: AppColors.textMuted,
                                               ),

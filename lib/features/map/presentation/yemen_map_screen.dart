@@ -1,11 +1,10 @@
 import 'dart:ui' show ImageFilter;
-import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
@@ -17,6 +16,7 @@ import '../../../models/property_type.dart';
 import '../../../providers/location_provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../shared/widgets/add_property_fab.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_page_body.dart';
@@ -26,7 +26,10 @@ import '../../../shared/widgets/property_filter_sheet.dart';
 import '../../../data/demo_properties_generator.dart';
 import '../../../services/supabase_service.dart';
 import '../services/map_cluster_service.dart';
+import 'map_screen_args.dart';
 import 'property_map_view.dart';
+
+export 'map_screen_args.dart';
 import '../../../core/l10n/context_l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -41,27 +44,6 @@ class YemenGovernorateCoord {
     required this.latitude,
     required this.longitude,
     this.defaultZoom = 12.5,
-  });
-}
-
-/// Options forwarded by the dashboard when it opens the map/list screen.
-/// The map screen owns its filter state, so the incoming values are used as
-/// a one-time seed (no global filter provider is required).
-class MapScreenArgs {
-  final bool initialListView;
-  final String? searchQuery;
-  final String? dealType;
-  final String? propertyTypeId;
-  final String? city;
-  final String? district;
-
-  const MapScreenArgs({
-    this.initialListView = false,
-    this.searchQuery,
-    this.dealType,
-    this.propertyTypeId,
-    this.city,
-    this.district,
   });
 }
 
@@ -86,7 +68,6 @@ class YemenMapScreen extends ConsumerStatefulWidget {
 class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     with TickerProviderStateMixin {
   late final MapController _mapController;
-  late final StreamSubscription<MapEvent> _mapEventsSubscription;
   final TextEditingController _searchController = TextEditingController();
 
   Property? _selectedProperty;
@@ -101,13 +82,16 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   bool _isListView =
       false; // overwritten from widget.initialListView in initState
-  bool _showSearchThisAreaBtn = false;
   double _currentZoom = _defaultZoom;
   LatLng? _lastSearchCenter;
-  LatLngBounds? _visibleBounds;
   LatLng? _initialFocus;
   double? _initialZoom;
-  Timer? _debounceTimer;
+
+  /// Set when a filter changes so the next build frames the filtered results.
+  bool _pendingFitToFiltered = false;
+
+  /// Count of listings after applying filters.
+  int _filteredCount = 0;
   final ScrollController _listScrollController = ScrollController();
 
   // Listing pagination — render 12 rows initially, extend on scroll.
@@ -282,15 +266,6 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
   void initState() {
     super.initState();
     _mapController = MapController();
-    // Refresh the count/list once a pan/zoom gesture ends (not on every
-    // frame) so they always match the area currently shown on the map.
-    _mapEventsSubscription = _mapController.mapEventStream.listen((event) {
-      if (event is! MapEventMoveEnd || !mounted) return;
-      final camera = _mapController.camera;
-      if (camera.nonRotatedSize.width > 0 && camera.nonRotatedSize.height > 0) {
-        setState(() => _visibleBounds = camera.visibleBounds);
-      }
-    });
     _isListView = widget.initialListView;
     // Respect the user's default map view preference from Settings for direct
     // /map visits (not when the dashboard explicitly requests list mode).
@@ -301,6 +276,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
     final incoming = widget.initialFilters;
     if (incoming != null) {
+      _pendingFitToFiltered = true;
       if (incoming.searchQuery != null && incoming.searchQuery!.isNotEmpty) {
         _searchController.text = incoming.searchQuery!;
       }
@@ -372,8 +348,6 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
-    _mapEventsSubscription.cancel();
     _listScrollController.dispose();
     _searchController.dispose();
     _mapController.dispose();
@@ -424,22 +398,41 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     return MapClusterService.getPropertyCoordinates(prop);
   }
 
-  /// Bounds of the visible map area. While the list view is open the FlutterMap
-  /// widget is not mounted, so a camera built from the last known centre/zoom
-  /// and the screen size is used instead.
-  LatLngBounds _calculateVisibleBounds(Size screenSize) {
-    final tracked = _visibleBounds;
-    if (tracked != null) return tracked;
-    return MapCamera(
-      crs: const Epsg3857(),
-      center: _lastSearchCenter ?? _ibbCenter,
-      zoom: _currentZoom,
-      rotation: 0,
-      nonRotatedSize: Size(
-        screenSize.width > 0 ? screenSize.width : 400,
-        screenSize.height > 0 ? screenSize.height : 800,
-      ),
-    ).visibleBounds;
+  /// All listings available to this screen (backend result or demo fallback).
+  List<Property> _allListings() {
+    final remote = ref.read(allMapPropertiesProvider).value;
+    if (remote != null && remote.isNotEmpty) return remote;
+    if (SupabaseService.demoProperties.isNotEmpty) {
+      return SupabaseService.demoProperties;
+    }
+    return DemoPropertiesGenerator.cachedDemoProperties;
+  }
+
+  /// Frame the filtered listings so the map lands on their actual area instead
+  /// of a governorate centroid that can leave every result outside the view.
+  void _fitToFiltered(List<Property> filtered) {
+    if (filtered.isEmpty || !mounted) return;
+    final points = filtered.map((p) {
+      final coords = _getPropertyCoords(p);
+      return LatLng(coords.$1, coords.$2);
+    }).toList();
+    try {
+      _mapController.fitCamera(
+        CameraFit.coordinates(
+          coordinates: points,
+          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 96),
+          maxZoom: 14.5,
+        ),
+      );
+      final camera = _mapController.camera;
+      _lastSearchCenter = camera.center;
+      _currentZoom = camera.zoom;
+    } catch (_) {
+      // Camera may not be attached yet (first frame / list mode); the pending
+      // flag keeps the request for the next map build.
+      _pendingFitToFiltered = true;
+      if (mounted) setState(() {});
+    }
   }
 
   // Point in polygon ray-casting test for freehand drawing filter
@@ -465,6 +458,14 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
 
   List<Property> _filterProperties(List<Property> all) {
     final query = _searchController.text.trim().toLowerCase();
+    // Applying a governorate filter also writes its localized label into the
+    // search box. That label is display text, not a raw Arabic data key, so
+    // skip the free-text pass when it exactly mirrors the active filter.
+    final queryIsActiveGovernorateLabel =
+        _selectedGovName != null &&
+        query ==
+            AppConstants.getGovernorateNameAr(_selectedGovName!)
+                .toLowerCase();
 
     return all.where((p) {
       if (p.status != AppConstants.statusPublished) return false;
@@ -481,13 +482,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         return false;
       }
 
-      // Filter governorate
-      if (_selectedGovName != null && _selectedGovName!.isNotEmpty) {
-        final matchesCity =
-            p.city == _selectedGovName ||
-            p.city.contains(_selectedGovName!) ||
-            _selectedGovName!.contains(p.city);
-        if (!matchesCity) return false;
+      // Filter governorate. Sana'a City and Sana'a Governorate are treated as
+      // one area, so choosing "صنعاء" also finds listings stored under
+      // "أمانة العاصمة" (e.g. بيت بوس).
+      if (!AppConstants.governorateMatches(_selectedGovName, p.city)) {
+        return false;
       }
 
       // Filter district
@@ -500,7 +499,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       }
 
       // Filter text query (city, district, addressDetails, title)
-      if (query.isNotEmpty) {
+      if (query.isNotEmpty && !queryIsActiveGovernorateLabel) {
         final inCity = p.city.toLowerCase().contains(query);
         final inDist = p.district.toLowerCase().contains(query);
         final inTitle = p.title.toLowerCase().contains(query);
@@ -551,7 +550,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
           SnackBar(
             content: Text(
               context.l10n.map_location_missing_message,
-              style: GoogleFonts.cairo(fontSize: 13),
+              style: AppFonts.cairo(fontSize: 13),
             ),
             backgroundColor: AppColors.warning,
             behavior: SnackBarBehavior.floating,
@@ -603,7 +602,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
           SnackBar(
             content: Text(
               context.l10n.map_maps_open_error,
-              style: GoogleFonts.cairo(fontSize: 13),
+              style: AppFonts.cairo(fontSize: 13),
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -646,6 +645,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     if (result == null || !mounted) return;
 
     setState(() {
+      // Reframe on the filtered coordinates after this rebuild.
+      _pendingFitToFiltered = true;
       _selectedDealType = result.dealType;
       _selectedTypeId = result.typeId;
       _selectedGovName = result.governorate;
@@ -657,14 +658,14 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       _selectedProperty = null;
 
       if (_selectedGovName != null) {
-        _searchController.text = _selectedGovName!;
+        _searchController.text =
+            AppConstants.getGovernorateNameAr(_selectedGovName!);
         final govCoord = _governorates.firstWhere(
           (g) => g.name == _selectedGovName,
           orElse: () => _governorates.first,
         );
         _lastSearchCenter = LatLng(govCoord.latitude, govCoord.longitude);
         _currentZoom = govCoord.defaultZoom;
-        _visibleBounds = null; // recalculated for the new view
         _animatedMapMove(_lastSearchCenter!, govCoord.defaultZoom);
       }
     });
@@ -698,28 +699,26 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             final effectiveList = allProperties.isNotEmpty
                 ? allProperties
                 : SupabaseService.demoProperties.isNotEmpty
-                    ? SupabaseService.demoProperties
-                    : DemoPropertiesGenerator.cachedDemoProperties;
+                ? SupabaseService.demoProperties
+                : DemoPropertiesGenerator.cachedDemoProperties;
 
             final filteredProperties = _filterProperties(effectiveList);
+            _filteredCount = filteredProperties.length;
 
-            // Count badge + list must show only what the map shows: listings
-            // inside the current map viewport.
-            final visibleBounds = _calculateVisibleBounds(
-              MediaQuery.sizeOf(context),
-            );
-            final mapProperties = filteredProperties.where((p) {
-              final coords = _getPropertyCoords(p);
-              return visibleBounds.contains(LatLng(coords.$1, coords.$2));
-            }).toList();
+            if (_pendingFitToFiltered && !_isListView) {
+              _pendingFitToFiltered = false;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _fitToFiltered(_filterProperties(_allListings()));
+              });
+            }
 
-            // Reset pagination whenever the result set or the map view changes.
-            final boundsKey = [
-              visibleBounds.south,
-              visibleBounds.north,
-              visibleBounds.west,
-              visibleBounds.east,
-            ].map((v) => v.toStringAsFixed(3)).join(',');
+            // Count badge and list use the same filtered result set as the
+            // map markers. Clipping them to the current viewport made correct
+            // filters look empty whenever the camera was still at the
+            // governorate centroid.
+            final mapProperties = filteredProperties;
+
+            // Reset pagination whenever the filters change.
             final filterKey = [
               _searchController.text,
               _selectedDealType,
@@ -731,13 +730,18 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
               _minBedrooms,
               _onlyExactCoordinates,
               _drawnPolygon.length,
-              boundsKey,
             ].join('|');
             if (filterKey != _lastFilterKey) {
               _lastFilterKey = filterKey;
               _visibleCount = _pageSize;
             }
             _lastFilteredCount = mapProperties.length;
+            // Keep the page size inside the actual result length. Without this,
+            // filtering to e.g. 3 listings still built 12 rows and threw a
+            // RangeError while scrolling.
+            if (_visibleCount > _lastFilteredCount) {
+              _visibleCount = _lastFilteredCount;
+            }
 
             return Stack(
               children: [
@@ -790,37 +794,13 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           ? InteractiveFlag.none
                           : InteractiveFlag.all,
                       onPositionChanged: (pos, hasGesture) {
-                        if (pos.nonRotatedSize.width > 0 &&
-                            pos.nonRotatedSize.height > 0) {
-                          _visibleBounds = pos.visibleBounds;
-                        }
                         if (pos.zoom != _currentZoom) {
                           setState(() {
                             _currentZoom = pos.zoom;
                           });
                         }
-                        if (hasGesture && !_isDrawingMode) {
-                          _debounceTimer?.cancel();
-                          _debounceTimer = Timer(
-                            const Duration(milliseconds: 300),
-                            () {
-                              if (mounted) {
-                                final dist = _lastSearchCenter != null
-                                    ? const Distance().as(
-                                        LengthUnit.Kilometer,
-                                        _lastSearchCenter!,
-                                        pos.center,
-                                      )
-                                    : 0;
-                                if (dist > 3.0) {
-                                  setState(() {
-                                    _showSearchThisAreaBtn = true;
-                                  });
-                                }
-                              }
-                            },
-                          );
-                        }
+                        // The map follows the filtered results; a manual pan
+                        // no longer offers a separate "search this area" step.
                       },
                       onMapTap: (tapPosition, point) {
                         if (_selectedProperty != null) {
@@ -936,7 +916,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                           Expanded(
                             child: Text(
                               context.l10n.map_draw_instruction,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 color: AppColors.textLight,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -952,7 +932,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             },
                             child: Text(
                               context.l10n.map_cancel,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 color: AppColors.textLight,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1000,7 +980,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             const SizedBox(width: 6),
                             Text(
                               '${context.l10n.map_draw_filter_active} (${mapProperties.length} ${context.l10n.map_result_property_unit})',
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryInk,
@@ -1032,48 +1012,6 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                     ),
                   ),
 
-                // 5. "Search this area" Button
-                if (_showSearchThisAreaBtn && !_isListView && !_isDrawingMode)
-                  Positioned(
-                    top: _headerBottom(context) + 82,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.surface,
-                          foregroundColor: AppColors.primaryInk,
-                          elevation: 4,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(
-                              color: AppColors.primaryInk,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                        icon: const Icon(Icons.refresh_rounded, size: 16),
-                        label: Text(
-                          context.l10n.map_search_this_area,
-                          style: GoogleFonts.cairo(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _lastSearchCenter = _mapController.camera.center;
-                            _showSearchThisAreaBtn = false;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-
                 // 6. Floating map controls — one RTL-aware anchored stack.
                 //    draw → layers → count → list toggle (top to bottom).
                 PositionedDirectional(
@@ -1083,6 +1021,16 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Primary list action: compact add-property FAB. It is
+                      // deliberately hidden over the map, where draw/layers
+                      // controls already occupy this stack.
+                      if (_isListView) ...[
+                        const AddPropertyFab(
+                          key: ValueKey('map_add_property_fab'),
+                          heroTag: 'map_add_property',
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       if (!_isListView) ...[
                         _buildSmallMapFab(
                           heroTag: 'map_draw_area',
@@ -1134,8 +1082,19 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                               : context.l10n.map_show_list,
                           style: PropertyTextStyles.badge(size: 13),
                         ),
-                        onPressed: () =>
-                            setState(() => _isListView = !_isListView),
+                        onPressed: () {
+                          final showingList = _isListView;
+                          setState(() => _isListView = !showingList);
+                          if (showingList && _pendingFitToFiltered) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                _fitToFiltered(
+                                  _filterProperties(_allListings()),
+                                );
+                              }
+                            });
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -1167,7 +1126,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                   const SizedBox(height: 12),
                   Text(
                     context.l10n.map_load_error,
-                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                    style: AppFonts.cairo(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
@@ -1193,7 +1152,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
         _minPrice != null ||
         _maxPrice != null ||
         _onlyExactCoordinates ||
-        _selectedDealType.isNotEmpty;
+        _selectedDealType.isNotEmpty ||
+        _searchController.text.trim().isNotEmpty;
 
     return SafeArea(
       bottom: false,
@@ -1275,6 +1235,37 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                             onTap: _showFilterModal,
                           ),
                           const SizedBox(width: 8),
+                          // Live count while filters are being applied.
+                          if (hasActiveFilters)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryMuted,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.apartment_rounded,
+                                    size: 15,
+                                    color: AppColors.primaryInk,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '$_filteredCount ${context.l10n.map_result_property_unit}',
+                                    style: AppFonts.cairo(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primaryInk,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (hasActiveFilters) const SizedBox(width: 8),
                           // الفلاتر المختارة تظهر كشيكات صغيرة بجوار زر الفلاتر
                           ..._activeFilterChips(),
                         ],
@@ -1306,13 +1297,13 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
           Expanded(
             child: TextField(
               controller: _searchController,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 13.5,
                 color: AppColors.textPrimary,
               ),
               decoration: InputDecoration(
                 hintText: context.l10n.map_search_hint,
-                hintStyle: GoogleFonts.cairo(
+                hintStyle: AppFonts.cairo(
                   fontSize: 12,
                   color: AppColors.textMuted,
                 ),
@@ -1321,6 +1312,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 contentPadding: EdgeInsets.zero,
               ),
               onChanged: (val) => setState(() {}),
+              onSubmitted: (_) => setState(() => _pendingFitToFiltered = true),
+              textInputAction: TextInputAction.search,
             ),
           ),
           if (_searchController.text.isNotEmpty)
@@ -1388,7 +1381,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     if (_selectedGovName != null && _selectedGovName!.isNotEmpty) {
       chips.add(
         _buildSelectedFilterChip(
-          _selectedGovName!,
+          AppConstants.getGovernorateNameAr(_selectedGovName!),
           onRemoved: () => setState(() => _selectedGovName = null),
         ),
       );
@@ -1397,7 +1390,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
     if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
       chips.add(
         _buildSelectedFilterChip(
-          _selectedDistrict!,
+          AppConstants.getDistrictNameAr(_selectedDistrict!),
           onRemoved: () => setState(() => _selectedDistrict = null),
         ),
       );
@@ -1445,7 +1438,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
       onDeleted: onRemoved,
       label: Text(
         label,
-        style: GoogleFonts.cairo(
+        style: AppFonts.cairo(
           fontSize: 11.5,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
@@ -1511,7 +1504,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             const SizedBox(width: 5),
             Text(
               label,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 11.5,
                 fontWeight: FontWeight.bold,
                 color: isActive ? AppColors.primaryInk : AppColors.textPrimary,
@@ -1583,7 +1576,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             const SizedBox(height: 14),
             Text(
               context.l10n.map_no_properties_in_area,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -1593,7 +1586,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             Text(
               context.l10n.map_no_properties_area_hint,
               textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),
@@ -1629,7 +1622,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
           const SizedBox(width: 8),
           Text(
             '${properties.length} ${context.l10n.map_properties_available}',
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 12.5,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
@@ -1717,7 +1710,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
             child: Text(
               hasExactGps
                   ? l10n.map_exact_location
-                  : '${l10n.map_approximate_location_prefix} ${prop.city}',
+                  : '${l10n.map_approximate_location_prefix} ${AppConstants.getGovernorateNameAr(prop.city)}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: PropertyTextStyles.caption(size: 10.5).copyWith(
@@ -1767,7 +1760,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                   onSelectOnMap ?? () => context.push('/property/${prop.id}'),
               child: Text(
                 isRent ? l10n.map_check_availability : l10n.map_view_details,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1795,7 +1788,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapScreen>
                 icon: const Icon(Icons.directions_rounded, size: 18),
                 label: Text(
                   l10n.map_directions_google_maps,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 12.5,
                     fontWeight: FontWeight.bold,
                   ),

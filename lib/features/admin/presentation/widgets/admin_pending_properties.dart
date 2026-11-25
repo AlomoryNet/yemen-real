@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../../core/l10n/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -70,7 +70,7 @@ class _AdminPendingPropertiesSectionState
                           Flexible(
                             child: Text(
                               context.l10n.admin_pending_title,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textPrimary,
@@ -98,7 +98,7 @@ class _AdminPendingPropertiesSectionState
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     color: AppColors.textLight,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -112,7 +112,7 @@ class _AdminPendingPropertiesSectionState
                       ),
                       Text(
                         context.l10n.admin_pending_desc,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 12,
                           color: AppColors.textSecondary,
                         ),
@@ -160,7 +160,7 @@ class _AdminPendingPropertiesSectionState
                         Expanded(
                           child: Text(
                             context.l10n.admin_no_pending,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/context_l10n.dart';
@@ -16,10 +16,7 @@ class AdminCsvDialog {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: Text(
-          title,
-          style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-        ),
+        title: Text(title, style: AppFonts.cairo(fontWeight: FontWeight.bold)),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600, maxHeight: 350),
           child: SingleChildScrollView(
@@ -32,14 +29,14 @@ class AdminCsvDialog {
         actions: [
           TextButton.icon(
             icon: const Icon(Icons.copy, size: 18),
-            label: Text(context.l10n.admin_copy_data, style: GoogleFonts.cairo()),
+            label: Text(context.l10n.admin_copy_data, style: AppFonts.cairo()),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: csvContent));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
                     context.l10n.admin_csv_copied,
-                    style: GoogleFonts.cairo(),
+                    style: AppFonts.cairo(),
                   ),
                   backgroundColor: AppColors.success,
                   duration: const Duration(seconds: 2),
@@ -73,7 +70,7 @@ class AdminCommissionDialog {
         builder: (context, setModalState) => AlertDialog(
           title: Text(
             context.l10n.admin_commission_modal_title,
-            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+            style: AppFonts.cairo(fontWeight: FontWeight.bold),
           ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
@@ -84,7 +81,7 @@ class AdminCommissionDialog {
                 children: [
                   Text(
                     context.l10n.admin_commission_property_title,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -100,7 +97,7 @@ class AdminCommissionDialog {
 
                   Text(
                     context.l10n.admin_commission_liable,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -136,7 +133,7 @@ class AdminCommissionDialog {
                           children: [
                             Text(
                               context.l10n.admin_seller_amount,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -156,7 +153,7 @@ class AdminCommissionDialog {
                           children: [
                             Text(
                               context.l10n.admin_buyer_amount,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -175,7 +172,7 @@ class AdminCommissionDialog {
 
                   Text(
                     context.l10n.admin_currency,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -199,7 +196,7 @@ class AdminCommissionDialog {
 
                   Text(
                     context.l10n.admin_commission_notes,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -239,7 +236,9 @@ class AdminCommissionDialog {
                 );
 
                 if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                ref.refresh(adminCommissionsProvider);
+                await ref
+                    .read(adminCommissionsPaginatorProvider.notifier)
+                    .reload();
                 ref.refresh(adminStatsProvider);
               },
               child: Text(context.l10n.admin_save_record),

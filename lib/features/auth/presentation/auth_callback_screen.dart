@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
@@ -154,7 +154,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
         SnackBar(
           content: Text(
             context.l10n.callback_enter_email_first,
-            style: GoogleFonts.cairo(),
+            style: AppFonts.cairo(),
           ),
         ),
       );
@@ -175,7 +175,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                 ? context.l10n.callback_resend_success
                 : (ref.read(authProvider).errorMessage ??
                       context.l10n.callback_resend_failed),
-            style: GoogleFonts.cairo(),
+            style: AppFonts.cairo(),
           ),
           backgroundColor: sent ? AppColors.success : AppColors.error,
         ),
@@ -228,7 +228,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             const SizedBox(height: 24),
             Text(
               context.l10n.callback_verifying,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -238,7 +238,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             const SizedBox(height: 10),
             Text(
               context.l10n.callback_waiting,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 13,
                 color: AppColors.textSecondary,
                 height: 1.5,
@@ -268,7 +268,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             const SizedBox(height: 20),
             Text(
               context.l10n.callback_success_title,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 21,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -278,7 +278,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
             const SizedBox(height: 10),
             Text(
               context.l10n.callback_success_message,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 13.5,
                 color: AppColors.textSecondary,
                 height: 1.6,
@@ -307,7 +307,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                     const SizedBox(width: 8),
                     Text(
                       _verifiedEmail!,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primaryDark,
@@ -345,7 +345,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                           hasTarget
                               ? context.l10n.callback_continue_operation
                               : context.l10n.callback_continue_home,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -370,7 +370,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                           hasTarget
                               ? context.l10n.callback_go_home
                               : context.l10n.callback_login_credentials,
-                          style: GoogleFonts.cairo(fontSize: 13),
+                          style: AppFonts.cairo(fontSize: 13),
                         ),
                       ),
                     ),
@@ -407,7 +407,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
               isExpired
                   ? context.l10n.callback_expired_title
                   : context.l10n.callback_cannot_confirm,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -420,7 +420,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                   (isExpired
                       ? context.l10n.callback_expired_fallback
                       : context.l10n.callback_error_fallback),
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 13,
                 color: AppColors.textSecondary,
                 height: 1.5,
@@ -433,7 +433,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 labelText: context.l10n.callback_resend_email_label,
-                labelStyle: GoogleFonts.cairo(fontSize: 12.5),
+                labelStyle: AppFonts.cairo(fontSize: 12.5),
                 prefixIcon: const Icon(Icons.email_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -469,7 +469,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
                     : const Icon(Icons.send_rounded, size: 18),
                 label: Text(
                   _isResending ? context.l10n.callback_sending : context.l10n.callback_send_new_link,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
@@ -481,7 +481,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
               onPressed: () => context.go('/login'),
               child: Text(
                 context.l10n.callback_back_login,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 13,
                   color: AppColors.primaryInk,
                   fontWeight: FontWeight.w600,

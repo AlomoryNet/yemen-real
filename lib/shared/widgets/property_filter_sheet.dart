@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/l10n/context_l10n.dart';
@@ -200,7 +200,7 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                   Expanded(
                     child: Text(
                       widget.title ?? l10n.map_filter_results,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
@@ -219,7 +219,7 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                       ),
                       child: Text(
                         '$activeCount',
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: onPrimary,
@@ -230,7 +230,7 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                     onPressed: _reset,
                     child: Text(
                       l10n.map_reset_filters,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         color: AppColors.error,
                         fontWeight: FontWeight.bold,
                       ),
@@ -325,7 +325,8 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                                 for (final gov in _governorateOptions)
                                   DropdownMenuEntry<String>(
                                     value: gov,
-                                    label: gov,
+                                    label:
+                                        AppConstants.getGovernorateNameAr(gov),
                                     leadingIcon: const Icon(
                                       Icons.location_city_outlined,
                                     ),
@@ -347,13 +348,13 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                                 enableFilter: true,
                                 label: Text(l10n.map_district_in),
                                 hintText:
-                                    '${l10n.map_all_districts_in} $_governorate',
+                                    '${l10n.map_all_districts_in} ${AppConstants.getGovernorateNameAr(_governorate)}',
                                 menuHeight: 260,
                                 dropdownMenuEntries: [
                                   DropdownMenuEntry<String>(
                                     value: _all,
                                     label:
-                                        '${l10n.map_all_districts_in} $_governorate',
+                                        '${l10n.map_all_districts_in} ${AppConstants.getGovernorateNameAr(_governorate)}',
                                     leadingIcon: const Icon(
                                       Icons.format_list_bulleted_rounded,
                                     ),
@@ -361,7 +362,9 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                                   for (final district in _districtOptions)
                                     DropdownMenuEntry<String>(
                                       value: district,
-                                      label: district,
+                                      label: AppConstants.getDistrictNameAr(
+                                        district,
+                                      ),
                                     ),
                                 ],
                                 onSelected: (value) {
@@ -447,14 +450,14 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                               value: _onlyExactCoordinates,
                               title: Text(
                                 l10n.map_exact_gps_only,
-                                style: GoogleFonts.cairo(
+                                style: AppFonts.cairo(
                                   fontSize: 13,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
                               subtitle: Text(
                                 l10n.map_hide_approximate,
-                                style: GoogleFonts.cairo(
+                                style: AppFonts.cairo(
                                   fontSize: 11.5,
                                   color: AppColors.textSecondary,
                                 ),
@@ -558,7 +561,7 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 13.5,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
@@ -80,13 +80,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         const SizedBox(height: 16),
         Text(
           context.l10n.forgot_link_sent,
-          style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.bold),
+          style: AppFonts.cairo(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
           context.l10n.forgot_check_inbox,
           textAlign: TextAlign.center,
-          style: GoogleFonts.cairo(
+          style: AppFonts.cairo(
             fontSize: 13,
             color: AppColors.textSecondary,
           ),
@@ -112,7 +112,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         children: [
           Text(
             context.l10n.forgot_title,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
@@ -121,7 +121,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 6),
           Text(
             context.l10n.forgot_instructions,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
@@ -130,7 +130,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           Text(
             context.l10n.forgot_email,
-            style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13),
+            style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 6),
           TextFormField(

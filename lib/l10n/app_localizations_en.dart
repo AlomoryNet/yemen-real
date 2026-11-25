@@ -2106,7 +2106,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get set_reset_location => 'Reset';
 
   @override
+  String get set_retry_location => 'Retry permission';
+
+  @override
   String get set_search_radius => 'Search radius';
+
+  @override
+  String get set_search_radius_hint => 'Controls which listings appear in Home → Properties near you.';
 
   @override
   String get set_currency => 'Currency';
@@ -3031,6 +3037,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sh_router_select_property => 'Please select a property first';
+
+  @override
+  String get sh_deferred_loading => 'Loading…';
+
+  @override
+  String get sh_deferred_error => 'Couldn\'t load this screen.';
+
+  @override
+  String get sh_deferred_retry => 'Retry';
 
   @override
   String get sh_back_exit_snackbar => 'Press again to exit the app';

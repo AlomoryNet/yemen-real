@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
@@ -60,7 +60,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         builder: (context, setDialogState) => AlertDialog(
           title: Text(
             context.l10n.detail_report_title,
-            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+            style: AppFonts.cairo(fontWeight: FontWeight.bold),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -68,7 +68,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             children: [
               Text(
                 context.l10n.detail_report_intro,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 13,
                   color: AppColors.textSecondary,
                 ),
@@ -76,7 +76,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               const SizedBox(height: 14),
               Text(
                 context.l10n.detail_report_reason_label,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
@@ -88,7 +88,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     .map(
                       (r) => DropdownMenuItem(
                         value: r,
-                        child: Text(r, style: GoogleFonts.cairo(fontSize: 13)),
+                        child: Text(r, style: AppFonts.cairo(fontSize: 13)),
                       ),
                     )
                     .toList(),
@@ -99,7 +99,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               const SizedBox(height: 14),
               Text(
                 context.l10n.detail_report_details_label,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
@@ -136,7 +136,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     SnackBar(
                       content: Text(
                         context.l10n.detail_report_submitted,
-                        style: GoogleFonts.cairo(),
+                        style: AppFonts.cairo(),
                       ),
                       backgroundColor: AppColors.success,
                     ),
@@ -221,7 +221,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                           onTap: () => context.go('/'),
                           child: Text(
                             context.l10n.detail_home,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               color: AppColors.textMuted,
                               fontSize: 13,
                             ),
@@ -235,7 +235,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                           onTap: () => context.go('/map'),
                           child: Text(
                             context.l10n.detail_properties,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               color: AppColors.textMuted,
                               fontSize: 13,
                             ),
@@ -250,7 +250,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                             property.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
@@ -436,7 +436,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             // Price text
             Text(
               Formatters.formatCurrency(property.price, property.currency),
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primaryInk,
@@ -461,14 +461,14 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     children: [
                       Text(
                         property.owner?.fullName ?? tr.misc_verified_advertiser,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
                       Text(
                         '${context.l10n.detail_publish_date} ${Formatters.formatDate(property.createdAt)}',
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 12,
                           color: AppColors.textMuted,
                         ),
@@ -501,7 +501,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   icon: const Icon(Icons.assignment_outlined, size: 20),
                   label: Text(
                     context.l10n.detail_send_rental_request,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -541,7 +541,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                 ),
                 label: Text(
                   context.l10n.detail_contract_preview,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primaryInk,
@@ -566,7 +566,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   ),
                   label: Text(
                     context.l10n.detail_report_action,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 12,
                       color: AppColors.error,
                     ),
@@ -578,7 +578,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       SnackBar(
                         content: Text(
                           context.l10n.detail_link_copied,
-                          style: GoogleFonts.cairo(),
+                          style: AppFonts.cairo(),
                         ),
                       ),
                     );
@@ -590,7 +590,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   ),
                   label: Text(
                     context.l10n.detail_share_ad,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
@@ -611,7 +611,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         // Title
         Text(
           property.title,
-          style: GoogleFonts.cairo(
+          style: AppFonts.cairo(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
@@ -626,8 +626,8 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                '${property.city} - ${property.district} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
-                style: GoogleFonts.cairo(
+                '${AppConstants.getGovernorateNameAr(property.city)} - ${AppConstants.getDistrictNameAr(property.district)} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
+                style: AppFonts.cairo(
                   fontSize: 14,
                   color: AppColors.textSecondary,
                 ),
@@ -689,7 +689,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         // Full Description
         Text(
           context.l10n.detail_description_title,
-          style: GoogleFonts.cairo(
+          style: AppFonts.cairo(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
@@ -698,7 +698,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         const SizedBox(height: 10),
         Text(
           property.description,
-          style: GoogleFonts.cairo(
+          style: AppFonts.cairo(
             fontSize: 14,
             height: 1.8,
             color: AppColors.textSecondary,
@@ -739,7 +739,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             const SizedBox(width: 10),
             Text(
               context.l10n.detail_map_section_title,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -749,8 +749,8 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          '${property.city} — ${property.district} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
-          style: GoogleFonts.cairo(
+          '${AppConstants.getGovernorateNameAr(property.city)} — ${AppConstants.getDistrictNameAr(property.district)} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
+          style: AppFonts.cairo(
             fontSize: 13,
             color: AppColors.textSecondary,
           ),
@@ -895,7 +895,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       icon: const Icon(Icons.map_rounded, size: 16),
                       label: Text(
                         context.l10n.detail_open_full_map,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -922,7 +922,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       ),
                       label: Text(
                         context.l10n.detail_directions_google_maps,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -963,14 +963,14 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 11,
                     color: AppColors.textMuted,
                   ),
                 ),
                 Text(
                   value,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,

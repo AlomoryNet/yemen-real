@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
@@ -67,7 +67,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Expanded(
                   child: Text(
                     context.l10n.register_confirm_title,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -81,7 +81,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               children: [
                 Text(
                   context.l10n.register_confirm_message,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -112,7 +112,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Expanded(
                         child: Text(
                           userEmail,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 12.5,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryDark,
@@ -125,7 +125,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 12),
                 Text(
                   context.l10n.register_open_inbox,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 12,
                     height: 1.5,
                     color: AppColors.textPrimary,
@@ -151,7 +151,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Expanded(
                         child: Text(
                           context.l10n.register_warning,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 11,
                             color: Colors.amber.shade900,
                             fontWeight: FontWeight.w600,
@@ -182,7 +182,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       ? l10n.register_resend_success
                                       : (ref.read(authProvider).errorMessage ??
                                             l10n.register_resend_failed),
-                                  style: GoogleFonts.cairo(),
+                                  style: AppFonts.cairo(),
                                 ),
                                 backgroundColor: resent
                                     ? AppColors.success
@@ -205,7 +205,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       isResending
                           ? context.l10n.register_resending
                           : context.l10n.register_resend_prompt,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primaryInk,
@@ -223,7 +223,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 },
                 child: Text(
                   context.l10n.register_browse_guest,
-                  style: GoogleFonts.cairo(color: AppColors.textSecondary),
+                  style: AppFonts.cairo(color: AppColors.textSecondary),
                 ),
               ),
               ElevatedButton(
@@ -246,7 +246,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 },
                 child: Text(
                   context.l10n.register_go_login,
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                  style: AppFonts.cairo(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -283,7 +283,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     children: [
                       Text(
                         context.l10n.register_title,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
@@ -292,7 +292,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const SizedBox(height: 6),
                       Text(
                         context.l10n.register_subtitle,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 13,
                           color: AppColors.textSecondary,
                         ),
@@ -328,7 +328,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 Expanded(
                                   child: Text(
                                     reason,
-                                    style: GoogleFonts.cairo(
+                                    style: AppFonts.cairo(
                                       color: AppColors.primaryDark,
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
@@ -366,7 +366,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   Expanded(
                                     child: Text(
                                       authState.errorMessage!,
-                                      style: GoogleFonts.cairo(
+                                      style: AppFonts.cairo(
                                         color: AppColors.error,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
@@ -390,7 +390,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     icon: const Icon(Icons.login, size: 18),
                                     label: Text(
                                       context.l10n.register_go_login_now,
-                                      style: GoogleFonts.cairo(
+                                      style: AppFonts.cairo(
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.primaryInk,
@@ -408,7 +408,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       // Full Name
                       Text(
                         context.l10n.register_full_name_required,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -428,7 +428,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       // Email
                       Text(
                         context.l10n.register_email_required,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -448,7 +448,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       // Phone
                       Text(
                         context.l10n.register_phone_required,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -468,7 +468,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       // Password
                       Text(
                         context.l10n.register_password_required,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -516,7 +516,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 )
                               : Text(
                                   context.l10n.register_submit,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                   ),
@@ -531,7 +531,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         children: [
                           Text(
                             context.l10n.register_have_account,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 13,
                               color: AppColors.textSecondary,
                             ),
@@ -540,7 +540,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             onPressed: () => context.push('/login'),
                             child: Text(
                               context.l10n.register_login_link,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryInk,

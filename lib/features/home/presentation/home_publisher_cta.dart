@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
@@ -24,7 +24,7 @@ class HomePublisherCta extends StatelessWidget {
             Text(
               context.l10n.dash_cta_title,
               textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -34,7 +34,7 @@ class HomePublisherCta extends StatelessWidget {
             Text(
               context.l10n.dash_cta_desc_mobile,
               textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 13,
                 color: AppColors.textSecondary,
               ),
@@ -47,25 +47,12 @@ class HomePublisherCta extends StatelessWidget {
               children: [
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D6EFD),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textLight,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                  ),
-                  icon: const Icon(Icons.map_rounded, size: 18),
-                  label: Text(
-                    context.l10n.dash_yemen_map,
-                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () => context.push('/map'),
-                ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -73,7 +60,7 @@ class HomePublisherCta extends StatelessWidget {
                   icon: const Icon(Icons.add_home_outlined, size: 18),
                   label: Text(
                     context.l10n.dash_add_listing_now,
-                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                    style: AppFonts.cairo(fontWeight: FontWeight.bold),
                   ),
                   onPressed: () => context.push('/add-property'),
                 ),
@@ -90,7 +77,7 @@ class HomePublisherCta extends StatelessWidget {
                 children: [
                   Text(
                     context.l10n.dash_cta_title,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
@@ -99,7 +86,7 @@ class HomePublisherCta extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     context.l10n.dash_cta_desc_desktop,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 14,
                       color: AppColors.textSecondary,
                     ),
@@ -112,28 +99,8 @@ class HomePublisherCta extends StatelessWidget {
               children: [
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D6EFD),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 18,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  icon: const Icon(Icons.map_rounded),
-                  label: Text(
-                    context.l10n.dash_yemen_map,
-                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () => context.push('/map'),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textLight,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 26,
                       vertical: 18,
@@ -145,7 +112,7 @@ class HomePublisherCta extends StatelessWidget {
                   icon: const Icon(Icons.add_home_outlined),
                   label: Text(
                     context.l10n.dash_add_listing_now,
-                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                    style: AppFonts.cairo(fontWeight: FontWeight.bold),
                   ),
                   onPressed: () => context.push('/add-property'),
                 ),

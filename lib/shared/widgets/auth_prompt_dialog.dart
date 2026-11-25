@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -54,7 +54,7 @@ class AuthPromptDialog extends StatelessWidget {
           Expanded(
             child: Text(
               context.l10n.sh_auth_login_required,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -69,7 +69,7 @@ class AuthPromptDialog extends StatelessWidget {
         children: [
           Text(
             message,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -96,7 +96,7 @@ class AuthPromptDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     context.l10n.sh_auth_info_note,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 11.5,
                       color: AppColors.textSecondary,
                       height: 1.5,
@@ -133,7 +133,7 @@ class AuthPromptDialog extends StatelessWidget {
                 },
                 child: Text(
                   context.l10n.sh_login,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
                   ),
@@ -164,7 +164,7 @@ class AuthPromptDialog extends StatelessWidget {
                 },
                 child: Text(
                   context.l10n.sh_auth_register_new,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
                   ),
@@ -179,7 +179,7 @@ class AuthPromptDialog extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               context.l10n.sh_auth_continue_guest,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 12,
                 color: AppColors.textMuted,
               ),

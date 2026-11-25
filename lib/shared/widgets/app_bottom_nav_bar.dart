@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
@@ -136,7 +136,7 @@ class _NavDestination extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 11.5,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               color: isSelected ? activeColor : inactiveColor,

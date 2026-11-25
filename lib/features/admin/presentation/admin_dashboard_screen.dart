@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
@@ -130,7 +130,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                 labelColor: AppColors.primaryInk,
                                 unselectedLabelColor: AppColors.textSecondary,
                                 indicatorColor: AppColors.primary,
-                                labelStyle: GoogleFonts.cairo(
+                                labelStyle: AppFonts.cairo(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13.5,
                                 ),
@@ -180,7 +180,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               icon: const Icon(Icons.picture_as_pdf, size: 18),
                               label: Text(
                                 context.l10n.admin_print_pdf,
-                                style: GoogleFonts.cairo(
+                                style: AppFonts.cairo(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
                                 ),
@@ -234,7 +234,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   Flexible(
                     child: Text(
                       context.l10n.admin_title,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
@@ -246,7 +246,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               const SizedBox(height: 4),
               Text(
                 context.l10n.admin_subtitle,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 13,
                   color: AppColors.textSecondary,
                 ),
@@ -263,7 +263,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           ),
           child: Text(
             context.l10n.admin_general_manager,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: AppColors.accentDark,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
@@ -30,8 +30,9 @@ class AppDrawer extends ConsumerWidget {
                   end: Alignment.bottomLeft,
                   colors: [AppColors.primaryDark, AppColors.primary],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(24)),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(24),
+                ),
               ),
               child: Row(
                 children: [
@@ -51,7 +52,7 @@ class AppDrawer extends ConsumerWidget {
                       child: user != null
                           ? Text(
                               _initial(context, user.fullName),
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 color: AppColors.textLight,
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -76,7 +77,7 @@ class AppDrawer extends ConsumerWidget {
                               : context.l10n.sh_brand_name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             color: AppColors.textLight,
                             fontSize: 16.5,
                             fontWeight: FontWeight.bold,
@@ -86,12 +87,12 @@ class AppDrawer extends ConsumerWidget {
                         Text(
                           user != null
                               ? (user.isAdmin
-                                  ? context.l10n.sh_drawer_admin_greeting
-                                  : context.l10n.sh_drawer_user_greeting)
+                                    ? context.l10n.sh_drawer_admin_greeting
+                                    : context.l10n.sh_drawer_user_greeting)
                               : context.l10n.sh_drawer_tagline,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             color: AppColors.textLight.withAlpha(205),
                             fontSize: 12,
                           ),
@@ -100,86 +101,6 @@ class AppDrawer extends ConsumerWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
-
-            // ── Map CTA Card ───────────────────────────────────────────────
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [AppColors.primary, AppColors.primaryLight],
-                ),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withAlpha(70),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/map');
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppColors.textLight.withAlpha(38),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            Icons.map_rounded,
-                            color: AppColors.textLight,
-                            size: 26,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                context.l10n.sh_drawer_map_title,
-                                style: GoogleFonts.cairo(
-                                  color: AppColors.textLight,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 14.5,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                context.l10n.sh_drawer_map_subtitle,
-                                style: GoogleFonts.cairo(
-                                  color: AppColors.textLight.withAlpha(220),
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AppColors.textLight,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ),
             ),
 
@@ -280,7 +201,7 @@ class AppDrawer extends ConsumerWidget {
                             icon: const Icon(Icons.logout_rounded, size: 19),
                             label: Text(
                               context.l10n.sh_logout,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -302,7 +223,7 @@ class AppDrawer extends ConsumerWidget {
                             icon: const Icon(Icons.login_rounded, size: 19),
                             label: Text(
                               context.l10n.sh_login_register,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -347,13 +268,16 @@ class AppDrawer extends ConsumerWidget {
     required String route,
   }) {
     final currentRoute = GoRouterState.of(context).uri.path;
-    final selected = currentRoute == route ||
+    final selected =
+        currentRoute == route ||
         (route != '/' && currentRoute.startsWith('$route/'));
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
-        color: selected ? AppColors.primaryMuted.withAlpha(105) : Colors.transparent,
+        color: selected
+            ? AppColors.primaryMuted.withAlpha(105)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
@@ -380,8 +304,10 @@ class AppDrawer extends ConsumerWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.cairo(
-                      color: selected ? AppColors.primaryInk : AppColors.textPrimary,
+                    style: AppFonts.cairo(
+                      color: selected
+                          ? AppColors.primaryInk
+                          : AppColors.textPrimary,
                       fontWeight: selected ? FontWeight.bold : FontWeight.w600,
                       fontSize: 13.5,
                     ),

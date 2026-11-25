@@ -4277,11 +4277,23 @@ abstract class AppLocalizations {
   /// **'Reset'**
   String get set_reset_location;
 
+  /// No description provided for @set_retry_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry permission'**
+  String get set_retry_location;
+
   /// No description provided for @set_search_radius.
   ///
   /// In en, this message translates to:
   /// **'Search radius'**
   String get set_search_radius;
+
+  /// No description provided for @set_search_radius_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Controls which listings appear in Home → Properties near you.'**
+  String get set_search_radius_hint;
 
   /// No description provided for @set_currency.
   ///
@@ -6130,6 +6142,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please select a property first'**
   String get sh_router_select_property;
+
+  /// No description provided for @sh_deferred_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get sh_deferred_loading;
+
+  /// No description provided for @sh_deferred_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this screen.'**
+  String get sh_deferred_error;
+
+  /// No description provided for @sh_deferred_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get sh_deferred_retry;
 
   /// No description provided for @sh_back_exit_snackbar.
   ///

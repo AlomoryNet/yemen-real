@@ -2106,7 +2106,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get set_reset_location => 'إعادة تعيين';
 
   @override
+  String get set_retry_location => 'إعادة طلب الإذن';
+
+  @override
   String get set_search_radius => 'نطاق البحث';
+
+  @override
+  String get set_search_radius_hint => 'يحدد العقارات التي تظهر في الرئيسية ← العقارات القريبة منك.';
 
   @override
   String get set_currency => 'العملة';
@@ -3031,6 +3037,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sh_router_select_property => 'يرجى تحديد العقار أولاً';
+
+  @override
+  String get sh_deferred_loading => 'جارٍ التحميل…';
+
+  @override
+  String get sh_deferred_error => 'تعذر تحميل هذه الشاشة.';
+
+  @override
+  String get sh_deferred_retry => 'إعادة المحاولة';
 
   @override
   String get sh_back_exit_snackbar => 'اضغط مرة أخرى للخروج من التطبيق';

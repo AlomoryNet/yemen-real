@@ -30,7 +30,8 @@ class AppConstants {
   ];
 
   static String getCurrencyNameAr(String code) {
-    if (!AppLocale.isArabic) return AppLabelsEn.currency[code.toUpperCase()] ?? code;
+    if (!AppLocale.isArabic)
+      return AppLabelsEn.currency[code.toUpperCase()] ?? code;
     switch (code.toUpperCase()) {
       case currencyYer:
         return 'ريال يمني';
@@ -68,7 +69,8 @@ class AppConstants {
   static const String statusRejected = 'rejected';
 
   static String getPropertyStatusNameAr(String status) {
-    if (!AppLocale.isArabic) return AppLabelsEn.propertyStatus[status] ?? status;
+    if (!AppLocale.isArabic)
+      return AppLabelsEn.propertyStatus[status] ?? status;
     switch (status) {
       case statusDraft:
         return 'مسودة';
@@ -97,7 +99,8 @@ class AppConstants {
   static const String reqStatusCompleted = 'completed';
 
   static String getRentalRequestStatusNameAr(String status) {
-    if (!AppLocale.isArabic) return AppLabelsEn.rentalRequestStatus[status] ?? status;
+    if (!AppLocale.isArabic)
+      return AppLabelsEn.rentalRequestStatus[status] ?? status;
     switch (status) {
       case reqStatusNew:
         return 'جديد';
@@ -143,7 +146,8 @@ class AppConstants {
   static const String commStatusCancelled = 'cancelled';
 
   static String getCommissionStatusNameAr(String status) {
-    if (!AppLocale.isArabic) return AppLabelsEn.commissionStatus[status] ?? status;
+    if (!AppLocale.isArabic)
+      return AppLabelsEn.commissionStatus[status] ?? status;
     switch (status) {
       case commStatusDue:
         return 'مستحق';
@@ -328,15 +332,7 @@ class AppConstants {
       'مغرب عنس',
       'حي الجامعة',
     ],
-    'شبوة': [
-      'عتق',
-      'بيحان',
-      'حبان',
-      'ميفعة',
-      'الروضة',
-      'الصعيد',
-      'نصاب',
-    ],
+    'شبوة': ['عتق', 'بيحان', 'حبان', 'ميفعة', 'الروضة', 'الصعيد', 'نصاب'],
     'لحج': [
       'الحوطة',
       'تبن',
@@ -346,32 +342,9 @@ class AppConstants {
       'الملاح',
       'صبر',
     ],
-    'أبين': [
-      'زنجبار',
-      'خنفر',
-      'جعار',
-      'لودر',
-      'مودية',
-      'أحور',
-      'المحفد',
-    ],
-    'صعدة': [
-      'مدينة صعدة',
-      'سحار',
-      'الطلح',
-      'الصفراء',
-      'رازح',
-      'حيدان',
-      'باقم',
-    ],
-    'المهرة': [
-      'الغيضة',
-      'حوف',
-      'سيحوت',
-      'قشن',
-      'شحن',
-      'حصوين',
-    ],
+    'أبين': ['زنجبار', 'خنفر', 'جعار', 'لودر', 'مودية', 'أحور', 'المحفد'],
+    'صعدة': ['مدينة صعدة', 'سحار', 'الطلح', 'الصفراء', 'رازح', 'حيدان', 'باقم'],
+    'المهرة': ['الغيضة', 'حوف', 'سيحوت', 'قشن', 'شحن', 'حصوين'],
     'عمران': [
       'مدينة عمران',
       'خمر',
@@ -381,14 +354,7 @@ class AppConstants {
       'عيال سريح',
       'حبور ظليمة',
     ],
-    'حجة': [
-      'مدينة حجة',
-      'عبس',
-      'المحابشة',
-      'كحلان عفار',
-      'حرض',
-      'ميدي',
-    ],
+    'حجة': ['مدينة حجة', 'عبس', 'المحابشة', 'كحلان عفار', 'حرض', 'ميدي'],
     'البيضاء': [
       'مدينة البيضاء',
       'رداع',
@@ -397,22 +363,8 @@ class AppConstants {
       'ذي ناعم',
       'السوادية',
     ],
-    'الضالع': [
-      'مدينة الضالع',
-      'قعطبة',
-      'دمت',
-      'جبن',
-      'الأزارق',
-      'جحاف',
-    ],
-    'ريمة': [
-      'الجبين',
-      'السلفية',
-      'بلاد الطعام',
-      'كسمة',
-      'الجعفرية',
-      'مزهر',
-    ],
+    'الضالع': ['مدينة الضالع', 'قعطبة', 'دمت', 'جبن', 'الأزارق', 'جحاف'],
+    'ريمة': ['الجبين', 'السلفية', 'بلاد الطعام', 'كسمة', 'الجعفرية', 'مزهر'],
     'المحويت': [
       'مدينة المحويت',
       'شبام كوكبان',
@@ -421,13 +373,7 @@ class AppConstants {
       'الرجم',
       'حفاش',
     ],
-    'سقطرى': [
-      'حديبو',
-      'قلنسية',
-      'نوجد',
-      'دكسم',
-      'مومي',
-    ],
+    'سقطرى': ['حديبو', 'قلنسية', 'نوجد', 'دكسم', 'مومي'],
     'الجوف': [
       'الحزم',
       'المتون',
@@ -438,10 +384,52 @@ class AppConstants {
     ],
   };
 
+  /// Treat Sana'a City (أمانة العاصمة) and Sana'a Governorate as one search
+  /// area. The demo data stores capital listings under `أمانة العاصمة`, while
+  /// users commonly pick `صنعاء` in the filter sheet.
+  static String canonicalGovernorate(String value) {
+    final v = value.trim();
+    if (v.contains('العاصمة') ||
+        v == 'صنعاء' ||
+        v == 'محافظة صنعاء' ||
+        v == 'محافظة العاصمة') {
+      return 'صنعاء';
+    }
+    return v.replaceFirst(RegExp(r'^محافظة\s*'), '');
+  }
+
+  /// Display label for a governorate key. Arabic remains the canonical data
+  /// value; English UI maps it through [AppLabelsEn.governorate].
+  static String getGovernorateNameAr(String value) {
+    if (AppLocale.isArabic) return value;
+    final key = value.trim();
+    return AppLabelsEn.governorate[key] ??
+        AppLabelsEn.governorate[canonicalGovernorate(key)] ??
+        key;
+  }
+
+  /// Display label for a district key. Districts are localized demo data, so
+  /// unknown names deliberately fall back to the stored Arabic text.
+  static String getDistrictNameAr(String value) {
+    if (AppLocale.isArabic) return value;
+    final key = value.trim();
+    return AppLabelsEn.district[key] ?? key;
+  }
+
+  static bool governorateMatches(String? selected, String candidate) {
+    final a = selected?.trim() ?? '';
+    if (a.isEmpty) return true;
+    final b = candidate.trim();
+    if (a == b || b.contains(a) || a.contains(b)) return true;
+    return canonicalGovernorate(a) == canonicalGovernorate(b);
+  }
+
   static List<String> getDistrictsForGovernorate(String? gov) {
     if (gov == null || gov.isEmpty) return const [];
     for (final entry in governorateDistricts.entries) {
-      if (gov == entry.key || gov.contains(entry.key) || entry.key.contains(gov)) {
+      if (gov == entry.key ||
+          gov.contains(entry.key) ||
+          entry.key.contains(gov)) {
         return entry.value;
       }
     }
@@ -478,7 +466,9 @@ class AppConstants {
       return (15.3547, 44.2075);
     }
     for (final entry in governorateCoordinates.entries) {
-      if (gov == entry.key || gov.contains(entry.key) || entry.key.contains(gov)) {
+      if (gov == entry.key ||
+          gov.contains(entry.key) ||
+          entry.key.contains(gov)) {
         return entry.value;
       }
     }

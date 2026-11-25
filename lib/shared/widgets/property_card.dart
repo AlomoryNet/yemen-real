@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/property_text_styles.dart';
@@ -128,7 +129,12 @@ class PropertyCard extends ConsumerWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 10,
-              child: PropertyImage(imageUrl: property.primaryImageUrl),
+              // Cap decode size: the first dashboard frame builds up to 16
+              // cards, so full-resolution network images are unnecessary.
+              child: PropertyImage(
+                imageUrl: property.primaryImageUrl,
+                memCacheWidth: 800,
+              ),
             ),
             PositionedDirectional(top: 12, start: 12, child: _badges(context)),
             if (_favoriteVisible)
@@ -209,6 +215,7 @@ class PropertyCard extends ConsumerWidget {
                   imageUrl:
                       property.primaryImageUrl ??
                       (images.isEmpty ? null : images.first),
+                  memCacheWidth: 800,
                 ),
               ),
               PositionedDirectional(top: 10, start: 10, child: _badges(context)),
@@ -231,7 +238,10 @@ class PropertyCard extends ConsumerWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 7,
-              child: PropertyImage(imageUrl: property.primaryImageUrl),
+              child: PropertyImage(
+                imageUrl: property.primaryImageUrl,
+                memCacheWidth: 800,
+              ),
             ),
             PositionedDirectional(top: 10, start: 10, child: _badges(context)),
           ],
@@ -332,7 +342,8 @@ class PropertyCard extends ConsumerWidget {
       const SizedBox(width: 4),
       Expanded(
         child: Text(
-          '${property.city} - ${property.district}',
+          '${AppConstants.getGovernorateNameAr(property.city)} - '
+          '${AppConstants.getDistrictNameAr(property.district)}',
           style: PropertyTextStyles.meta(size: size),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

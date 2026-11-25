@@ -5,7 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/flutter_map.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -198,8 +198,14 @@ class _PropertyMapViewState extends State<PropertyMapView>
 
   late final MapController _controller;
   late final bool _ownController;
+  late final AnimationController _moveController;
   late double _zoom;
   List<GovernorateBoundary> _boundaries = const [];
+
+  LatLng _moveFrom = const LatLng(0, 0);
+  LatLng _moveTo = const LatLng(0, 0);
+  double _moveFromZoom = 0;
+  double _moveToZoom = 0;
 
   @override
   void initState() {
@@ -208,6 +214,10 @@ class _PropertyMapViewState extends State<PropertyMapView>
     final provided = widget.mapController;
     _controller = provided ?? MapController();
     _ownController = provided == null;
+    _moveController = AnimationController(
+      duration: const Duration(milliseconds: 650),
+      vsync: this,
+    )..addListener(_applyAnimatedMove);
     _loadBoundariesOnce().then((loaded) {
       if (mounted) setState(() => _boundaries = loaded);
     });
@@ -215,48 +225,32 @@ class _PropertyMapViewState extends State<PropertyMapView>
 
   @override
   void dispose() {
+    _moveController.dispose();
     if (_ownController) _controller.dispose();
     super.dispose();
   }
 
+  void _applyAnimatedMove() {
+    final t = Curves.easeInOutCubic.transform(_moveController.value);
+    final center = LatLng(
+      _moveFrom.latitude + (_moveTo.latitude - _moveFrom.latitude) * t,
+      _moveFrom.longitude + (_moveTo.longitude - _moveFrom.longitude) * t,
+    );
+    final zoom = _moveFromZoom + (_moveToZoom - _moveFromZoom) * t;
+    _controller.move(center, zoom);
+  }
+
+  /// Reuses one controller so repeated cluster taps cannot create extra
+  /// tickers. Each tap restarts from the camera's current location.
   void _animatedMove(LatLng destLocation, double destZoom) {
-    final latTween = Tween<double>(
-      begin: _controller.camera.center.latitude,
-      end: destLocation.latitude,
-    );
-    final lngTween = Tween<double>(
-      begin: _controller.camera.center.longitude,
-      end: destLocation.longitude,
-    );
-    final zoomTween = Tween<double>(
-      begin: _controller.camera.zoom,
-      end: destZoom,
-    );
-
-    final controller = AnimationController(
-      duration: const Duration(milliseconds: 650),
-      vsync: this,
-    );
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: Curves.easeInOutCubic,
-    );
-
-    controller.addListener(() {
-      _controller.move(
-        LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-        zoomTween.evaluate(animation),
-      );
-    });
-
-    animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
-        controller.dispose();
-      }
-    });
-
-    controller.forward();
+    final camera = _controller.camera;
+    _moveFrom = camera.center;
+    _moveTo = destLocation;
+    _moveFromZoom = camera.zoom;
+    _moveToZoom = destZoom;
+    _moveController
+      ..reset()
+      ..forward();
   }
 
   void _handleClusterTap(PropertyCluster cluster) {
@@ -461,7 +455,7 @@ class _PropertyPriceMarker extends StatelessWidget {
             priceText,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.cairo(
+            style: AppFonts.cairo(
               fontSize: isSelected ? 11 : 10,
               fontWeight: FontWeight.bold,
               color: isSelected ? Colors.white : pinColor,
@@ -525,7 +519,7 @@ class _ClusterBadge extends StatelessWidget {
           child: Center(
             child: Text(
               count >= 1000 ? '${(count / 1000).toStringAsFixed(1)}k' : '$count',
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: count >= 100 ? 11 : 13,
@@ -626,7 +620,7 @@ class _ClusterPropertiesSheet extends StatelessWidget {
                                   l10n.map_cluster_properties_title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontSize: 17,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.textPrimary,
@@ -644,7 +638,7 @@ class _ClusterPropertiesSheet extends StatelessWidget {
                                   ),
                                   child: Text(
                                     '${properties.length} ${l10n.map_cluster_property_unit}',
-                                    style: GoogleFonts.cairo(
+                                    style: AppFonts.cairo(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.textSecondary,

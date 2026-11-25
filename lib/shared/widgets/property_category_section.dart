@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
@@ -119,7 +119,7 @@ class PropertyCategorySection extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
@@ -130,7 +130,7 @@ class PropertyCategorySection extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           subtitle,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 12.5,
                             color: AppColors.textSecondary,
                           ),
@@ -141,7 +141,7 @@ class PropertyCategorySection extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           countText!,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 12.5,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryInk,

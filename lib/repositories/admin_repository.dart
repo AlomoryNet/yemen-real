@@ -2,6 +2,7 @@ import 'package:csv/csv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/env_config.dart';
 import '../core/constants/app_constants.dart';
+import '../models/admin_list_page.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/commission.dart';
 import '../models/property.dart';
@@ -9,6 +10,7 @@ import '../models/rental_request.dart';
 import '../models/user_profile.dart';
 import '../services/supabase_service.dart';
 import '../core/l10n/app_strings.dart';
+import 'admin_paging.dart';
 
 class AdminDashboardStats {
   final int totalProperties;
@@ -130,23 +132,82 @@ class AdminRepository {
     }
   }
 
-  /// Get all user profiles
-  Future<List<UserProfile>> getAllUsers() async {
+  /// Get all user profiles for export, in bounded chunks.
+  Future<List<UserProfile>> getAllUsers() =>
+      collectAdminStream(streamAllUsersForExport());
+
+  /// One bounded page for the admin users tab.
+  Future<AdminListPage<UserProfile>> getUsersPage({
+    int limit = 12,
+    int offset = 0,
+  }) async {
+    final pageOffset = normalizeAdminOffset(offset);
+    final pageLimit = normalizeAdminLimit(limit);
+    final results = await Future.wait<dynamic>([
+      _fetchUsersPage(limit: pageLimit, offset: pageOffset),
+      countUsers(),
+    ]);
+
+    return AdminListPage<UserProfile>(
+      items: results[0] as List<UserProfile>,
+      total: results[1] as int,
+      offset: pageOffset,
+    );
+  }
+
+  Future<int> countUsers() async {
     if (EnvConfig.isDemoMode || _client == null) {
-      return List.from(SupabaseService.demoUsers);
+      return SupabaseService.demoUsers.length;
+    }
+
+    try {
+      return await _client.from('profiles').count();
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  Future<List<UserProfile>> _fetchUsersPage({
+    required int limit,
+    required int offset,
+  }) async {
+    if (EnvConfig.isDemoMode || _client == null) {
+      return pageAdminDemo(
+        SupabaseService.demoUsers,
+        offset,
+        limit,
+        (user) => user.createdAt,
+        (user) => user.id,
+      );
     }
 
     try {
       final data = await _client
           .from('profiles')
           .select()
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .order('id', ascending: false)
+          .range(offset, offset + limit - 1);
 
       return (data as List)
           .map((item) => UserProfile.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Complete user list for PDF/CSV export without an unbounded select.
+  Stream<List<UserProfile>> streamAllUsersForExport({
+    int pageSize = 200,
+  }) async* {
+    final total = await countUsers();
+    final size = normalizeAdminLimit(pageSize);
+
+    for (var offset = 0; offset < total; offset += size) {
+      final page = await _fetchUsersPage(limit: size, offset: offset);
+      if (page.isEmpty) break;
+      yield page;
     }
   }
 

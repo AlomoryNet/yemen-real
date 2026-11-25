@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -79,7 +79,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                   child: Text(
                     title ?? context.l10n.app_name,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,

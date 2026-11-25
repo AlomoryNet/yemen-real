@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/context_l10n.dart';
@@ -21,7 +21,7 @@ class AdminCommissionsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final commissionsAsync = ref.watch(adminCommissionsProvider);
+    final commissionsPaginator = ref.watch(adminCommissionsPaginatorProvider);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -35,7 +35,7 @@ class AdminCommissionsTab extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     context.l10n.admin_commissions_list_title,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -57,8 +57,13 @@ class AdminCommissionsTab extends ConsumerWidget {
                     OutlinedButton.icon(
                       icon: const Icon(Icons.download, size: 16),
                       label: const Text('CSV'),
-                      onPressed: () {
-                        final list = commissionsAsync.value ?? [];
+                      onPressed: () async {
+                        // Export providers are intentionally separate from the
+                        // paginator so the CSV contains every commission.
+                        final list = await ref.read(
+                          adminCommissionsProvider.future,
+                        );
+                        if (!context.mounted) return;
                         final csvData = ref
                             .read(adminRepositoryProvider)
                             .exportCommissionsToCsv(list);
@@ -77,8 +82,9 @@ class AdminCommissionsTab extends ConsumerWidget {
             const Divider(height: 1),
             const SizedBox(height: 12),
             Expanded(
-              child: commissionsAsync.when(
-                data: (commissions) {
+              child: commissionsPaginator.when(
+                data: (page) {
+                  final commissions = page.items;
                   if (commissions.isEmpty) {
                     return EmptyStateView(
                       icon: Icons.receipt_long,
@@ -88,6 +94,11 @@ class AdminCommissionsTab extends ConsumerWidget {
                   }
                   return AdminPagedList(
                     items: commissions,
+                    hasMore: page.hasMore,
+                    isLoadingMore: page.isLoadingMore,
+                    onLoadMore: ref
+                        .read(adminCommissionsPaginatorProvider.notifier)
+                        .loadMore,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, c, index) {
                       return ListTile(
@@ -101,14 +112,14 @@ class AdminCommissionsTab extends ConsumerWidget {
                         ),
                         title: Text(
                           '${Formatters.formatCurrency(c.totalAmount, c.currency)} - ${c.propertyTitle ?? context.l10n.admin_registered_property}',
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
                         subtitle: Text(
                           '${context.l10n.admin_liable_party}: ${AppConstants.getLiablePartyNameAr(c.liableParty)} • ${context.l10n.admin_settlement_method}: ${c.settlementMethod ?? context.l10n.admin_awaiting_collection}',
-                          style: GoogleFonts.cairo(fontSize: 12),
+                          style: AppFonts.cairo(fontSize: 12),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -122,7 +133,12 @@ class AdminCommissionsTab extends ConsumerWidget {
                                       commissionId: c.id,
                                       status: newStatus,
                                     );
-                                ref.refresh(adminCommissionsProvider);
+                                await ref
+                                    .read(
+                                      adminCommissionsPaginatorProvider
+                                          .notifier,
+                                    )
+                                    .reload();
                                 ref.refresh(adminStatsProvider);
                               },
                               itemBuilder: (context) => [

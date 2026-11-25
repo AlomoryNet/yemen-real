@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/theme/app_colors.dart';
 
 class EmptyStateView extends StatelessWidget {
@@ -38,7 +38,7 @@ class EmptyStateView extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -49,7 +49,7 @@ class EmptyStateView extends StatelessWidget {
               Text(
                 description!,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: 13,
                   color: AppColors.textSecondary,
                 ),

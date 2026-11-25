@@ -1,8 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/env_config.dart';
 import '../core/exceptions/app_exception.dart';
+import '../models/admin_list_page.dart';
 import '../models/report_item.dart';
 import '../services/supabase_service.dart';
+import 'admin_paging.dart';
 
 class ReportRepository {
   final SupabaseClient? _client = SupabaseService.client;
@@ -41,10 +43,53 @@ class ReportRepository {
     }
   }
 
-  /// Get reports (Admin)
-  Future<List<ReportItem>> getReports() async {
+  /// Get all reports for export, in bounded chunks (Admin).
+  Future<List<ReportItem>> getReports() =>
+      collectAdminStream(streamAllReportsForExport());
+
+  /// One bounded page for the admin reports tab.
+  Future<AdminListPage<ReportItem>> getReportsPage({
+    int limit = 12,
+    int offset = 0,
+  }) async {
+    final pageOffset = normalizeAdminOffset(offset);
+    final pageLimit = normalizeAdminLimit(limit);
+    final results = await Future.wait<dynamic>([
+      _fetchReportsPage(limit: pageLimit, offset: pageOffset),
+      countReports(),
+    ]);
+
+    return AdminListPage<ReportItem>(
+      items: results[0] as List<ReportItem>,
+      total: results[1] as int,
+      offset: pageOffset,
+    );
+  }
+
+  Future<int> countReports() async {
     if (EnvConfig.isDemoMode || _client == null) {
-      return List<ReportItem>.from(SupabaseService.demoReports);
+      return SupabaseService.demoReports.length;
+    }
+
+    try {
+      return await _client.from('reports').count();
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  Future<List<ReportItem>> _fetchReportsPage({
+    required int limit,
+    required int offset,
+  }) async {
+    if (EnvConfig.isDemoMode || _client == null) {
+      return pageAdminDemo(
+        SupabaseService.demoReports,
+        offset,
+        limit,
+        (report) => report.createdAt,
+        (report) => report.id,
+      );
     }
 
     try {
@@ -56,13 +101,29 @@ class ReportRepository {
               title
             )
           ''')
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .order('id', ascending: false)
+          .range(offset, offset + limit - 1);
 
       return (data as List)
           .map((item) => ReportItem.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Complete report list for PDF export without an unbounded select.
+  Stream<List<ReportItem>> streamAllReportsForExport({
+    int pageSize = 200,
+  }) async* {
+    final total = await countReports();
+    final size = normalizeAdminLimit(pageSize);
+
+    for (var offset = 0; offset < total; offset += size) {
+      final page = await _fetchReportsPage(limit: size, offset: offset);
+      if (page.isEmpty) break;
+      yield page;
     }
   }
 

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../providers/settings_provider.dart';
 
 /// Dashboard hero: branding plus a single search field and one filter button.
 ///
 /// All filtering controls live in the shared filter sheet opened by
 /// [onFilterRequested], so the hero stays compact regardless of how many
 /// governorates, districts or property types are available.
-class HomeHeroSection extends StatelessWidget {
+class HomeHeroSection extends ConsumerWidget {
   const HomeHeroSection({
     super.key,
     required this.searchController,
@@ -26,8 +28,10 @@ class HomeHeroSection extends StatelessWidget {
   final int activeFilterCount;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final useOutlinedAdd =
+        ref.watch(settingsProvider).addPropertyStyle == 'outlined';
 
     return Container(
       width: double.infinity,
@@ -65,7 +69,7 @@ class HomeHeroSection extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       l10n.dash_trusted_platform,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         color: AppColors.textLight,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -78,7 +82,7 @@ class HomeHeroSection extends StatelessWidget {
               Text(
                 l10n.dash_hero_title,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: Responsive.isMobile(context) ? 26 : 38,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -89,7 +93,7 @@ class HomeHeroSection extends StatelessWidget {
               Text(
                 l10n.dash_hero_subtitle,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: Responsive.isMobile(context) ? 13 : 16,
                   color: AppColors.textLight.withAlpha(210),
                 ),
@@ -125,8 +129,7 @@ class HomeHeroSection extends StatelessWidget {
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide:
-                                    BorderSide(color: AppColors.border),
+                                borderSide: BorderSide(color: AppColors.border),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -162,9 +165,7 @@ class HomeHeroSection extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             shape: const StadiumBorder(),
                           ),
                           onPressed: onSearchSubmit,
@@ -179,10 +180,52 @@ class HomeHeroSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              _buildMapBanner(context),
+              if (useOutlinedAdd)
+                _buildAddPropertyBanner(context)
+              else
+                _buildMapBanner(context),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// When Settings → "Outline button on Home" is selected, the hero CTA
+  /// becomes the primary add-property action instead of the map shortcut.
+  Widget _buildAddPropertyBanner(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withAlpha(238),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        children: [
+          OutlinedButton.icon(
+            key: const ValueKey('home_add_property_outlined'),
+            onPressed: () => context.push('/add-property'),
+            icon: const Icon(Icons.add_home_outlined, size: 18),
+            label: Text(context.l10n.dash_add_listing_now),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primaryInk,
+              side: BorderSide(color: AppColors.primaryInk),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            context.l10n.dash_add_property_prompt,
+            textAlign: TextAlign.center,
+            style: AppFonts.cairo(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -192,26 +235,23 @@ class HomeHeroSection extends StatelessWidget {
       onTap: () => context.go('/map'),
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withAlpha(20),
+          color: AppColors.surface.withAlpha(238),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withAlpha(50)),
+          border: Border.all(color: AppColors.divider),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.accent,
+                color: AppColors.primaryMuted,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.map_rounded,
-                color: Colors.white,
+                color: AppColors.primaryInk,
                 size: 20,
               ),
             ),
@@ -222,25 +262,25 @@ class HomeHeroSection extends StatelessWidget {
                 children: [
                   Text(
                     context.l10n.dash_map_cta_title,
-                    style: GoogleFonts.cairo(
-                      color: Colors.white,
+                    style: AppFonts.cairo(
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
                   ),
                   Text(
                     context.l10n.dash_map_cta_subtitle,
-                    style: GoogleFonts.cairo(
-                      color: AppColors.textLight.withAlpha(210),
+                    style: AppFonts.cairo(
+                      color: AppColors.textSecondary,
                       fontSize: 11,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
-              color: Colors.white,
+              color: AppColors.primaryInk,
               size: 14,
             ),
           ],

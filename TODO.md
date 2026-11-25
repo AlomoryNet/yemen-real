@@ -4,39 +4,78 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 
 ## Next up
 
-- [ ] **Remaining i18n (Option B) — larger migrations**
-      - PDF locale policy: `contract_preview_screen.dart` and
-        `admin_pdf_service.dart` force RTL (`pw.Directionality`, `MultiPage`,
-        `pw.Alignment.centerRight`) even in English mode.
-      - Governorate/district display names: `app_constants.dart`, both map
-        screens, demo generator, `AppLabelsEn`; fix `supabase_service.dart:125`
-        where `nameEn` is a slug (`sanaa_capital`).
-      - Contract default clauses/titles in `models/property_contract.dart` are
-        bilingual content — needs a data-model decision, not a label migration.
+- [x] **Remaining i18n (Option B) — PDF direction + place names**
+      - [x] PDF locale policy: `contract_preview_screen.dart` and
+        `admin_pdf_service.dart` now snapshot `Directionality.of(context)`
+        before the async font load; PDF direction and cell/heading alignment
+        follow the active locale instead of always rendering RTL.
+      - [x] Governorate/district display names: `AppLabelsEn` holds English
+        labels, `AppConstants.getGovernorateNameAr/getDistrictNameAr` are the
+        single display gate, and filter/card/detail/map/contract call sites use
+        them. Arabic stays the canonical storage/filter key. The map search box
+        now shows the localized governorate label without breaking filtering.
+        Demo `LocationItem.nameEn` is a display name, not `sanaa_capital`.
+      - Added `test/display_name_localization_test.dart` plus an English `/map`
+        filter regression in `test/yemen_map_screen_test.dart`; `flutter analyze`
+        clean, 83/83 tests, USB hot restart with no runtime errors.
+
+- [x] **Contract default clauses/titles — locale defaults at creation**
+      - Added `models/contract_default_text.dart` with Arabic/English legal
+        template text. `PropertyContract.defaultTemplate()` picks the active
+        locale via `AppLocale` and stores the chosen title, payment/duration,
+        utilities/maintenance/late-payment wording and clauses in the existing
+        string fields, so no schema/JSON migration is needed.
+      - Saved owner templates keep the language they were created in; new
+        contracts without a saved template follow the current locale.
+      - Added `test/contract_locale_defaults_test.dart`; `flutter analyze` clean,
+        87/87 tests, fresh USB hot restart with no runtime errors.
       - Leave as-is: demo property content, model JSON fallbacks, comments,
-        log strings, Arabic comma in contract clauses.
+        log strings, Arabic comma in user-edited contract clauses.
 
 - [ ] **Performance quick wins**
       - [x] Cold-start jank: the 440 demo listings are now generated once per
         process (`DemoPropertiesGenerator.cachedDemoProperties`) and reused by
         the demo store, Home and the map fallback. Home's no-op post-frame
         rebuild was removed and both `ThemeData` objects are cached.
-      - [ ] Runtime font fetching remains: `GoogleFonts` still downloads Cairo
-        weight variants because the bundled variable `Cairo.ttf` is not declared
-        as a font family. Needs a weight-safe declaration before disabling
-        `allowRuntimeFetching`.
-      - Slim the four unbounded admin queries: `admin_repository.dart:124`
-        `.select()`, `commission_repository.dart:20`, `report_repository.dart:53`,
-        `rental_request_repository.dart:123` (all `select('*')`, no `.limit()`).
-        Needs coordinated provider + UI + PDF-export changes so a hard cap
-        does not silently truncate admin exports — deferred as a unit.
+      - [x] Input-dispatch ANR mitigation: the dashboard's 440-listing nearby
+        scan is now cached in `nearbyPropertiesProvider`, card images decode at
+        a capped width, and first-run location consent no longer races a
+        SharedPreferences write with the OS permission dialog.
+      - [x] Runtime font fetching removed: `assets/fonts/Cairo.ttf` is declared
+        as the `CairoLocal` family (its `fvar` table exposes `wght` 200–1000),
+        and `core/theme/app_fonts.dart` sets `FontVariation('wght', …)` for
+        every requested weight. All `GoogleFonts.cairo`/`outfit`/`amiri` calls
+        were migrated to `AppFonts.cairo` (the two minor fonts now render with
+        bundled Cairo), `GoogleFonts.config.allowRuntimeFetching = false` in
+        `main.dart`, and `test/app_fonts_test.dart` was added. `flutter analyze`
+        clean, 92/92 tests, fresh USB cold launch with no runtime errors.
+      - [x] Slim the four unbounded admin queries (users, commissions, reports,
+        rental requests). Each repository now exposes a bounded `get*Page()`
+        (`order(...).range(...)` plus a separate count), a chunked
+        `streamAll*ForExport()`, and keeps the old full-list method as an
+        export-only collector. `AdminListPaginator` drives the four tabs via
+        new paginator providers; `AdminPagedList` gained external
+        `hasMore/isLoadingMore/onLoadMore`. CSV buttons and PDF sections await
+        the separate full-list providers, so exports remain complete.
+        Added `test/admin_paging_repository_test.dart`,
+        `test/admin_list_paginator_test.dart` and external-paging widget tests;
+        `flutter analyze` clean, 100/100 tests. USB pass verified all four
+        tabs and PDF sections 1–4; requests/commissions CSV dialogs opened
+        with complete headers. No runtime errors or new ANR.
       - [x] `getDashboardStats()` now uses PostgREST `sum()`/`count()` aggregates
         with a client-side fallback for older backends (`admin_repository.dart`).
       - [x] `const` constructor pass (40 `const`/`unnecessary_const` fixes across
         hot-path and shared widgets; `prefer_const_constructors` was temporarily
         enabled to find them, then disabled again in `analysis_options.yaml`).
-      - [ ] Web bundle deferred loading for admin/map.
-      - [ ] Profile map clustering with `map_cluster_service.dart` for large sets.
+      - [x] Web bundle deferred loading for admin/map — route libraries are
+        loaded through `DeferredScreen`; the release web build emits separate
+        deferred parts for the heavy screens.
+      - [x] Map clustering with `map_cluster_service.dart` — clustering now uses
+        a spatial hash instead of an O(n²) all-pairs scan.
+      - [x] Map cluster zoom animation now reuses one `AnimationController` in
+        `PropertyMapView`, so rapid repeated cluster taps cannot create extra
+        tickers. Added `test/property_map_cluster_ticker_test.dart`; verified on
+        USB with repeated cluster taps and no runtime errors.
 
 - [ ] **Accessibility + loading UX**
       - Remaining low-contrast token: `PropertyTextStyles.badge()` uses
@@ -59,8 +98,32 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
       - CI: `flutter analyze` + `flutter test` on PRs.
       - Production crash reporting (Sentry/Crashlytics).
 
+## Recently completed (2026-11-25)
+
+- [x] **Dashboard FAB stack alignment.** The compact add-property FAB now uses
+      the extended map FAB's trailing edge (`CrossAxisAlignment.end`); the old
+      centered `Column` child looked detached from the `endFloat` FAB stack.
+- [x] **Map filter + add-action correction.** `صنعاء` aliases `أمانة العاصمة`,
+      so Governorate=صنعاء + District=بيت بوس returns the 2 demo listings.
+      Count/list now use the full filtered set instead of clipping to the map
+      viewport. Added a compact shared `AddPropertyFab` (small FAB, add-home
+      icon) on Home and in the map list view only. `flutter analyze` clean,
+      74/74 tests, USB hot restart with no runtime errors.
+
 ## Recently completed (2026-11-24)
 
+- [x] **Performance quick wins — web deferred routes + map clustering.**
+      `AdminDashboardScreen` and `YemenMapScreen` are now deferred imports in
+      `app_router.dart`, loaded through `DeferredScreen` with a localized loading
+      and retry state. `MapScreenArgs` moved to its own tiny file so Home no
+      longer pulls the map screen into the eagerly-loaded graph.
+      `MapClusterService.clusterProperties` now buckets coordinates into a
+      spatial hash and only checks the seed cell plus its 8 neighbours, turning
+      the previous O(n²) scan into near-linear work for large result sets.
+      Added `test/deferred_screen_test.dart` and
+      `test/map_cluster_service_test.dart` (brute-force equivalence oracle).
+      `flutter analyze` clean, 71/71 tests, `flutter build web --release`
+      succeeded and emitted three deferred parts.
 - [x] **Performance quick win — `const` pass.** Applied 40 mechanical
       `const`/`unnecessary_const` fixes across admin tabs, contract/map/sheet
       widgets, `PropertyCard` and tests. No behavior changes.

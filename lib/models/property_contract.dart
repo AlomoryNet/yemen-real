@@ -1,6 +1,8 @@
 // Yemen Real Estate Portal — بوابة اليمن العقارية
 // Property Contract Model — نموذج عقد الإيجار والبيع اليمني القابل للتشكيل والطباعة
 
+import 'contract_default_text.dart';
+
 class PropertyContract {
   final String id;
   final String propertyId;
@@ -93,40 +95,36 @@ class PropertyContract {
     double price = 0,
     String currency = 'USD',
     String dealType = 'rent',
+    ContractDefaultText? text,
   }) {
     final now = DateTime.now();
     final nextYear = DateTime(now.year + 1, now.month, now.day);
     final isRent = dealType == 'rent';
+    final defaults = text ?? ContractDefaultText.forCurrentLocale();
 
     return PropertyContract(
       id: 'contract-${DateTime.now().millisecondsSinceEpoch}',
       propertyId: propertyId,
       contractType: dealType,
-      title: isRent ? 'عقد إيجار شرعي وقانوني' : 'عقد بيع وشراء عقار',
+      title: isRent ? defaults.rentTitle : defaults.saleTitle,
       ownerName: ownerName,
       ownerPhone: ownerPhone,
+      ownerAddress: defaults.ownerAddress,
       propertyCity: city,
       propertyDistrict: district,
       amount: price,
       currency: currency,
-      paymentFrequency: isRent ? 'شهرياً مقدماً' : 'دفعة كاملة عند التوثيق',
-      durationText: isRent ? 'سنة واحدة' : 'تمليك نهائي',
+      paymentFrequency: isRent ? defaults.monthlyPayment : defaults.fullPayment,
+      durationText: isRent ? defaults.oneYear : defaults.permanentOwnership,
+      utilitiesPayableBy: defaults.utilities,
+      maintenanceLiability: defaults.maintenance,
+      latePaymentPolicy: defaults.latePayment,
       startDate: '${now.year}/${now.month}/${now.day}',
       endDate: isRent
           ? '${nextYear.year}/${nextYear.month}/${nextYear.day}'
-          : 'دائم',
+          : defaults.indefiniteEndDate,
       securityDeposit: isRent ? price : 0.0,
-      customClauses: isRent
-          ? [
-              'استخدام العين المؤجرة للسكن العائلي فقط ولا يحق تحويلها لغرض تجاري أو غيره.',
-              'عدم إحداث أي استحداثات أو تعديلات أو فتحات في الجدران إلا بإذن خطي من المالك.',
-              'يلتزم المستأجر بسداد فواتير الكهرباء والماء والهاتف والخدمات أولاً بأول وتسليم إبراء ذمة عند الإخلاء.',
-              'المؤجر غير مسؤول عن أي حوادث أو سرقات أو كوارث قدرية تقع داخل العين المؤجرة.',
-            ]
-          : [
-              'يقر البائع بخلو العقار من أي نزاع أو رهن أو حقوق للغير.',
-              'يلتزم البائع بتسليم كافة بصائر وأصول ووثائق الملكية الشرعية للمشتري.',
-            ],
+      customClauses: isRent ? defaults.rentClauses : defaults.saleClauses,
       createdAt: now,
     );
   }

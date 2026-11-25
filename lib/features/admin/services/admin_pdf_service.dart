@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -24,13 +24,20 @@ class AdminPdfService {
     required int sectionIndex,
   }) async {
     final l10n = context.l10n;
+    // Snapshot direction before any async work so PDF rows and headers follow
+    // the active locale instead of always rendering as Arabic/RTL.
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final pdfDirection = isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr;
+    final cellAlignment = isRtl
+        ? pw.Alignment.centerRight
+        : pw.Alignment.centerLeft;
     final int currentTab = sectionIndex;
     final List<String> sectionTitles = [
-      context.l10n.admin_tab_properties,
-      context.l10n.admin_tab_requests,
-      context.l10n.admin_tab_commissions,
-      context.l10n.admin_tab_reports,
-      context.l10n.admin_section_users,
+      l10n.admin_tab_properties,
+      l10n.admin_tab_requests,
+      l10n.admin_tab_commissions,
+      l10n.admin_tab_reports,
+      l10n.admin_section_users,
     ];
 
     final sectionTitle = sectionTitles[currentTab];
@@ -38,8 +45,8 @@ class AdminPdfService {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '${context.l10n.admin_pdf_preparing} $sectionTitle...',
-          style: GoogleFonts.cairo(),
+          '${l10n.admin_pdf_preparing} $sectionTitle...',
+          style: AppFonts.cairo(),
         ),
         duration: const Duration(seconds: 2),
       ),
@@ -53,27 +60,27 @@ class AdminPdfService {
 
       final now = DateTime.now();
       final arabicDays = [
-        context.l10n.admin_day_monday,
-        context.l10n.admin_day_tuesday,
-        context.l10n.admin_day_wednesday,
-        context.l10n.admin_day_thursday,
-        context.l10n.admin_day_friday,
-        context.l10n.admin_day_saturday,
-        context.l10n.admin_day_sunday,
+        l10n.admin_day_monday,
+        l10n.admin_day_tuesday,
+        l10n.admin_day_wednesday,
+        l10n.admin_day_thursday,
+        l10n.admin_day_friday,
+        l10n.admin_day_saturday,
+        l10n.admin_day_sunday,
       ];
       final arabicMonths = [
-        context.l10n.admin_month_january,
-        context.l10n.admin_month_february,
-        context.l10n.admin_month_march,
-        context.l10n.admin_month_april,
-        context.l10n.admin_month_may,
-        context.l10n.admin_month_june,
-        context.l10n.admin_month_july,
-        context.l10n.admin_month_august,
-        context.l10n.admin_month_september,
-        context.l10n.admin_month_october,
-        context.l10n.admin_month_november,
-        context.l10n.admin_month_december,
+        l10n.admin_month_january,
+        l10n.admin_month_february,
+        l10n.admin_month_march,
+        l10n.admin_month_april,
+        l10n.admin_month_may,
+        l10n.admin_month_june,
+        l10n.admin_month_july,
+        l10n.admin_month_august,
+        l10n.admin_month_september,
+        l10n.admin_month_october,
+        l10n.admin_month_november,
+        l10n.admin_month_december,
       ];
 
       final dayName = arabicDays[now.weekday - 1];
@@ -84,9 +91,9 @@ class AdminPdfService {
       final int hour12 = rawHour > 12
           ? rawHour - 12
           : (rawHour == 0 ? 12 : rawHour);
-      final period = rawHour >= 12 ? context.l10n.admin_pm : context.l10n.admin_am;
+      final period = rawHour >= 12 ? l10n.admin_pm : l10n.admin_am;
       final minute = now.minute.toString().padLeft(2, '0');
-      final timeFormatted = '$hour12:$minute $period ${context.l10n.admin_sanaa_time}';
+      final timeFormatted = '$hour12:$minute $period ${l10n.admin_sanaa_time}';
 
       final pdf = pw.Document();
 
@@ -98,12 +105,12 @@ class AdminPdfService {
         case 0: // Properties
           final props = ref.read(searchPropertiesProvider).asData?.value ?? [];
           tableHeaders = [
-            context.l10n.admin_col_property_id,
-            context.l10n.admin_col_address,
-            context.l10n.admin_col_deal,
-            context.l10n.admin_col_city,
-            context.l10n.admin_col_price,
-            context.l10n.admin_status_label,
+            l10n.admin_col_property_id,
+            l10n.admin_col_address,
+            l10n.admin_col_deal,
+            l10n.admin_col_city,
+            l10n.admin_col_price,
+            l10n.admin_status_label,
           ];
           tableData = props
               .map(
@@ -120,14 +127,14 @@ class AdminPdfService {
           break;
 
         case 1: // Rental Requests
-          final reqs = ref.read(allRentalRequestsProvider).asData?.value ?? [];
+          final reqs = await ref.read(allRentalRequestsProvider.future);
           tableHeaders = [
-            context.l10n.admin_col_request_id,
-            context.l10n.admin_property_label,
-            context.l10n.admin_col_tenant,
-            context.l10n.admin_col_phone,
-            context.l10n.admin_col_start_date,
-            context.l10n.admin_status_label,
+            l10n.admin_col_request_id,
+            l10n.admin_property_label,
+            l10n.admin_col_tenant,
+            l10n.admin_col_phone,
+            l10n.admin_col_start_date,
+            l10n.admin_status_label,
           ];
           tableData = reqs
               .map(
@@ -145,14 +152,14 @@ class AdminPdfService {
           break;
 
         case 2: // Commissions
-          final comms = ref.read(adminCommissionsProvider).asData?.value ?? [];
+          final comms = await ref.read(adminCommissionsProvider.future);
           tableHeaders = [
-            context.l10n.admin_col_id,
-            context.l10n.admin_property_label,
-            context.l10n.admin_liable_party,
-            context.l10n.admin_col_amount,
-            context.l10n.admin_currency,
-            context.l10n.admin_col_settlement_status,
+            l10n.admin_col_id,
+            l10n.admin_property_label,
+            l10n.admin_liable_party,
+            l10n.admin_col_amount,
+            l10n.admin_currency,
+            l10n.admin_col_settlement_status,
           ];
           tableData = comms
               .map(
@@ -169,13 +176,13 @@ class AdminPdfService {
           break;
 
         case 3: // Reports
-          final reps = ref.read(adminReportsProvider).asData?.value ?? [];
+          final reps = await ref.read(adminReportsProvider.future);
           tableHeaders = [
-            context.l10n.admin_col_id,
-            context.l10n.admin_col_property_id,
-            context.l10n.admin_col_report_reason,
-            context.l10n.admin_status_label,
-            context.l10n.admin_col_report_date,
+            l10n.admin_col_id,
+            l10n.admin_col_property_id,
+            l10n.admin_col_report_reason,
+            l10n.admin_status_label,
+            l10n.admin_col_report_date,
           ];
           tableData = reps
               .map(
@@ -183,7 +190,9 @@ class AdminPdfService {
                   rp.id,
                   rp.propertyId,
                   rp.reason,
-                  rp.status == 'pending' ? context.l10n.admin_status_under_review : context.l10n.admin_status_resolved,
+                  rp.status == 'pending'
+                      ? l10n.admin_status_under_review
+                      : l10n.admin_status_resolved,
                   rp.createdAt.toIso8601String().split('T').first,
                 ],
               )
@@ -192,13 +201,13 @@ class AdminPdfService {
 
         case 4: // Users
         default:
-          final users = ref.read(allUsersProvider).asData?.value ?? [];
+          final users = await ref.read(allUsersProvider.future);
           tableHeaders = [
-            context.l10n.admin_col_number,
-            context.l10n.admin_col_username,
-            context.l10n.admin_col_account_email,
-            context.l10n.admin_col_encryption_status,
-            context.l10n.admin_created_at,
+            l10n.admin_col_number,
+            l10n.admin_col_username,
+            l10n.admin_col_account_email,
+            l10n.admin_col_encryption_status,
+            l10n.admin_created_at,
           ];
           tableData = users.asMap().entries.map((entry) {
             final u = entry.value;
@@ -209,7 +218,7 @@ class AdminPdfService {
               '${entry.key + 1}',
               u.fullName,
               account,
-              context.l10n.admin_encrypted_protected_pdf,
+              l10n.admin_encrypted_protected_pdf,
               u.createdAt.toString().split(' ').first,
             ];
           }).toList();
@@ -219,7 +228,7 @@ class AdminPdfService {
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
-          textDirection: pw.TextDirection.rtl,
+          textDirection: pdfDirection,
           margin: const pw.EdgeInsets.all(24),
           build: (pw.Context ctx) {
             return [
@@ -235,12 +244,12 @@ class AdminPdfService {
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Text(
-                      context.l10n.admin_pdf_bismillah,
+                      l10n.admin_pdf_bismillah,
                       style: pw.TextStyle(font: fontCairoBold, fontSize: 11),
                     ),
                     pw.SizedBox(height: 2),
                     pw.Text(
-                      context.l10n.admin_pdf_republic,
+                      l10n.admin_pdf_republic,
                       style: pw.TextStyle(
                         font: fontCairoBold,
                         fontSize: 13,
@@ -249,7 +258,7 @@ class AdminPdfService {
                     ),
                     pw.SizedBox(height: 2),
                     pw.Text(
-                      context.l10n.admin_pdf_report_header,
+                      l10n.admin_pdf_report_header,
                       style: pw.TextStyle(font: fontCairoBold, fontSize: 11),
                     ),
                     pw.Divider(thickness: 0.5, color: PdfColors.grey400),
@@ -257,7 +266,7 @@ class AdminPdfService {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text(
-                          '${context.l10n.admin_pdf_section}: $sectionTitle',
+                          '${l10n.admin_pdf_section}: $sectionTitle',
                           style: pw.TextStyle(
                             font: fontCairoBold,
                             fontSize: 10,
@@ -265,7 +274,7 @@ class AdminPdfService {
                           ),
                         ),
                         pw.Text(
-                          context.l10n.admin_pdf_issuer,
+                          l10n.admin_pdf_issuer,
                           style: pw.TextStyle(font: fontCairo, fontSize: 9.5),
                         ),
                       ],
@@ -285,35 +294,35 @@ class AdminPdfService {
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
                           pw.Text(
-                            '${context.l10n.admin_pdf_day_label}: $dayName',
+                            '${l10n.admin_pdf_day_label}: $dayName',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
                             ),
                           ),
                           pw.Text(
-                            '${context.l10n.admin_pdf_date_label}: $dayNum',
+                            '${l10n.admin_pdf_date_label}: $dayNum',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
                             ),
                           ),
                           pw.Text(
-                            '${context.l10n.admin_pdf_month_label}: $monthName (${now.month})',
+                            '${l10n.admin_pdf_month_label}: $monthName (${now.month})',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
                             ),
                           ),
                           pw.Text(
-                            '${context.l10n.admin_pdf_year_label}: $yearNum ${context.l10n.admin_pdf_year_suffix}',
+                            '${l10n.admin_pdf_year_label}: $yearNum ${l10n.admin_pdf_year_suffix}',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
                             ),
                           ),
                           pw.Text(
-                            '${context.l10n.admin_pdf_time_label}: $timeFormatted',
+                            '${l10n.admin_pdf_time_label}: $timeFormatted',
                             style: pw.TextStyle(
                               font: fontCairoBold,
                               fontSize: 8.5,
@@ -332,11 +341,11 @@ class AdminPdfService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    '${context.l10n.admin_pdf_total_items}: ${tableData.length}',
+                    '${l10n.admin_pdf_total_items}: ${tableData.length}',
                     style: pw.TextStyle(font: fontCairoBold, fontSize: 10),
                   ),
                   pw.Text(
-                    context.l10n.admin_pdf_data_status,
+                    l10n.admin_pdf_data_status,
                     style: pw.TextStyle(
                       font: fontCairo,
                       fontSize: 9,
@@ -354,7 +363,7 @@ class AdminPdfService {
                     ? [
                         List.generate(
                           tableHeaders.length,
-                          (_) => context.l10n.admin_pdf_no_data,
+                          (_) => l10n.admin_pdf_no_data,
                         ),
                       ]
                     : tableData,
@@ -367,7 +376,7 @@ class AdminPdfService {
                   color: PdfColors.green800,
                 ),
                 cellStyle: pw.TextStyle(font: fontCairo, fontSize: 7.5),
-                cellAlignment: pw.Alignment.centerRight,
+                cellAlignment: cellAlignment,
                 cellPadding: const pw.EdgeInsets.symmetric(
                   horizontal: 4,
                   vertical: 4,
@@ -382,7 +391,7 @@ class AdminPdfService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    context.l10n.admin_pdf_copyright,
+                    l10n.admin_pdf_copyright,
                     style: pw.TextStyle(
                       font: fontCairo,
                       fontSize: 7.5,
@@ -390,7 +399,7 @@ class AdminPdfService {
                     ),
                   ),
                   pw.Text(
-                    context.l10n.admin_pdf_doc_footer,
+                    l10n.admin_pdf_doc_footer,
                     style: pw.TextStyle(
                       font: fontCairo,
                       fontSize: 7.5,
@@ -444,8 +453,8 @@ class AdminPdfService {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    context.l10n.admin_pdf_export_success,
-                    style: GoogleFonts.cairo(
+                    l10n.admin_pdf_export_success,
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -458,8 +467,8 @@ class AdminPdfService {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${context.l10n.admin_pdf_saved_prefix}$sectionTitle${context.l10n.admin_pdf_saved_suffix}',
-                  style: GoogleFonts.cairo(fontSize: 13),
+                  '${l10n.admin_pdf_saved_prefix}$sectionTitle${l10n.admin_pdf_saved_suffix}',
+                  style: AppFonts.cairo(fontSize: 13),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -473,23 +482,23 @@ class AdminPdfService {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.l10n.admin_pdf_file_name,
-                        style: GoogleFonts.cairo(
+                        l10n.admin_pdf_file_name,
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                         ),
                       ),
                       Text(
                         filename,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 11,
                           color: AppColors.primaryInk,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        context.l10n.admin_pdf_save_path,
-                        style: GoogleFonts.cairo(
+                        l10n.admin_pdf_save_path,
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                         ),
@@ -509,14 +518,14 @@ class AdminPdfService {
             actions: [
               TextButton.icon(
                 icon: const Icon(Icons.copy, size: 16),
-                label: Text(context.l10n.admin_copy_path, style: GoogleFonts.cairo()),
+                label: Text(l10n.admin_copy_path, style: AppFonts.cairo()),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: file.path));
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        context.l10n.admin_path_copied,
-                        style: GoogleFonts.cairo(),
+                        l10n.admin_path_copied,
+                        style: AppFonts.cairo(),
                       ),
                       duration: const Duration(seconds: 2),
                     ),
@@ -526,8 +535,8 @@ class AdminPdfService {
               ElevatedButton(
                 onPressed: () => Navigator.pop(dialogCtx),
                 child: Text(
-                  context.l10n.admin_ok,
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                  l10n.admin_ok,
+                  style: AppFonts.cairo(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -538,7 +547,10 @@ class AdminPdfService {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${context.l10n.admin_export_failed}: $e', style: GoogleFonts.cairo()),
+            content: Text(
+              '${l10n.admin_export_failed}: $e',
+              style: AppFonts.cairo(),
+            ),
             backgroundColor: AppColors.error,
           ),
         );

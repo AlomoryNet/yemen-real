@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
@@ -43,7 +43,7 @@ class AppLogo extends StatelessWidget {
             children: [
               Text(
                 context.l10n.sh_brand_name,
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   fontSize: size * 0.42,
                   fontWeight: FontWeight.bold,
                   color: isDark ? AppColors.textLight : AppColors.primary,
@@ -52,7 +52,7 @@ class AppLogo extends StatelessWidget {
               ),
               Text(
                 AppConstants.appNameEn,
-                style: GoogleFonts.outfit(
+                style: AppFonts.cairo(
                   fontSize: size * 0.22,
                   fontWeight: FontWeight.w500,
                   color: isDark

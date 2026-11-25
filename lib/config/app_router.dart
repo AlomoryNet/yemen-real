@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../features/admin/presentation/admin_dashboard_screen.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
+import '../features/admin/presentation/admin_dashboard_screen.dart'
+    deferred as admin;
 import '../features/auth/presentation/auth_callback_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
@@ -15,12 +16,14 @@ import '../features/settings/presentation/settings_screen.dart';
 import '../features/properties/presentation/add_edit_property_screen.dart';
 import '../features/properties/presentation/property_detail_screen.dart';
 import '../features/property_requests/presentation/my_rental_requests_screen.dart';
-import '../features/map/presentation/yemen_map_screen.dart';
+import '../features/map/presentation/yemen_map_screen.dart' deferred as map;
 import '../features/contracts/presentation/contract_preview_screen.dart';
 import '../core/l10n/context_l10n.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme_scope.dart';
+import '../features/map/presentation/map_screen_args.dart';
 import '../models/property.dart';
+import '../shared/widgets/deferred_screen.dart';
 import '../shared/widgets/empty_state_view.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -42,8 +45,10 @@ CustomTransitionPage<void> _tabPage(
     reverseTransitionDuration: const Duration(milliseconds: 150),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
-      final fadeOut =
-          CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeIn);
+      final fadeOut = CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: Curves.easeIn,
+      );
       return FadeTransition(
         opacity: fade.drive(Tween<double>(begin: 0.25, end: 1)),
         child: FadeTransition(
@@ -74,7 +79,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/',
       name: 'home',
-      pageBuilder: (context, state) => _tabPage(context, state, const HomeScreen()),
+      pageBuilder: (context, state) =>
+          _tabPage(context, state, const HomeScreen()),
     ),
     GoRoute(
       path: '/map',
@@ -86,11 +92,17 @@ final GoRouter appRouter = GoRouter(
         return _tabPage(
           context,
           state,
-          YemenMapScreen(
-            initialListView: extra is MapScreenArgs
-                ? extra.initialListView
-                : (extra is bool ? extra : false),
-            initialFilters: extra is MapScreenArgs ? extra : null,
+          DeferredScreen(
+            load: () async => map.loadLibrary(),
+            builder: () => map.YemenMapScreen(
+              initialListView: extra is MapScreenArgs
+                  ? extra.initialListView
+                  : (extra is bool ? extra : false),
+              initialFilters: extra is MapScreenArgs ? extra : null,
+            ),
+            loadingText: context.l10n.sh_deferred_loading,
+            errorText: context.l10n.sh_deferred_error,
+            retryText: context.l10n.sh_deferred_retry,
           ),
         );
       },
@@ -109,7 +121,9 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final extra = state.extra;
         final prop = extra is Property ? extra : null;
-        return AppThemeScope(child: AddEditPropertyScreen(propertyToEdit: prop));
+        return AppThemeScope(
+          child: AddEditPropertyScreen(propertyToEdit: prop),
+        );
       },
     ),
     GoRoute(
@@ -142,7 +156,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/favorites',
       name: 'favorites',
-      builder: (context, state) => AppThemeScope(child: const FavoritesScreen()),
+      builder: (context, state) =>
+          AppThemeScope(child: const FavoritesScreen()),
     ),
     GoRoute(
       path: '/profile',
@@ -173,8 +188,15 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/admin',
       name: 'admin',
-      builder: (context, state) =>
-          AppThemeScope(child: const AdminDashboardScreen()),
+      builder: (context, state) => AppThemeScope(
+        child: DeferredScreen(
+          load: () async => admin.loadLibrary(),
+          builder: () => admin.AdminDashboardScreen(),
+          loadingText: context.l10n.sh_deferred_loading,
+          errorText: context.l10n.sh_deferred_error,
+          retryText: context.l10n.sh_deferred_retry,
+        ),
+      ),
     ),
     GoRoute(
       path: '/login-callback',
@@ -228,7 +250,8 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
 
   void _onRouteChanged() {
     try {
-      final location = appRouter.routerDelegate.currentConfiguration.uri.toString();
+      final location = appRouter.routerDelegate.currentConfiguration.uri
+          .toString();
       if (_navigationHistory.isEmpty || _navigationHistory.last != location) {
         _navigationHistory.add(location);
         if (_navigationHistory.length > 40) {
@@ -239,28 +262,37 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
   }
 
   Future<bool> _handleBackPress() async {
-    // 1. فحص ما إذا كان هناك ديالوج أو قائمة منبثقة أو صفحة تم فتحها بـ push يمكن الرجوع منها
     final nav = rootNavigatorKey.currentState;
-    if (nav != null && nav.canPop()) {
+
+    // 1. التحقق من مسار الشاشة الحالية قبل أي محاولة pop، لأن pop على الجذر
+    //    يغلق التطبيق مباشرة بدل إظهار تنبيه "اضغط مرة أخرى للخروج".
+    String currentLocation = '/';
+    try {
+      currentLocation = appRouter.routerDelegate.currentConfiguration.uri
+          .toString();
+    } catch (_) {}
+
+    // 2. ديالوج/قائمة منبثقة فوق أي شاشة: تُغلق أولاً ولا يُلمس المسار.
+    //    على الجذر لا نعتبر صفحة GoRouter نفسها قابلة للإغلاق.
+    final isRoot = currentLocation == '/' || currentLocation.isEmpty;
+    final canPopOverlay =
+        nav != null && nav.canPop() && (!isRoot || nav.widget.pages.length > 1);
+    if (canPopOverlay) {
       nav.pop();
       return true;
     }
 
-    // 2. التحقق من مسار الشاشة الحالية
-    String currentLocation = '/';
-    try {
-      currentLocation = appRouter.routerDelegate.currentConfiguration.uri.toString();
-    } catch (_) {}
-
     // 3. إذا لم تكن في الصفحة الرئيسية، ارجع خطوة واحدة إلى الخلف!
-    if (currentLocation != '/' && currentLocation.isNotEmpty) {
+    if (!isRoot) {
+      _lastBackPressTime = null;
       // إزالة المسار الحالي من سجل التنقل
       while (_navigationHistory.isNotEmpty &&
           _navigationHistory.last == currentLocation) {
         _navigationHistory.removeLast();
       }
 
-      if (_navigationHistory.isNotEmpty && _navigationHistory.last != currentLocation) {
+      if (_navigationHistory.isNotEmpty &&
+          _navigationHistory.last != currentLocation) {
         final target = _navigationHistory.removeLast();
         appRouter.go(target);
       } else {
@@ -274,7 +306,8 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
     // الضغط مرة واحدة: إشعار
     // الضغط مرتين متتاليتين خلال ثانيتين: خروج من التطبيق
     final now = DateTime.now();
-    final isDouble = _lastBackPressTime != null &&
+    final isDouble =
+        _lastBackPressTime != null &&
         now.difference(_lastBackPressTime!) < const Duration(seconds: 2);
 
     if (isDouble) {
@@ -291,7 +324,7 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
             content: Text(
               ctx.l10n.sh_back_exit_snackbar,
               textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textLight,
@@ -315,13 +348,11 @@ class _GlobalAppBackHandlerState extends State<GlobalAppBackHandler> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
+      onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
-        _handleBackPress();
+        await _handleBackPress();
       },
       child: widget.child,
     );
   }
 }
-
-

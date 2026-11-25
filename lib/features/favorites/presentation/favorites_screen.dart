@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -83,7 +83,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                       children: [
                         Text(
                           context.l10n.fav_title,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
@@ -92,7 +92,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                         const SizedBox(height: 6),
                         Text(
                           context.l10n.fav_subtitle,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 13,
                             color: AppColors.textSecondary,
                           ),

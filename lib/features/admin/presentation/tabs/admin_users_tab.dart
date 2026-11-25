@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/context_l10n.dart';
@@ -40,7 +40,7 @@ class AdminUsersTab extends ConsumerWidget {
                 const SizedBox(height: 14),
                 Text(
                   context.l10n.admin_encrypted_section_title,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: AppColors.textPrimary,
@@ -50,7 +50,7 @@ class AdminUsersTab extends ConsumerWidget {
                 Text(
                   context.l10n.admin_encrypted_section_desc,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -62,7 +62,7 @@ class AdminUsersTab extends ConsumerWidget {
       );
     }
 
-    final usersAsync = ref.watch(allUsersProvider);
+    final usersPaginator = ref.watch(adminUsersPaginatorProvider);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -85,7 +85,7 @@ class AdminUsersTab extends ConsumerWidget {
                       Flexible(
                         child: Text(
                           context.l10n.admin_users_list_title,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
                             color: AppColors.primaryInk,
@@ -109,13 +109,16 @@ class AdminUsersTab extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.lock,
-                            size: 14, color: AppColors.success),
+                        const Icon(
+                          Icons.lock,
+                          size: 14,
+                          color: AppColors.success,
+                        ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
                             context.l10n.admin_gm_permissions,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               color: AppColors.success,
@@ -143,7 +146,7 @@ class AdminUsersTab extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       context.l10n.admin_data_protection,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontSize: 11,
                         color: Colors.green.shade900,
                       ),
@@ -156,10 +159,15 @@ class AdminUsersTab extends ConsumerWidget {
             const Divider(height: 1),
             const SizedBox(height: 8),
             Expanded(
-              child: usersAsync.when(
-                data: (users) {
+              child: usersPaginator.when(
+                data: (page) {
                   return AdminPagedList(
-                    items: users,
+                    items: page.items,
+                    hasMore: page.hasMore,
+                    isLoadingMore: page.isLoadingMore,
+                    onLoadMore: ref
+                        .read(adminUsersPaginatorProvider.notifier)
+                        .loadMore,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, u, index) {
                       final accountEmail =
@@ -172,7 +180,7 @@ class AdminUsersTab extends ConsumerWidget {
                           backgroundColor: AppColors.primaryMuted,
                           child: Text(
                             u.fullName.isNotEmpty ? u.fullName[0] : 'U',
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryInk,
                             ),
@@ -180,14 +188,14 @@ class AdminUsersTab extends ConsumerWidget {
                         ),
                         title: Text(
                           u.fullName,
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
                         subtitle: Text(
                           '${context.l10n.admin_account_label}: $accountEmail • ${context.l10n.admin_created_at}: ${u.createdAt.toString().split(' ').first}',
-                          style: GoogleFonts.cairo(
+                          style: AppFonts.cairo(
                             fontSize: 12,
                             color: AppColors.textSecondary,
                           ),
@@ -213,7 +221,7 @@ class AdminUsersTab extends ConsumerWidget {
                               const SizedBox(width: 4),
                               Text(
                                 context.l10n.admin_encrypted_protected,
-                                style: GoogleFonts.cairo(
+                                style: AppFonts.cairo(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.primaryInk,

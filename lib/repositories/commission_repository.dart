@@ -1,17 +1,62 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/env_config.dart';
 import '../core/constants/app_constants.dart';
+import '../models/admin_list_page.dart';
 import '../core/exceptions/app_exception.dart';
 import '../models/commission.dart';
 import '../services/supabase_service.dart';
+import 'admin_paging.dart';
 
 class CommissionRepository {
   final SupabaseClient? _client = SupabaseService.client;
 
-  /// Get all commission records (Admin only)
-  Future<List<Commission>> getCommissions() async {
+  /// Get all commission records for export, in bounded chunks (Admin only).
+  Future<List<Commission>> getCommissions() =>
+      collectAdminStream(streamAllCommissionsForExport());
+
+  /// One bounded page for the admin commissions tab.
+  Future<AdminListPage<Commission>> getCommissionsPage({
+    int limit = 12,
+    int offset = 0,
+  }) async {
+    final pageOffset = normalizeAdminOffset(offset);
+    final pageLimit = normalizeAdminLimit(limit);
+    final results = await Future.wait<dynamic>([
+      _fetchCommissionsPage(limit: pageLimit, offset: pageOffset),
+      countCommissions(),
+    ]);
+
+    return AdminListPage<Commission>(
+      items: results[0] as List<Commission>,
+      total: results[1] as int,
+      offset: pageOffset,
+    );
+  }
+
+  Future<int> countCommissions() async {
     if (EnvConfig.isDemoMode || _client == null) {
-      return List<Commission>.from(SupabaseService.demoCommissions);
+      return SupabaseService.demoCommissions.length;
+    }
+
+    try {
+      return await _client.from('commissions').count();
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  Future<List<Commission>> _fetchCommissionsPage({
+    required int limit,
+    required int offset,
+  }) async {
+    if (EnvConfig.isDemoMode || _client == null) {
+      return pageAdminDemo(
+        SupabaseService.demoCommissions,
+        offset,
+        limit,
+        (commission) => commission.recordedAt,
+        (commission) => commission.id,
+      );
     }
 
     try {
@@ -23,13 +68,29 @@ class CommissionRepository {
               title
             )
           ''')
-          .order('recorded_at', ascending: false);
+          .order('recorded_at', ascending: false)
+          .order('id', ascending: false)
+          .range(offset, offset + limit - 1);
 
       return (data as List)
           .map((item) => Commission.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Complete commission list for PDF/CSV export without an unbounded select.
+  Stream<List<Commission>> streamAllCommissionsForExport({
+    int pageSize = 200,
+  }) async* {
+    final total = await countCommissions();
+    final size = normalizeAdminLimit(pageSize);
+
+    for (var offset = 0; offset < total; offset += size) {
+      final page = await _fetchCommissionsPage(limit: size, offset: offset);
+      if (page.isEmpty) break;
+      yield page;
     }
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/app_router.dart';
@@ -14,6 +15,10 @@ import 'services/supabase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // All typography uses the bundled variable Cairo font via AppFonts. Fail fast
+  // instead of silently downloading a font if a future screen forgets to use it.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   // Initialize Supabase backend service with graceful fallback
   await SupabaseService.initialize();
@@ -113,7 +118,11 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
           child: GestureDetector(
             // Tap anywhere outside the focused field (and on non-interactive
             // surfaces) dismisses the keyboard — standard mobile behaviour.
-            behavior: HitTestBehavior.translucent,
+            // Only receive taps that no interactive child (e.g. a TextField)
+          // consumed. `translucent` also fired for taps *on* fields, so
+          // focusing the bottom register fields instantly unfocused them and
+          // hid the keyboard.
+          behavior: HitTestBehavior.deferToChild,
             onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {

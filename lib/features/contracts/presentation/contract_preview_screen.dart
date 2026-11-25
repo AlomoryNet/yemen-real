@@ -5,10 +5,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -90,7 +91,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
               SnackBar(
                 content: Text(
                   context.l10n.contract_clauses_saved,
-                  style: GoogleFonts.cairo(),
+                  style: AppFonts.cairo(),
                 ),
                 backgroundColor: AppColors.success,
               ),
@@ -129,7 +130,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
     buffer.writeln('');
     buffer.writeln(context.l10n.contract_leased_property);
     buffer.writeln(
-      '${context.l10n.contract_property_in_governorate} ${widget.property.city} ${context.l10n.contract_district_label} ${widget.property.district} - ${widget.property.addressDetails ?? ""}',
+      '${context.l10n.contract_property_in_governorate} ${AppConstants.getGovernorateNameAr(widget.property.city)} ${context.l10n.contract_district_label} ${AppConstants.getDistrictNameAr(widget.property.district)} - ${widget.property.addressDetails ?? ""}',
     );
     buffer.writeln('${context.l10n.contract_specifications} ${widget.property.title}');
     buffer.writeln('');
@@ -176,7 +177,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
       SnackBar(
         content: Text(
           context.l10n.contract_text_copied,
-          style: GoogleFonts.cairo(),
+          style: AppFonts.cairo(),
         ),
         backgroundColor: AppColors.success,
       ),
@@ -219,6 +220,13 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
   }
 
   Future<Uint8List> _generatePdf(PdfPageFormat format) async {
+    // Snapshot the active locale direction before the async font load so the
+    // generated document stays internally consistent in English mode too.
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final pdfDirection = isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr;
+    final clauseAlignment =
+        isRtl ? pw.Alignment.centerRight : pw.Alignment.centerLeft;
+
     final pdf = pw.Document();
     final fontData = await rootBundle.load('assets/fonts/Cairo.ttf');
     final fontCairo = pw.Font.ttf(fontData);
@@ -231,7 +239,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
         theme: pw.ThemeData.withFont(base: fontCairo, bold: fontCairoBold),
         build: (pw.Context ctx) {
           return pw.Directionality(
-            textDirection: pw.TextDirection.rtl,
+            textDirection: pdfDirection,
             child: pw.Container(
               padding: const pw.EdgeInsets.all(18),
               decoration: pw.BoxDecoration(
@@ -343,7 +351,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                       borderRadius: pw.BorderRadius.circular(4),
                     ),
                     child: pw.Text(
-                      '${context.l10n.contract_leased_property} ${context.l10n.contract_property_in_governorate} ${widget.property.city} ${context.l10n.contract_district_label} ${widget.property.district} - ${widget.property.addressDetails ?? ""} (${widget.property.title})',
+                      '${context.l10n.contract_leased_property} ${context.l10n.contract_property_in_governorate} ${AppConstants.getGovernorateNameAr(widget.property.city)} ${context.l10n.contract_district_label} ${AppConstants.getDistrictNameAr(widget.property.district)} - ${widget.property.addressDetails ?? ""} (${widget.property.title})',
                       style: pw.TextStyle(font: fontCairoBold, fontSize: 9),
                     ),
                   ),
@@ -351,7 +359,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
 
                   // Clauses Title
                   pw.Align(
-                    alignment: pw.Alignment.centerRight,
+                    alignment: clauseAlignment,
                     child: pw.Text(
                       context.l10n.contract_pdf_terms_title,
                       style: pw.TextStyle(font: fontCairoBold, fontSize: 10),
@@ -546,13 +554,13 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                 const SizedBox(width: 8),
                 Text(
                   context.l10n.contract_pdf_saved_title,
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                  style: AppFonts.cairo(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             content: Text(
               '${context.l10n.contract_pdf_saved_body_before}\n${file.path}\n\n${context.l10n.contract_pdf_saved_body_after}',
-              style: GoogleFonts.cairo(height: 1.5, fontSize: 13),
+              style: AppFonts.cairo(height: 1.5, fontSize: 13),
             ),
             actions: [
               TextButton(
@@ -576,7 +584,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
           SnackBar(
             content: Text(
               '${context.l10n.contract_pdf_save_error}: $e',
-              style: GoogleFonts.cairo(),
+              style: AppFonts.cairo(),
             ),
             backgroundColor: AppColors.error,
           ),
@@ -600,7 +608,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
       appBar: AppBar(
         title: Text(
           context.l10n.contract_app_bar_title,
-          style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+          style: AppFonts.cairo(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -646,7 +654,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                   icon: const Icon(Icons.tune, size: 18),
                   label: Text(
                     context.l10n.contract_edit_clauses,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -669,7 +677,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                   icon: const Icon(Icons.picture_as_pdf, size: 18),
                   label: Text(
                     context.l10n.contract_save_pdf,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -691,7 +699,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                   icon: const Icon(Icons.print, size: 18),
                   label: Text(
                     context.l10n.contract_print,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -726,7 +734,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                         children: [
                           Text(
                             context.l10n.contract_bismillah,
-                            style: GoogleFonts.amiri(
+                            style: AppFonts.cairo(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
@@ -735,7 +743,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                           const SizedBox(height: 4),
                           Text(
                             context.l10n.contract_republic,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryInk,
@@ -754,7 +762,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                             ),
                             child: Text(
                               _contract.title,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryInk,
@@ -775,7 +783,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                         Expanded(
                           child: Text(
                             '${context.l10n.contract_edit_date} ${_contract.startDate.isNotEmpty ? _contract.startDate : DateTime.now().toString().split(" ").first}',
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textSecondary,
                             ),
@@ -786,7 +794,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                           child: Text(
                             '${context.l10n.contract_number} ${_contract.id}',
                             textAlign: TextAlign.end,
-                            style: GoogleFonts.outfit(
+                            style: AppFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textMuted,
                             ),
@@ -821,7 +829,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                               children: [
                                 Text(
                                   context.l10n.contract_fill_intro_title,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                     color: AppColors.primaryInk,
@@ -829,7 +837,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                                 ),
                                 Text(
                                   context.l10n.contract_fill_intro_body,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontSize: 11,
                                     color: AppColors.textSecondary,
                                   ),
@@ -850,7 +858,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                             icon: const Icon(Icons.edit, size: 15),
                             label: Text(
                               context.l10n.contract_fill_fields,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -907,8 +915,8 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                         border: Border.all(color: AppColors.border),
                       ),
                       child: Text(
-                        '${context.l10n.contract_property_in_governorate} ${widget.property.city} ${context.l10n.contract_district_label} ${widget.property.district} - ${widget.property.addressDetails ?? ""}.\n${context.l10n.contract_specifications} ${widget.property.title} ${context.l10n.contract_approx_area_prefix} ${widget.property.areaSqm} ${context.l10n.contract_sqm_unit}.',
-                        style: GoogleFonts.cairo(fontSize: 13, height: 1.6),
+                        '${context.l10n.contract_property_in_governorate} ${AppConstants.getGovernorateNameAr(widget.property.city)} ${context.l10n.contract_district_label} ${AppConstants.getDistrictNameAr(widget.property.district)} - ${widget.property.addressDetails ?? ""}.\n${context.l10n.contract_specifications} ${widget.property.title} ${context.l10n.contract_approx_area_prefix} ${widget.property.areaSqm} ${context.l10n.contract_sqm_unit}.',
+                        style: AppFonts.cairo(fontSize: 13, height: 1.6),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -973,7 +981,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                       const SizedBox(height: 8),
                       Text(
                         context.l10n.contract_extra_clauses_title,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                           color: AppColors.primaryInk,
@@ -993,7 +1001,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                               Expanded(
                                 child: Text(
                                   clause,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontSize: 12.5,
                                     height: 1.5,
                                   ),
@@ -1031,7 +1039,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                     Center(
                       child: Text(
                         context.l10n.contract_footer_notice,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 10,
                           color: AppColors.textMuted,
                         ),
@@ -1059,7 +1067,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
       ),
       child: Text(
         title,
-        style: GoogleFonts.cairo(
+        style: AppFonts.cairo(
           fontWeight: FontWeight.bold,
           fontSize: 14,
           color: AppColors.primaryInk,
@@ -1099,7 +1107,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.cairo(
+                  style: AppFonts.cairo(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                     color: AppColors.primaryInk,
@@ -1122,7 +1130,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                   ),
                   label: Text(
                     context.l10n.contract_write_edit,
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primaryInk,
@@ -1137,7 +1145,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                 Expanded(
                   child: Text(
                     '${context.l10n.contract_name_label} $name',
-                    style: GoogleFonts.cairo(
+                    style: AppFonts.cairo(
                       fontSize: 12,
                       fontWeight: isFilled
                           ? FontWeight.bold
@@ -1148,7 +1156,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                 Expanded(
                   child: Text(
                     '${context.l10n.contract_phone} $phone',
-                    style: GoogleFonts.cairo(fontSize: 12),
+                    style: AppFonts.cairo(fontSize: 12),
                   ),
                 ),
               ],
@@ -1159,13 +1167,13 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
                 Expanded(
                   child: Text(
                     '${context.l10n.contract_identity_label} $idCard',
-                    style: GoogleFonts.cairo(fontSize: 12),
+                    style: AppFonts.cairo(fontSize: 12),
                   ),
                 ),
                 Expanded(
                   child: Text(
                     '${context.l10n.contract_address} $address',
-                    style: GoogleFonts.cairo(fontSize: 12),
+                    style: AppFonts.cairo(fontSize: 12),
                   ),
                 ),
               ],
@@ -1208,7 +1216,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: GoogleFonts.cairo(
+                style: AppFonts.cairo(
                   color: AppColors.textSecondary,
                   fontSize: 13,
                   height: 1.6,
@@ -1247,7 +1255,7 @@ class _ContractPreviewScreenState extends ConsumerState<ContractPreviewScreen> {
           children: [
             Text(
               role,
-              style: GoogleFonts.cairo(
+              style: AppFonts.cairo(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
@@ -1489,7 +1497,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                     const SizedBox(width: 8),
                     Text(
                       context.l10n.contract_sheet_title,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primaryInk,
@@ -1511,7 +1519,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
               labelColor: AppColors.primaryInk,
               unselectedLabelColor: AppColors.textSecondary,
               indicatorColor: AppColors.primary,
-              labelStyle: GoogleFonts.cairo(
+              labelStyle: AppFonts.cairo(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -1560,7 +1568,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                                 const SizedBox(width: 6),
                                 Text(
                                   context.l10n.contract_tenant_section_title,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                     color: AppColors.primaryInk,
@@ -1626,7 +1634,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                                 const SizedBox(width: 6),
                                 Text(
                                   context.l10n.contract_owner_section_title,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                     color: AppColors.accentInk,
@@ -1733,14 +1741,14 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                         child: SwitchListTile(
                           title: Text(
                             context.l10n.contract_non_renewable_switch_title,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
                           ),
                           subtitle: Text(
                             context.l10n.contract_non_renewable_switch_subtitle,
-                            style: GoogleFonts.cairo(fontSize: 11),
+                            style: AppFonts.cairo(fontSize: 11),
                           ),
                           value: _isRenewableOnlyByOwner,
                           onChanged: (val) =>
@@ -1753,14 +1761,14 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                         child: SwitchListTile(
                           title: Text(
                             context.l10n.contract_sublease_switch_title,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
                           ),
                           subtitle: Text(
                             context.l10n.contract_sublease_switch_subtitle,
-                            style: GoogleFonts.cairo(fontSize: 11),
+                            style: AppFonts.cairo(fontSize: 11),
                           ),
                           value: _forbidSubleasing,
                           onChanged: (val) =>
@@ -1789,7 +1797,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                       // Custom Clauses
                       Text(
                         context.l10n.contract_extra_owner_clauses_title,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -1811,7 +1819,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                               Expanded(
                                 child: Text(
                                   entry.value,
-                                  style: GoogleFonts.cairo(fontSize: 12),
+                                  style: AppFonts.cairo(fontSize: 12),
                                 ),
                               ),
                               IconButton(
@@ -1837,7 +1845,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                               decoration: InputDecoration(
                                 hintText:
                                     context.l10n.contract_custom_clause_hint,
-                                hintStyle: GoogleFonts.cairo(fontSize: 12),
+                                hintStyle: AppFonts.cairo(fontSize: 12),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 10,
@@ -1876,7 +1884,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                           child: SwitchListTile(
                             title: Text(
                               context.l10n.contract_save_template_title,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                                 color: AppColors.primaryInk,
@@ -1884,7 +1892,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                             ),
                             subtitle: Text(
                               context.l10n.contract_save_template_subtitle,
-                              style: GoogleFonts.cairo(fontSize: 11),
+                              style: AppFonts.cairo(fontSize: 11),
                             ),
                             value: _saveAsDefault,
                             onChanged: (val) =>
@@ -1909,7 +1917,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                     icon: const Icon(Icons.check_circle_outline, size: 20),
                     label: Text(
                       context.l10n.contract_save_apply,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -1940,7 +1948,7 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       context.l10n.contract_cancel,
-                      style: GoogleFonts.cairo(
+                      style: AppFonts.cairo(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -1966,17 +1974,17 @@ class _ContractEditorSheetState extends State<_ContractEditorSheet>
       children: [
         Text(
           label,
-          style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12),
+          style: AppFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12),
         ),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
           scrollPadding: const EdgeInsets.only(bottom: 90),
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-          style: GoogleFonts.cairo(fontSize: 13),
+          style: AppFonts.cairo(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.cairo(
+            hintStyle: AppFonts.cairo(
               fontSize: 11,
               color: AppColors.textMuted,
             ),

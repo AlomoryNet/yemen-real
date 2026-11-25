@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
@@ -65,7 +65,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         SnackBar(
           content: Text(
             context.l10n.login_enter_email_first,
-            style: GoogleFonts.cairo(),
+            style: AppFonts.cairo(),
           ),
         ),
       );
@@ -84,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ? context.l10n.login_verification_resent
                 : (ref.read(authProvider).errorMessage ??
                       context.l10n.login_resend_failed),
-            style: GoogleFonts.cairo(),
+            style: AppFonts.cairo(),
           ),
           backgroundColor: sent ? AppColors.success : AppColors.error,
         ),
@@ -134,7 +134,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       SnackBar(
         content: Text(
           context.l10n.login_demo_admin_filled,
-          style: GoogleFonts.cairo(),
+          style: AppFonts.cairo(),
         ),
         backgroundColor: AppColors.primaryDark,
         duration: const Duration(seconds: 3),
@@ -149,7 +149,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       SnackBar(
         content: Text(
           context.l10n.login_demo_user_filled,
-          style: GoogleFonts.cairo(),
+          style: AppFonts.cairo(),
         ),
         duration: const Duration(seconds: 3),
       ),
@@ -183,7 +183,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       Text(
                         context.l10n.login_title,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
@@ -192,7 +192,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 6),
                       Text(
                         context.l10n.login_subtitle,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 13,
                           color: AppColors.textSecondary,
                         ),
@@ -228,7 +228,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 Expanded(
                                   child: Text(
                                     reason,
-                                    style: GoogleFonts.cairo(
+                                    style: AppFonts.cairo(
                                       color: AppColors.primaryDark,
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
@@ -303,7 +303,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       Expanded(
                                         child: Text(
                                           authState.errorMessage!,
-                                          style: GoogleFonts.cairo(
+                                          style: AppFonts.cairo(
                                             color: textColor,
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.w600,
@@ -339,7 +339,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           _isResending
                                               ? context.l10n.login_sending
                                               : context.l10n.login_resend_now,
-                                          style: GoogleFonts.cairo(
+                                          style: AppFonts.cairo(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                             color: AppColors.primaryDark,
@@ -359,7 +359,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       // Email Field
                       Text(
                         context.l10n.login_email,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -379,7 +379,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       // Password Field
                       Text(
                         context.l10n.login_password,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -421,7 +421,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           Text(
                             context.l10n.login_remember_me,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textSecondary,
                             ),
@@ -431,7 +431,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             onPressed: () => context.push('/forgot-password'),
                             child: Text(
                               context.l10n.login_forgot_password,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 12,
                                 color: AppColors.primaryInk,
                               ),
@@ -460,7 +460,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 )
                               : Text(
                                   context.l10n.login_submit,
-                                  style: GoogleFonts.cairo(
+                                  style: AppFonts.cairo(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                   ),
@@ -475,7 +475,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         children: [
                           Text(
                             context.l10n.login_no_account,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 13,
                               color: AppColors.textSecondary,
                             ),
@@ -500,7 +500,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             },
                             child: Text(
                               context.l10n.login_create_account,
-                              style: GoogleFonts.cairo(
+                              style: AppFonts.cairo(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryInk,
@@ -521,7 +521,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           label: Text(
                             context.l10n.login_resend_prompt,
-                            style: GoogleFonts.cairo(
+                            style: AppFonts.cairo(
                               fontSize: 12,
                               color: AppColors.textSecondary,
                             ),
@@ -534,7 +534,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       // Demo Quick Fill Helpers
                       Text(
                         context.l10n.login_quick_demo,
-                        style: GoogleFonts.cairo(
+                        style: AppFonts.cairo(
                           fontSize: 11,
                           color: AppColors.textMuted,
                         ),
@@ -552,7 +552,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onPressed: _fillDemoAdmin,
                               child: Text(
                                 context.l10n.login_demo_admin,
-                                style: GoogleFonts.cairo(
+                                style: AppFonts.cairo(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -570,7 +570,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onPressed: _fillDemoUser,
                               child: Text(
                                 context.l10n.login_demo_user,
-                                style: GoogleFonts.cairo(fontSize: 11),
+                                style: AppFonts.cairo(fontSize: 11),
                               ),
                             ),
                           ),

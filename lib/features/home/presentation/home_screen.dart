@@ -1,26 +1,25 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/context_l10n.dart';
-import '../../../data/demo_properties_generator.dart';
-import '../../../models/property.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../providers/dashboard_filter_provider.dart';
+import '../../../providers/home_nearby_properties_provider.dart';
 import '../../../providers/location_provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/device_location_service.dart';
-import '../../../services/supabase_service.dart';
+import '../../../shared/widgets/add_property_fab.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
 import '../../../shared/widgets/property_category_section.dart';
 import '../../../shared/widgets/property_filter_sheet.dart';
-import '../../map/presentation/yemen_map_screen.dart';
-import '../../map/services/map_cluster_service.dart';
+import '../../map/presentation/map_screen_args.dart';
 import 'home_hero_section.dart';
 import 'home_nearby_section.dart';
 import 'home_publisher_cta.dart';
@@ -33,11 +32,47 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  // Filter selections live in dashboardFilterProvider. Only the
-  // location-first state remains local to the screen.
+  // Filter selections live in dashboardFilterProvider; the location-first
+  // centre and the nearby listing cache live in providers so they survive
+  // rebuilds without rescanning the whole catalogue in `build`.
 
-  // Simplified: use Ibb center as default, no location permission request.
-  final latlong.LatLng _userCenter = DeviceLocationService.ibbCenter;
+  @override
+  void initState() {
+    super.initState();
+    // A post-frame callback can run after a hot restart has already disposed
+    // this State. Capture the notifiers via `ref.read` here (safe in initState)
+    // instead of touching `ref` or inherited widgets after the async gaps.
+    final settingsNotifier = ref.read(settingsProvider.notifier);
+    final settings = ref.read(settingsProvider);
+    final centerNotifier = ref.read(homeCenterProvider.notifier);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationOnFirstRun(settings, settingsNotifier, centerNotifier);
+    });
+  }
+
+  /// Ask once on the first dashboard visit. If the user denies it, Settings
+  /// keeps an explicit retry action — we never nag on every rebuild.
+  Future<void> _requestLocationOnFirstRun(
+    SettingsState settings,
+    SettingsNotifier settingsNotifier,
+    StateController<latlong.LatLng> centerNotifier,
+  ) async {
+    if (!mounted) return;
+    // A denial is still a completed first-run prompt — Settings owns retry.
+    if (settings.locationPromptShown) return;
+
+    // Ask first, then persist the "shown" flag: no SharedPreferences write
+    // competes with the OS permission dialog or the first frame.
+    final result = await DeviceLocationService.requestLocation();
+    await settingsNotifier.markLocationPromptShown();
+    if (!result.granted || result.position == null) return;
+    await settingsNotifier.setLocation(
+      result.position!.latitude,
+      result.position!.longitude,
+    );
+    if (!mounted) return;
+    centerNotifier.state = result.position!;
+  }
 
   void _onSearchSubmit() {
     final dashboardFilter = ref.read(dashboardFilterProvider);
@@ -101,36 +136,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
     context.push(
       '/map',
-      extra: MapScreenArgs(
-        initialListView: true,
-        dealType: dealType,
-      ),
+      extra: MapScreenArgs(initialListView: true, dealType: dealType),
     );
-  }
-
-  /// All listings within the configured radius of the dashboard centre (Ibb
-  /// by default), nearest first. The section displays at most four of them but
-  /// uses the full list for its count and for the "view all" destination.
-  List<Property> _nearbyProperties(double radiusKm) {
-    const distance = latlong.Distance();
-    final scored = <(Property, double)>[];
-    // Demo mode keeps its edits in SupabaseService.demoProperties; reuse that
-    // list instead of regenerating 440 objects on every build.
-    final listings = SupabaseService.demoProperties.isNotEmpty
-        ? SupabaseService.demoProperties
-        : DemoPropertiesGenerator.cachedDemoProperties;
-    for (final property in listings) {
-      if (property.status != AppConstants.statusPublished) continue;
-      final coords = MapClusterService.getPropertyCoordinates(property);
-      final km = distance.as(
-        latlong.LengthUnit.Kilometer,
-        _userCenter,
-        latlong.LatLng(coords.$1, coords.$2),
-      );
-      if (km <= radiusKm) scored.add((property, km));
-    }
-    scored.sort((a, b) => a.$2.compareTo(b.$2));
-    return scored.map((entry) => entry.$1).toList();
   }
 
   @override
@@ -141,34 +148,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final featuredAsync = ref.watch(featuredPropertiesProvider);
     final forSaleAsync = ref.watch(propertiesForSaleProvider);
     final forRentAsync = ref.watch(propertiesForRentProvider);
-    final settings = ref.watch(settingsProvider);
-    final nearbyProperties = _nearbyProperties(settings.searchRadiusKm);
+    final nearbyProperties = ref.watch(nearbyPropertiesProvider);
+    final center = ref.watch(homeCenterProvider);
     final dashboardFilter = ref.watch(dashboardFilterProvider);
 
-    final usingFallback = _userCenter.latitude ==
-            DeviceLocationService.ibbCenter.latitude &&
-        _userCenter.longitude == DeviceLocationService.ibbCenter.longitude;
+    final usingFallback =
+        center.latitude == DeviceLocationService.ibbCenter.latitude &&
+        center.longitude == DeviceLocationService.ibbCenter.longitude;
 
     return Scaffold(
       appBar: const AppHeader(),
       drawer: const AppDrawer(),
       bottomNavigationBar: const AppBottomNavBar(currentRoute: '/'),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const ValueKey('dashboard_map_fab'),
-        heroTag: 'dashboard_map_fab',
-        backgroundColor: const Color(0xFF0F766E),
-        foregroundColor: Colors.white,
-        elevation: 6,
-        icon: const Icon(Icons.map_rounded, size: 18),
-        label: Text(l10n.dash_view_map),
-        onPressed: () => context.push('/map', extra: false),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        // Scaffold places the FAB at the trailing edge (endFloat). Stack the
+        // compact add action on that same edge instead of centering it over
+        // the wider extended map FAB, which made it look detached.
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const AddPropertyFab(
+            key: ValueKey('home_add_property_fab'),
+            heroTag: 'home_add_property',
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            key: const ValueKey('dashboard_map_fab'),
+            heroTag: 'dashboard_map_fab',
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.textLight,
+            elevation: 6,
+            icon: const Icon(Icons.map_rounded, size: 18),
+            label: Text(l10n.dash_view_map),
+            onPressed: () => context.push('/map', extra: false),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             HomeHeroSection(
-              searchController:
-                  ref.read(dashboardFilterProvider.notifier).searchController,
+              searchController: ref
+                  .read(dashboardFilterProvider.notifier)
+                  .searchController,
               onSearchSubmit: _onSearchSubmit,
               onFilterRequested: _onFilterRequested,
               activeFilterCount: dashboardFilter.activeFilterCount,
@@ -225,7 +247,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           message: error.toString(),
                           icon: Icons.star_rounded,
                           onViewAll: () => _openCategory(null),
-                          onRetry: () => ref.refresh(featuredPropertiesProvider),
+                          onRetry: () =>
+                              ref.refresh(featuredPropertiesProvider),
                         ),
                       ),
 
@@ -239,24 +262,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               '${properties.length} ${l10n.map_properties_available}',
                           properties: properties,
                           icon: Icons.sell_outlined,
-                          onViewAll: () =>
-                              _openCategory(AppConstants.dealSale),
+                          onViewAll: () => _openCategory(AppConstants.dealSale),
                         ),
                         loading: () => PropertyCategorySection.loading(
                           title: l10n.dash_for_sale_title,
                           subtitle: l10n.dash_for_sale_subtitle,
                           loadingMessage: l10n.dash_loading_for_sale,
                           icon: Icons.sell_outlined,
-                          onViewAll: () =>
-                              _openCategory(AppConstants.dealSale),
+                          onViewAll: () => _openCategory(AppConstants.dealSale),
                         ),
                         error: (error, _) => PropertyCategorySection.error(
                           title: l10n.dash_for_sale_title,
                           subtitle: l10n.dash_for_sale_subtitle,
                           message: error.toString(),
                           icon: Icons.sell_outlined,
-                          onViewAll: () =>
-                              _openCategory(AppConstants.dealSale),
+                          onViewAll: () => _openCategory(AppConstants.dealSale),
                           onRetry: () => ref.refresh(propertiesForSaleProvider),
                         ),
                       ),
@@ -271,24 +291,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               '${properties.length} ${l10n.map_properties_available}',
                           properties: properties,
                           icon: Icons.key_outlined,
-                          onViewAll: () =>
-                              _openCategory(AppConstants.dealRent),
+                          onViewAll: () => _openCategory(AppConstants.dealRent),
                         ),
                         loading: () => PropertyCategorySection.loading(
                           title: l10n.dash_for_rent_title,
                           subtitle: l10n.dash_for_rent_subtitle,
                           loadingMessage: l10n.dash_loading_for_rent,
                           icon: Icons.key_outlined,
-                          onViewAll: () =>
-                              _openCategory(AppConstants.dealRent),
+                          onViewAll: () => _openCategory(AppConstants.dealRent),
                         ),
                         error: (error, _) => PropertyCategorySection.error(
                           title: l10n.dash_for_rent_title,
                           subtitle: l10n.dash_for_rent_subtitle,
                           message: error.toString(),
                           icon: Icons.key_outlined,
-                          onViewAll: () =>
-                              _openCategory(AppConstants.dealRent),
+                          onViewAll: () => _openCategory(AppConstants.dealRent),
                           onRetry: () => ref.refresh(propertiesForRentProvider),
                         ),
                       ),
