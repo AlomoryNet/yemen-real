@@ -8,6 +8,41 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
+DONE (unified map query, 2026-11-25, uncommitted, `flutter analyze` clean,
+124/124 tests):
+- Replaced the map screen's private filter fields with one immutable
+  `lib/models/map_query.dart` (`freeText`, chip filters, view, source, nearby
+  radius, featured flag). `MapQuery.copyWith()` can clear nullable fields,
+  `applySelection()` commits a filter-sheet result, `resetFilters()` clears all
+  filters while preserving view/source, and `cameraKey` deliberately ignores
+  free text so typing does not move the camera.
+- Added `lib/providers/map_query_provider.dart`: scoped `MapQueryNotifier` plus
+  a pure `filterMapProperties()` used by the screen and tests. It honours
+  published status, `AppConstants.governorateMatches` (Sana'a City == Sana'a
+  Governorate), district containment, localized-data free text, price/bedrooms,
+  exact-GPS, featured, nearby radius and freehand polygon. The polygon stays
+  outside `MapQuery` because it changes on every pointer move.
+- `YemenMapScreen` is now a thin scoped wrapper that seeds `mapQueryProvider`
+  before the first frame; `YemenMapView` is the stateful body. This fixed the
+  Riverpod errors from seeding in `initState` and gives each route its own query
+  scope, so settings changes cannot reset live filters. The camera fit listener
+  lives in `build()` (Riverpod 2.6 forbids `ref.listen` in `initState`) and only
+  reacts to `cameraKey`; list/map toggles update view only.
+- Removed the auto-written governorate label from the search field. The search
+  field is user-owned; the governorate is a removable chip derived from the
+  query. Sheet Apply/Reset, every chip removal and search clear/submit all go
+  through the notifier, so count, chips and camera can never disagree. Added a
+  "Clear all" chip when more than one filter is active.
+- `MapScreenArgs` gained typed `search`, `nearby`, `featured` and `category`
+  factories. Home search, nearby "View all", featured sections and category
+  sections now push seeded args and open list view. The nearby section takes an
+  `onViewAll` callback so the same center/radius drives preview and results.
+- Added `test/map_query_test.dart` (model/notifier/filter/factory regressions)
+  and updated the two old map tests that expected `Ibb` in the search field.
+- Fixed `AppColors.onAccent`: it aliased the light `darkTextPrimary`, giving
+  2.9:1 on the amber badge fill. It now uses a dark ink with 5.6:1 contrast;
+  `PropertyTextStyles.badgeOnAccent()` already pointed at this token.
+
 DONE (filter reset/chip/zoom, 2026-11-25, uncommitted, `flutter analyze` clean,
 116/116 tests):
 - `/map` writes the active governorate's localized label into the floating

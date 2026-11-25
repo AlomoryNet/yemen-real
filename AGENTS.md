@@ -62,7 +62,7 @@ demo/offline fallback (DemoPropertiesGenerator). State: Riverpod. Routing: GoRou
 ```
 flutter analyze   → expect "No issues found!"
 flutter run -d ZY22G4C24N   (USB, preferred)
-flutter test      → suite (last known: 114 tests)
+flutter test      → suite (last known: 124 tests)
 ```
 
 ## Status — latest
@@ -73,9 +73,21 @@ flutter test      → suite (last known: 114 tests)
   Demo-mode logic relocated to the new minimal `lib/config/app_config.dart`
   (`AppConfig.isDemoMode` / `AppConfig.setForceDemoModeForTesting`); all repositories,
   storage service and tests updated to use it. `.env` holds SUPABASE_URL / SUPABASE_ANON_KEY /
-  DEFAULT_CURRENCY / SUPPORT_PHONE / SUPPORT_WHATSAPP. `flutter analyze` clean; suites
-  touched pass. Remaining failures are pre-existing/unrelated (badgeOnAccent contrast,
-  Yemen map widget tests).
+  DEFAULT_CURRENCY / SUPPORT_PHONE / SUPPORT_WHATSAPP. `flutter analyze` clean;
+  full suite passes after the badge contrast and map-query fixes below.
+- Unified map query refactor (uncommitted): `MapQuery` + `mapQueryProvider` are
+  now the single source of truth for map search text, filters, view and source.
+  `YemenMapScreen` wraps every visit in a scoped provider override seeded before
+  the first frame; chips, filter sheet Apply/Reset and search submit all commit
+  through that notifier. Free text is user-owned — the governorate is only a
+  removable chip, never injected into the search field. One build-time listener
+  reframes the camera on filter changes; list/map toggles do not. Dashboard
+  search, nearby, featured and category CTAs use typed `MapScreenArgs` factories
+  and open list view. `filterMapProperties()` is a pure shared filter (status,
+  text, chips, featured, nearby radius, drawn polygon). Fixed `onAccent` to a
+  real dark ink (WCAG AA 5.6:1) instead of the light `darkTextPrimary`.
+  Added `test/map_query_test.dart` and updated map regressions. `flutter analyze`
+  clean, `flutter test` 124/124.
 - Filter reset/chip/zoom fix (uncommitted): resetting `/map`'s bottom-sheet
   filters and removing the governorate chip now both clear the auto-written
   governorate label from the search field, so the free-text pass no longer
