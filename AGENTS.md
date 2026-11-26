@@ -66,8 +66,8 @@ flutter test      → suite (last known: 136 tests)
 ```
 
 ## Status - latest
-- MapLibre + OpenFreeMap migration with offline cache (uncommitted, verified
-  2026-11-26): street maps now use `MapLibreLayer` (`flutter_map_maplibre`)
+- MapLibre + OpenFreeMap migration with offline cache (committed `add0b3f`,
+  verified 2026-11-26): street maps now use `MapLibreLayer` (`flutter_map_maplibre`)
   inside the existing `FlutterMap` on `/map`, property detail and the add/edit
   picker, so clusters, polygons, camera animations, gestures and RTL overlays
   are unchanged. Esri World Imagery is retained only for the satellite toggle;

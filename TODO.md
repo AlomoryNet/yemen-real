@@ -5,7 +5,7 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 ## Next up
 
 - [x] **MapLibre + OpenFreeMap street maps with local tile cache** (2026-11-26,
-      uncommitted; `flutter analyze` clean, `flutter test` 136/136):
+      committed `add0b3f`; `flutter analyze` clean, `flutter test` 136/136):
       - [x] `MapLibreLayer` replaces Esri street tiles on `/map`, property detail
         and the add/edit picker while keeping the existing `FlutterMap`
         clusters, polygons, camera animation and RTL overlays. Esri World

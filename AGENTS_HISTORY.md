@@ -8,8 +8,8 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
-DONE (MapLibre + OpenFreeMap migration with local tile cache, 2026-11-26;
-uncommitted; `flutter analyze` clean, `flutter test` 136/136):
+DONE (MapLibre + OpenFreeMap migration with local tile cache, 2026-11-26,
+committed `add0b3f`; `flutter analyze` clean, `flutter test` 136/136):
 
 - Replaced the Esri World Street raster `TileLayer` with OpenFreeMap Liberty via
   `MapLibreLayer` from `flutter_map_maplibre` in all three map surfaces:
