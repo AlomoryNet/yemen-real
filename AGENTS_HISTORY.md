@@ -8,6 +8,41 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
+DONE (map floating header + dashboard count fix, 2026-11-26;
+`flutter analyze` clean, `flutter test` 133/133):
+
+- Root cause of the Home/"View all" count mismatch: the dashboard preview
+  providers (`featuredPropertiesProvider`, `propertiesForSaleProvider`,
+  `propertiesForRentProvider`) deliberately request `limit: 10`, but
+  `PropertyCategorySection.countText` used that truncated list's length.
+  "View all" opens `/map`, which filters `allMapPropertiesProvider`
+  (`limit: 1000`), so Featured showed 10 on Home and 88 on the map.
+- Added `PropertyRepository.getPropertyCount({dealType, onlyFeatured})`: in
+  demo mode it counts the same published demo list; against Supabase it uses a
+  bounded `.count()` HEAD query with the same status/deal/featured predicates
+  as `getProperties()`. Added `featuredCountProvider`,
+  `propertiesForSaleCountProvider` and `propertiesForRentCountProvider`; Home
+  now feeds their values into the three section headers while still rendering
+  only the bounded preview cards. Updated the `PropertyCategorySection` doc to
+  state that `countText` comes from the caller's full-total query.
+- Added `test/dashboard_category_counts_test.dart`: verifies the previews stay
+  at 10 and that each new count equals the corresponding full
+  `allMapPropertiesProvider` subset (Featured 88, sale/rent totals match the
+  map dataset), preventing the mismatch from returning.
+- Redesigned `_buildMapHeader()` in `yemen_map_screen.dart`: frosted surface with
+  M3 semantic border/shadow tokens and a less bulbous 20dp radius; 48dp touch
+  rows; grouped search icon on a rounded primary-muted tile; filter control now
+  a 48dp Material/InkWell action chip with a real ripple and clear selected
+  fill; the live result chip is always visible (not only when filters are
+  active), so users can see at a glance how many listings the current query
+  returns. Active filters remain removable chips beside it.
+- USB `ZY22G4C24N`: fresh DTD hot restart, Home Featured header showed
+  `88 properties available` and its "View all" opened the map showing
+  `88 properties available`/`88 properties`; map header inspected in
+  English/light and Arabic/dark with back, menu, filter, count and governorate
+  chip all inside the 720dp width. Filter sheet opened and closed via the new
+  chip. DTD reported no runtime errors; no new ANR observed.
+
 DONE (auth screen redesign, 2026-11-26, committed/pushed after `9517a8e`;
 `flutter analyze` clean, `flutter test` 132/132):
 

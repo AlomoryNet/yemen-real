@@ -13,8 +13,9 @@ import 'property_card.dart';
 /// small, bounded preview of its properties and a "view all" action.
 ///
 /// The preview is capped at [maxItems] (four by default) so long category lists
-/// never inflate the dashboard widget tree. The full list is still used for
-/// [countText] and for the destination chosen by [onViewAll].
+/// never inflate the dashboard widget tree. [countText] is supplied by the
+/// caller from a lightweight count query, so it reflects the full category
+/// total even though the preview list is intentionally capped.
 class PropertyCategorySection extends StatelessWidget {
   const PropertyCategorySection({
     super.key,

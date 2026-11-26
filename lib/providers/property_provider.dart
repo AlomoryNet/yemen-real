@@ -137,6 +137,23 @@ final propertiesForRentProvider = FutureProvider<List<Property>>((ref) async {
   return await repo.getProperties(dealType: AppConstants.dealRent, limit: 10);
 });
 
+// True totals for the dashboard section headers. The preview providers above
+// cap their lists at 10, so the header must not use preview.length as the count.
+final featuredCountProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(propertyRepositoryProvider);
+  return await repo.getPropertyCount(onlyFeatured: true);
+});
+
+final propertiesForSaleCountProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(propertyRepositoryProvider);
+  return await repo.getPropertyCount(dealType: AppConstants.dealSale);
+});
+
+final propertiesForRentCountProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(propertyRepositoryProvider);
+  return await repo.getPropertyCount(dealType: AppConstants.dealRent);
+});
+
 // Pending Properties Awaiting Admin Review Provider
 final pendingPropertiesProvider = FutureProvider<List<Property>>((ref) async {
   final repo = ref.watch(propertyRepositoryProvider);

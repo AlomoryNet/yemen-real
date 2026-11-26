@@ -151,6 +151,46 @@ class PropertyRepository {
     }
   }
 
+  /// Lightweight published-property count for dashboard section headers.
+  ///
+  /// The dashboard previews are intentionally capped at 10 items, so using
+  /// their list length as the section count made "View all" appear to disagree
+  /// with the map (10 previews vs 88 featured listings). A count query avoids
+  /// downloading the full list just to show the real total.
+  Future<int> getPropertyCount({
+    String? dealType,
+    bool onlyFeatured = false,
+  }) async {
+    if (AppConfig.isDemoMode || _client == null) {
+      var list = SupabaseService.demoProperties
+          .where((p) => p.status == AppConstants.statusPublished)
+          .toList();
+      if (onlyFeatured) {
+        list = list.where((p) => p.isFeatured).toList();
+      }
+      if (dealType != null && dealType.isNotEmpty) {
+        list = list.where((p) => p.dealType == dealType).toList();
+      }
+      return list.length;
+    }
+
+    try {
+      var query = _client
+          .from('properties')
+          .count()
+          .eq('status', AppConstants.statusPublished);
+      if (onlyFeatured) {
+        query = query.eq('is_featured', true);
+      }
+      if (dealType != null && dealType.isNotEmpty) {
+        query = query.eq('deal_type', dealType);
+      }
+      return await query;
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
   /// Get property details by ID
   Future<Property> getPropertyById(String id) async {
     if (AppConfig.isDemoMode || _client == null) {

@@ -158,6 +158,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final featuredAsync = ref.watch(featuredPropertiesProvider);
     final forSaleAsync = ref.watch(propertiesForSaleProvider);
     final forRentAsync = ref.watch(propertiesForRentProvider);
+    // Section headers show the true category total; the providers above are
+    // deliberately capped at 10 preview cards for dashboard performance.
+    final featuredCount = ref.watch(featuredCountProvider).value;
+    final forSaleCount = ref.watch(propertiesForSaleCountProvider).value;
+    final forRentCount = ref.watch(propertiesForRentCountProvider).value;
     final nearbyProperties = ref.watch(nearbyPropertiesProvider);
     final center = ref.watch(homeCenterProvider);
     final radiusKm = ref.watch(homeSearchRadiusProvider);
@@ -240,8 +245,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         data: (properties) => PropertyCategorySection(
                           title: l10n.dash_featured_title,
                           subtitle: l10n.dash_featured_subtitle,
-                          countText:
-                              '${properties.length} ${l10n.map_properties_available}',
+                          countText: featuredCount == null
+                              ? null
+                              : '$featuredCount ${l10n.map_properties_available}',
                           properties: properties,
                           icon: Icons.star_rounded,
                           onViewAll: _openFeatured,
@@ -270,8 +276,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         data: (properties) => PropertyCategorySection(
                           title: l10n.dash_for_sale_title,
                           subtitle: l10n.dash_for_sale_subtitle,
-                          countText:
-                              '${properties.length} ${l10n.map_properties_available}',
+                          countText: forSaleCount == null
+                              ? null
+                              : '$forSaleCount ${l10n.map_properties_available}',
                           properties: properties,
                           icon: Icons.sell_outlined,
                           onViewAll: () => _openCategory(AppConstants.dealSale),
@@ -299,8 +306,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         data: (properties) => PropertyCategorySection(
                           title: l10n.dash_for_rent_title,
                           subtitle: l10n.dash_for_rent_subtitle,
-                          countText:
-                              '${properties.length} ${l10n.map_properties_available}',
+                          countText: forRentCount == null
+                              ? null
+                              : '$forRentCount ${l10n.map_properties_available}',
                           properties: properties,
                           icon: Icons.key_outlined,
                           onViewAll: () => _openCategory(AppConstants.dealRent),

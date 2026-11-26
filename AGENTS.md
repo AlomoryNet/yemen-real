@@ -66,6 +66,17 @@ flutter test      → suite (last known: 124 tests)
 ```
 
 ## Status - latest
+- Map floating header + dashboard count fix (verified 2026-11-26): the top bar
+  now uses a frosted M3 surface with semantic tokens, a 48dp filter chip with a
+  real ripple, a visually grouped search icon, and an always-visible live result
+  chip; selected filters remain removable chips. The dashboard's Featured/For
+  sale/For rent header counts no longer use the capped 10-card preview lists:
+  `PropertyRepository.getPropertyCount()` backs three new count providers, so
+  the headers show the full published total that "View all" opens on the map.
+  Added `test/dashboard_category_counts_test.dart` (133/133 tests). USB
+  `ZY22G4C24N`: Featured showed 88 on Home and 88 in `/map`; header stayed inside
+  bounds in English/light and Arabic/dark, filter sheet opened and closed, and
+  DTD reported no runtime errors. `flutter analyze` clean.
 - Auth screen redesign (committed 2026-11-26, after `9517a8e`): Login, Register
   and Forgot-password now share `lib/features/auth/presentation/widgets/auth_ui.dart`
   (top-aligned scrollable card, one app-bar title, themed `AuthField`,

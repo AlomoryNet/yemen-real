@@ -172,7 +172,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
   // offsets that broke with text scaling and safe-area changes.
   static const double _headerPadding = 10;
   static const double _headerSearchHeight = 46;
-  static const double _headerChipHeight = 42;
+  static const double _headerChipHeight = 48;
   static const double _headerGap = 8;
   static const double _selectedCardReserve = 372;
 
@@ -1214,22 +1214,22 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
         padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: AppColors.divider.withAlpha(140)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border.withAlpha(120)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(50),
-                blurRadius: 22,
-                offset: const Offset(0, 8),
+                color: AppColors.shadow,
+                blurRadius: 14,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
               child: Container(
-                color: AppColors.surface.withAlpha(238),
+                color: AppColors.surface.withAlpha(244),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1269,33 +1269,37 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
                     // Filter Chips Row: filter button opens the bottom sheet;
                     // any active filter is shown as a chip right beside it.
                     SizedBox(
-                      height: 42,
+                      height: _headerChipHeight,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
-                          vertical: 3,
+                          vertical: 4,
                         ),
                         children: [
                           // زر الفلاتر الشاملة — يفتح شريحة الفلاتر السفلية
-                          _buildFilterBarBtn(
-                            label: hasActiveFilters
-                                ? context.l10n.map_filters_active
-                                : context.l10n.map_filters,
-                            icon: Icons.tune,
-                            isActive: hasActiveFilters,
-                            onTap: _showFilterModal,
+                          Center(
+                            child: _buildFilterBarBtn(
+                              label: hasActiveFilters
+                                  ? context.l10n.map_filters_active
+                                  : context.l10n.map_filters,
+                              icon: Icons.tune,
+                              isActive: hasActiveFilters,
+                              onTap: _showFilterModal,
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          // Live count while filters are being applied.
-                          if (hasActiveFilters)
-                            Container(
+                          // Always show the live result total. Modern map apps
+                          // keep this visible so the user can tell at a glance
+                          // whether a filter is narrowing the map.
+                          Center(
+                            child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryMuted,
+                                color: AppColors.primaryFill,
                                 borderRadius: BorderRadius.circular(18),
                               ),
                               child: Row(
@@ -1318,7 +1322,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
                                 ],
                               ),
                             ),
-                          if (hasActiveFilters) const SizedBox(width: 8),
+                          ),
+                          const SizedBox(width: 8),
                           // الفلاتر المختارة تظهر كشيكات صغيرة بجوار زر الفلاتر
                           ..._activeFilterChips(),
                         ],
@@ -1337,15 +1342,29 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
 
   Widget _mapHeaderSearchField() {
     return Container(
-      height: 46,
+      height: _headerSearchHeight,
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(23),
+        borderRadius: BorderRadius.circular(_headerSearchHeight / 2),
+        border: Border.all(color: AppColors.divider.withAlpha(120)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
-          Icon(Icons.search_rounded, color: AppColors.primaryInk, size: 20),
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.primaryMuted,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.search_rounded,
+              color: AppColors.primaryInk,
+              size: 18,
+            ),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
@@ -1426,9 +1445,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
 
     void add(String label, MapQuery Function(MapQuery current) clear) {
       chips.add(
-        _buildSelectedFilterChip(
-          label,
-          onRemoved: () => notifier.update(clear),
+        Center(
+          child: _buildSelectedFilterChip(
+            label,
+            onRemoved: () => notifier.update(clear),
+          ),
         ),
       );
     }
@@ -1539,44 +1560,57 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
     }
   }
 
-  /// زر شريط الفلاتر العلوي — موحد ومنظم
+  /// زر شريط الفلاتر العلوي — Material 3 action-chip styling with a real
+  /// ripple, a 48dp touch target and semantic foreground/background tokens.
   Widget _buildFilterBarBtn({
     required String label,
     required IconData icon,
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
+    return Material(
+      color: isActive ? AppColors.primaryFill : AppColors.surfaceVariant,
+      shape: StadiumBorder(
+        side: BorderSide(
           color: isActive
-              ? (AppColors.isDark
-                    ? AppColors.primaryMuted.withAlpha(140)
-                    : AppColors.primaryMuted)
-              : AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(24),
+              ? AppColors.primaryInk.withAlpha(80)
+              : AppColors.divider,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isActive ? AppColors.primaryInk : AppColors.textSecondary,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: SizedBox(
+            height: 48,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 17,
+                  color: isActive
+                      ? AppColors.primaryInk
+                      : AppColors.textSecondary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.cairo(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.bold,
+                    color: isActive
+                        ? AppColors.primaryInk
+                        : AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: AppFonts.cairo(
-                fontSize: 11.5,
-                fontWeight: FontWeight.bold,
-                color: isActive ? AppColors.primaryInk : AppColors.textPrimary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
