@@ -4,8 +4,11 @@ import 'package:yemen_real_estate_portal/core/constants/app_constants.dart';
 import 'package:yemen_real_estate_portal/features/map/presentation/property_map_view.dart';
 import 'package:yemen_real_estate_portal/l10n/app_localizations.dart';
 import 'package:yemen_real_estate_portal/models/property.dart';
+import 'helpers/maplibre_test_stub.dart';
 
 void main() {
+  setUp(registerFakeMapLibrePlatform);
+
   testWidgets('repeated cluster taps reuse the map animation ticker', (
     tester,
   ) async {

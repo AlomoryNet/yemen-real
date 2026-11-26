@@ -4397,6 +4397,48 @@ abstract class AppLocalizations {
   /// **'List'**
   String get set_default_map_view_list;
 
+  /// No description provided for @set_offline_map_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline map'**
+  String get set_offline_map_title;
+
+  /// No description provided for @set_offline_map_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-downloads Yemen at zoom 5–10. Areas you visit are cached automatically up to 100 MB.'**
+  String get set_offline_map_hint;
+
+  /// No description provided for @set_offline_map_download.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get set_offline_map_download;
+
+  /// No description provided for @set_offline_map_downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading…'**
+  String get set_offline_map_downloading;
+
+  /// No description provided for @set_offline_map_downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get set_offline_map_downloaded;
+
+  /// No description provided for @set_offline_map_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get set_offline_map_delete;
+
+  /// No description provided for @set_offline_map_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on this platform'**
+  String get set_offline_map_unsupported;
+
   /// No description provided for @map_all.
   ///
   /// In en, this message translates to:

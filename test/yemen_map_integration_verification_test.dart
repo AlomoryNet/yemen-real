@@ -13,11 +13,13 @@ import 'package:yemen_real_estate_portal/models/property.dart';
 import 'package:yemen_real_estate_portal/services/supabase_service.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/app_bottom_nav_bar.dart';
 import 'package:yemen_real_estate_portal/shared/widgets/app_header.dart';
+import 'helpers/maplibre_test_stub.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
+    registerFakeMapLibrePlatform();
     AppConfig.setForceDemoModeForTesting(true);
     await SupabaseService.initialize();
   });

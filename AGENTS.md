@@ -62,10 +62,28 @@ demo/offline fallback (DemoPropertiesGenerator). State: Riverpod. Routing: GoRou
 ```
 flutter analyze   → expect "No issues found!"
 flutter run -d ZY22G4C24N   (USB, preferred)
-flutter test      → suite (last known: 124 tests)
+flutter test      → suite (last known: 136 tests)
 ```
 
 ## Status - latest
+- MapLibre + OpenFreeMap migration with offline cache (uncommitted, verified
+  2026-11-26): street maps now use `MapLibreLayer` (`flutter_map_maplibre`)
+  inside the existing `FlutterMap` on `/map`, property detail and the add/edit
+  picker, so clusters, polygons, camera animations, gestures and RTL overlays
+  are unchanged. Esri World Imagery is retained only for the satellite toggle;
+  no Esri street tiles remain. URLs/attribution moved to
+  `lib/core/constants/map_sources.dart`; future R2/PMTiles instructions are in
+  `docs/MAP_SOURCES.md`. Settings gained an offline-map tile: 100 MB ambient
+  cache plus a Yemen z5–10 pack (1,105 tiles / ~9 MB, inside OpenFreeMap's
+  3,000-tile and 50 MB offline limits). MapLibre native owns `User-Agent`, so
+  requests send `X-Yemen-Real-Estate-Portal` for identification; concurrency is
+  plugin-controlled. The offline pack was deleted/re-downloaded on device and
+  rendered with Wi-Fi and mobile data disabled. `String.fromEnvironment` for
+  Supabase is now `const` (required by Dart 3.13) and the temporary diagnostic
+  prints were removed. `flutter analyze` clean, `flutter test` 136/136; USB
+  `ZY22G4C24N` verified map clusters/toggle, detail preview, add/edit pin drop,
+  Settings download/delete/offline rendering, Arabic locale and DTD
+  `No runtime errors found.`
 - Map floating header + dashboard count fix (verified 2026-11-26): the top bar
   now uses a frosted M3 surface with semantic tokens, a 48dp filter chip with a
   real ripple, a visually grouped search icon, and an always-visible live result

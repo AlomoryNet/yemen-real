@@ -4,6 +4,25 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 
 ## Next up
 
+- [x] **MapLibre + OpenFreeMap street maps with local tile cache** (2026-11-26,
+      uncommitted; `flutter analyze` clean, `flutter test` 136/136):
+      - [x] `MapLibreLayer` replaces Esri street tiles on `/map`, property detail
+        and the add/edit picker while keeping the existing `FlutterMap`
+        clusters, polygons, camera animation and RTL overlays. Esri World
+        Imagery remains only for the satellite toggle.
+      - [x] `lib/core/constants/map_sources.dart` centralizes URLs/attribution;
+        `docs/MAP_SOURCES.md` documents the live stack, the offline cache and
+        the future Cloudflare R2 free-tier PMTiles upload pipeline.
+      - [x] Settings offline-map tile downloads/deletes a Yemen z5–10 pack
+        (1,105 tiles / ~9 MB, within OpenFreeMap's 3,000-tile and 50 MB limits)
+        on top of a 100 MB ambient cache. Verified on `ZY22G4C24N` with Wi-Fi
+        and mobile data disabled.
+      - [x] Supabase `String.fromEnvironment` values are now `const`; temporary
+        diagnostic prints removed. iOS target is 15.0 for `maplibre: ^0.4.0`.
+      - [x] USB pass covered clusters/toggle, detail preview, add/edit pin drop,
+        Settings download/delete/offline rendering and Arabic locale; DTD showed
+        no runtime errors.
+
 - [x] **Remaining i18n (Option B) — PDF direction + place names**
       - [x] PDF locale policy: `contract_preview_screen.dart` and
         `admin_pdf_service.dart` now snapshot `Directionality.of(context)`

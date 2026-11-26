@@ -2,15 +2,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:maplibre/maplibre.dart' as ml;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/app_router.dart';
 import 'core/constants/app_constants.dart';
+import 'core/constants/map_sources.dart';
 import 'core/l10n/app_locale.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/auth_provider.dart' hide AuthState;
 import 'providers/settings_provider.dart';
+import 'services/map_offline_service.dart';
 import 'services/supabase_service.dart';
 
 void main() async {
@@ -22,6 +25,18 @@ void main() async {
 
   // Initialize Supabase backend service with graceful fallback
   await SupabaseService.initialize();
+
+  // Identify this app in OpenFreeMap access logs. MapLibre native owns the
+  // User-Agent header, so a custom header is the available app identifier.
+  ml.MapLibreNetwork.requestHeaders = [
+    ml.RequestHeaders(
+      AppMapSources.appRequestHeaders,
+      url: 'https://tiles.openfreemap.org/**',
+    ),
+  ];
+
+  // Keep MapLibre's ambient tile/style cache bounded on low-storage devices.
+  await MapOfflineService.configureAmbientCache();
 
   runApp(const ProviderScope(child: YemenRealEstateApp()));
 }

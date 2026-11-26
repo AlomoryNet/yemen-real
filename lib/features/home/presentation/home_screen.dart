@@ -160,9 +160,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final forRentAsync = ref.watch(propertiesForRentProvider);
     // Section headers show the true category total; the providers above are
     // deliberately capped at 10 preview cards for dashboard performance.
-    final featuredCount = ref.watch(featuredCountProvider).value;
-    final forSaleCount = ref.watch(propertiesForSaleCountProvider).value;
-    final forRentCount = ref.watch(propertiesForRentCountProvider).value;
+    // A failed count request must not crash the dashboard; the section simply
+    // hides its total while the bounded preview keeps rendering.
+    final featuredCount = ref.watch(featuredCountProvider).valueOrNull;
+    final forSaleCount =
+        ref.watch(propertiesForSaleCountProvider).valueOrNull;
+    final forRentCount = ref.watch(propertiesForRentCountProvider).valueOrNull;
     final nearbyProperties = ref.watch(nearbyPropertiesProvider);
     final center = ref.watch(homeCenterProvider);
     final radiusKm = ref.watch(homeSearchRadiusProvider);

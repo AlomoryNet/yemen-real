@@ -1,12 +1,15 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_maplibre/flutter_map_maplibre.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:maplibre/maplibre.dart' as ml;
 import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/map_sources.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/property_text_styles.dart';
 import '../../../core/utils/formatters.dart';
@@ -799,69 +802,72 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.all,
                   ),
+                  cameraConstraint: CameraConstraint.containLatitude(),
                 ),
                 children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-                    userAgentPackageName: 'com.yemenreal.portal',
-                    maxZoom: 19,
-                    errorTileCallback: (tile, error, stackTrace) {
-                      debugPrint('Detail map tile failed to load: $error');
-                    },
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: latLng,
-                        width: 140,
-                        height: 52,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.shadow,
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                            border: Border.all(
-                              color: AppColors.surface,
-                              width: 2,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                color: AppColors.textLight,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  Formatters.formatCurrency(
-                                    property.price,
-                                    property.currency,
+                  MapLibreLayer(
+                    style: const ml.MapStyle.url(
+                      AppMapSources.openFreeMapStyleUrl,
+                    ),
+                    onError: (event) =>
+                        debugPrint('Detail map error: ${event.message}'),
+                    children: [
+                      FlutterMapAdapter(
+                        child: MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: latLng,
+                              width: 140,
+                              height: 52,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.shadow,
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                  border: Border.all(
+                                    color: AppColors.surface,
+                                    width: 2,
                                   ),
-                                  style: const TextStyle(
-                                    color: AppColors.textLight,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on,
+                                      color: AppColors.textLight,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        Formatters.formatCurrency(
+                                          property.price,
+                                          property.currency,
+                                        ),
+                                        style: const TextStyle(
+                                          color: AppColors.textLight,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -872,10 +878,10 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       alignment: AttributionAlignment.bottomRight,
                       attributions: [
                         TextSourceAttribution(
-                          'Tiles © Esri — Sources: Esri, HERE, Garmin, USGS, OpenStreetMap contributors, GIS User Community',
+                          AppMapSources.openFreeMapAttribution,
                           onTap: () {
                             final uri = Uri.parse(
-                              'https://goto.arcgisonline.com/maps/World_Street_Map',
+                              AppMapSources.openFreeMapAttributionUrl,
                             );
                             canLaunchUrl(uri).then((ok) {
                               if (ok) {

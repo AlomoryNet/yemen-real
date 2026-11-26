@@ -8,6 +8,65 @@ decisions, migration history, or why a convention exists.
 
 ## Status — done / remaining (full history)
 
+DONE (MapLibre + OpenFreeMap migration with local tile cache, 2026-11-26;
+uncommitted; `flutter analyze` clean, `flutter test` 136/136):
+
+- Replaced the Esri World Street raster `TileLayer` with OpenFreeMap Liberty via
+  `MapLibreLayer` from `flutter_map_maplibre` in all three map surfaces:
+  `features/map/presentation/property_map_view.dart`,
+  `features/properties/presentation/property_detail_screen.dart` and
+  `features/properties/presentation/add_edit_property_screen.dart`. The layer
+  lives inside the existing `FlutterMap`, so the current clusters, drawn
+  polygons, animated camera moves, gestures and RTL overlay widgets are
+  preserved. `FlutterMapAdapter` carries the existing marker layers and
+  `CameraConstraint.containLatitude()` prevents out-of-world panning. Esri
+  World Imagery remains only for the optional satellite toggle.
+- Added `lib/core/constants/map_sources.dart` as the single source of truth for
+  the style URL, satellite URL, attribution text/link and the app-identifying
+  request header. `main.dart` registers that header with
+  `MapLibreNetwork.requestHeaders` and calls
+  `MapOfflineService.configureAmbientCache()` before `runApp`. MapLibre native
+  manages `User-Agent`, which cannot be overridden through
+  `package:maplibre`'s `RequestHeaders`, so the app uses
+  `X-Yemen-Real-Estate-Portal` and documents that real UA/concurrency control
+  needs a self-hosted style.
+- Added `lib/services/map_offline_service.dart` and
+  `lib/shared/widgets/map_cache_tile.dart`: a 100 MB ambient cache and an
+  optional `Yemen` offline region bounded to lat 12.5–19.5 / lon 42.5–54.5 at
+  zoom 5–10. That is exactly 1,105 tiles (~9 MB measured on `ZY22G4C24N`),
+  within OpenFreeMap's public-instance offline limits of 3,000 tiles, 50 MB and
+  four parallel requests. Zoom 11 alone would add 3,010 tiles, so it is
+  deliberately excluded and city-level detail relies on the ambient cache.
+  The Settings tile can download, show progress and delete the region; both
+  ARBs and generated l10n were regenerated with `flutter gen-l10n`.
+- Added `docs/MAP_SOURCES.md`: current stack, the offline-cache behaviour and
+  verification steps, and a future Cloudflare R2 free-tier PMTiles pipeline
+  (Geofabrik extract → Planetiler → R2 `r2.dev`/custom domain with CORS and
+  byte ranges → `pmtiles://` source in a style JSON → config flag with
+  OpenFreeMap fallback). The live stack is not switched to R2.
+- Fixed a Dart 3.13 runtime issue found during the migration:
+  `String.fromEnvironment('SUPABASE_URL'/'SUPABASE_ANON_KEY')` must be `const`,
+  otherwise the compile-time defines are ignored and Supabase receives an
+  empty relative URL. Removed the temporary define/repository `debugPrint`s.
+  Home count providers now use `valueOrNull`, so a failed count request cannot
+  crash the dashboard. iOS deployment target moved 12.0 → 15.0 for
+  `maplibre: ^0.4.0`; the existing Android NDK 26.3 remains and the build emits
+  only the upstream `maplibre_native requires NDK 28.2.13676358` warning.
+- Added `test/helpers/maplibre_test_stub.dart`, `test/map_sources_test.dart`,
+  source-map regressions in the three map test files and a tile-count oracle
+  that keeps the country pack under 3,000 tiles. `flutter analyze` clean;
+  `flutter test` 136/136.
+- USB `ZY22G4C24N` verification: fresh cold run with
+  `--dart-define-from-file=.env` loaded Home and `/map` normally; OpenFreeMap
+  street labels rendered, clusters reported 3/12/2 semantics, cluster taps
+  animated to the selected card, and the satellite toggle repainted both ways.
+  The property-detail preview rendered OpenFreeMap labels; the add/edit picker
+  rendered and tapping it pinned `15.2310, 44.3500`. Settings showed the z5–10
+  hint, deleted the old 4,115-tile region, downloaded the new 1,105-tile region
+  and rendered the map with Wi-Fi and mobile data disabled. Arabic locale kept
+  app labels localized (map tiles use Latin names; a self-hosted style can
+  prefer `name:ar`). DTD reported `No runtime errors found.`; no new ANR.
+
 DONE (map floating header + dashboard count fix, 2026-11-26;
 `flutter analyze` clean, `flutter test` 133/133):
 

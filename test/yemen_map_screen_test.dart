@@ -6,9 +6,11 @@ import 'package:yemen_real_estate_portal/config/app_config.dart';
 import 'package:yemen_real_estate_portal/core/l10n/app_locale.dart';
 import 'package:yemen_real_estate_portal/features/map/presentation/yemen_map_screen.dart';
 import 'package:yemen_real_estate_portal/services/supabase_service.dart';
+import 'helpers/maplibre_test_stub.dart';
 
 void main() {
   setUp(() async {
+    registerFakeMapLibrePlatform();
     AppConfig.setForceDemoModeForTesting(true);
     await SupabaseService.initialize();
   });

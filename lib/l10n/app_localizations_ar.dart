@@ -2166,6 +2166,27 @@ class AppLocalizationsAr extends AppLocalizations {
   String get set_default_map_view_list => 'القائمة';
 
   @override
+  String get set_offline_map_title => 'الخريطة دون اتصال';
+
+  @override
+  String get set_offline_map_hint => 'تنزيل مسبق لخريطة اليمن بالمستويات ٥–١٠، وتحفظ المناطق التي تزورها تلقائيًا حتى ١٠٠ ميجابايت.';
+
+  @override
+  String get set_offline_map_download => 'تنزيل';
+
+  @override
+  String get set_offline_map_downloading => 'جارٍ التنزيل…';
+
+  @override
+  String get set_offline_map_downloaded => 'تم التنزيل';
+
+  @override
+  String get set_offline_map_delete => 'حذف';
+
+  @override
+  String get set_offline_map_unsupported => 'غير متاح على هذا الجهاز';
+
+  @override
   String get map_all => 'الكل';
 
   @override

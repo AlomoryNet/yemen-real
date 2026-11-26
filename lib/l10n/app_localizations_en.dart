@@ -2166,6 +2166,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get set_default_map_view_list => 'List';
 
   @override
+  String get set_offline_map_title => 'Offline map';
+
+  @override
+  String get set_offline_map_hint => 'Pre-downloads Yemen at zoom 5–10. Areas you visit are cached automatically up to 100 MB.';
+
+  @override
+  String get set_offline_map_download => 'Download';
+
+  @override
+  String get set_offline_map_downloading => 'Downloading…';
+
+  @override
+  String get set_offline_map_downloaded => 'Downloaded';
+
+  @override
+  String get set_offline_map_delete => 'Delete';
+
+  @override
+  String get set_offline_map_unsupported => 'Not available on this platform';
+
+  @override
   String get map_all => 'All';
 
   @override

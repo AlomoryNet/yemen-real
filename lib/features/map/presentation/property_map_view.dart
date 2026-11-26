@@ -5,11 +5,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_maplibre/flutter_map_maplibre.dart';
+import 'package:maplibre/maplibre.dart' as ml;
 import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/map_sources.dart';
 import '../../../models/property.dart';
 import '../../../core/theme/app_colors.dart';
 import '../services/map_cluster_service.dart';
@@ -53,9 +56,10 @@ String formatMapPriceTag(BuildContext context, Property p) {
 }
 
 /// Shared interactive map used by BOTH the /map tab and the search results
-/// list↔map toggle. Renders: OpenStreetMap / Esri satellite tiles, official
-/// Yemen governorate boundaries (from bundled GeoJSON), spatial clustering
-/// with price pin markers, and an optional freehand-drawn polygon.
+/// list↔map toggle. Renders: free OpenFreeMap vector tiles (or Esri satellite
+/// imagery), official Yemen governorate boundaries (from bundled GeoJSON),
+/// spatial clustering with price pin markers, and an optional freehand-drawn
+/// polygon.
 ///
 /// Host concerns (selected-property card, filters, search-this-area, satellite
 /// toggle button, drawing gestures) stay in the hosts; pass them in via the
@@ -292,6 +296,92 @@ class _PropertyMapViewState extends State<PropertyMapView>
     );
     final highlight = widget.highlightGovernorate;
 
+    // Overlays are built once and either mounted directly above the satellite
+    // raster layer, or wrapped in FlutterMapAdapter inside MapLibreLayer so
+    // they stay glued to the MapLibre frame while the camera moves.
+    final overlays = <Widget>[
+      if (widget.showBoundaries && _boundaries.isNotEmpty)
+        PolygonLayer(
+          polygons: _boundaries.expand((gov) {
+            final isSelected =
+                highlight != null &&
+                (gov.arabicName == highlight ||
+                    gov.arabicName.contains(highlight) ||
+                    highlight.contains(gov.arabicName));
+            return gov.polygonRings.map((ring) {
+              return Polygon(
+                points: ring,
+                color: isSelected
+                    ? AppColors.primary.withAlpha(45)
+                    : Colors.transparent,
+                borderColor: isSelected
+                    ? AppColors.primary
+                    : const Color(0xFF4A5568).withAlpha(120),
+                borderStrokeWidth: isSelected ? 2.8 : 1.2,
+              );
+            });
+          }).toList(),
+        ),
+      if (widget.drawnPolygon.isNotEmpty)
+        PolygonLayer(
+          polygons: [
+            Polygon(
+              points: widget.drawnPolygon,
+              color: AppColors.primary.withAlpha(45),
+              borderColor: AppColors.primary,
+              borderStrokeWidth: 3.0,
+            ),
+          ],
+        ),
+      MarkerLayer(
+        markers: clusters.map((cluster) {
+          if (cluster.isSingle) {
+            final prop = cluster.singleProperty;
+            final isSelected = widget.selectedPropertyId == prop.id;
+            final isRent = prop.dealType == AppConstants.dealRent;
+            final hasExact = MapClusterService.hasExactCoordinates(prop);
+
+            return Marker(
+              point: cluster.centroid,
+              width: isSelected ? 160 : 140,
+              height: isSelected ? 74 : 66,
+              child: Semantics(
+                button: true,
+                label: '${context.l10n.map_view_details}: ${prop.title}',
+                child: GestureDetector(
+                  onTap: () =>
+                      widget.onPropertyTap?.call(prop, cluster.centroid),
+                  child: _PropertyPriceMarker(
+                    priceText: formatMapPriceTag(context, prop),
+                    isSelected: isSelected,
+                    isRent: isRent,
+                    hasExact: hasExact,
+                  ),
+                ),
+              ),
+            );
+          }
+
+          final count = cluster.count;
+          final size = count >= 100 ? 60.0 : (count >= 10 ? 54.0 : 48.0);
+          return Marker(
+            point: cluster.centroid,
+            width: size,
+            height: size,
+            child: Semantics(
+              button: true,
+              label:
+                  '$count ${context.l10n.map_cluster_property_unit} — ${context.l10n.map_cluster_properties_title}',
+              child: GestureDetector(
+                onTap: () => _handleClusterTap(cluster),
+                child: _ClusterBadge(count: count),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    ];
+
     return FlutterMap(
       mapController: _controller,
       options: MapOptions(
@@ -300,6 +390,8 @@ class _PropertyMapViewState extends State<PropertyMapView>
         minZoom: widget.minZoom,
         maxZoom: widget.maxZoom,
         interactionOptions: InteractionOptions(flags: widget.interactionFlags),
+        // MapLibre cannot render an unbound latitude.
+        cameraConstraint: CameraConstraint.containLatitude(),
         onPositionChanged: (pos, hasGesture) {
           // A camera animation owned by the parent can keep moving the map
           // after this view has been popped; never call setState on a disposed
@@ -314,108 +406,38 @@ class _PropertyMapViewState extends State<PropertyMapView>
             widget.onMapTap?.call(tapPosition, point),
       ),
       children: [
-        TileLayer(
-          urlTemplate: widget.isSatellite
-              ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-              : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-          userAgentPackageName: 'com.yemenreal.portal',
-          maxZoom: 19,
-          errorTileCallback: (tile, error, stackTrace) {
-            debugPrint('Map tile failed to load: $error');
-          },
-        ),
-        if (widget.showBoundaries && _boundaries.isNotEmpty)
-          PolygonLayer(
-            polygons: _boundaries.expand((gov) {
-              final isSelected =
-                  highlight != null &&
-                  (gov.arabicName == highlight ||
-                      gov.arabicName.contains(highlight) ||
-                      highlight.contains(gov.arabicName));
-              return gov.polygonRings.map((ring) {
-                return Polygon(
-                  points: ring,
-                  color: isSelected
-                      ? AppColors.primary.withAlpha(45)
-                      : Colors.transparent,
-                  borderColor: isSelected
-                      ? AppColors.primary
-                      : const Color(0xFF4A5568).withAlpha(120),
-                  borderStrokeWidth: isSelected ? 2.8 : 1.2,
-                );
-              });
-            }).toList(),
-          ),
-        if (widget.drawnPolygon.isNotEmpty)
-          PolygonLayer(
-            polygons: [
-              Polygon(
-                points: widget.drawnPolygon,
-                color: AppColors.primary.withAlpha(45),
-                borderColor: AppColors.primary,
-                borderStrokeWidth: 3.0,
-              ),
+        if (widget.isSatellite)
+          TileLayer(
+            urlTemplate: AppMapSources.satelliteTileUrl,
+            userAgentPackageName: 'com.yemenreal.portal',
+            maxZoom: 19,
+            errorTileCallback: (tile, error, stackTrace) {
+              debugPrint('Map tile failed to load: $error');
+            },
+          )
+        else
+          MapLibreLayer(
+            style: const ml.MapStyle.url(AppMapSources.openFreeMapStyleUrl),
+            onError: (event) =>
+                debugPrint('MapLibre style/tile error: ${event.message}'),
+            children: [
+              for (final overlay in overlays)
+                FlutterMapAdapter(child: overlay),
             ],
           ),
-        MarkerLayer(
-          markers: clusters.map((cluster) {
-            if (cluster.isSingle) {
-              final prop = cluster.singleProperty;
-              final isSelected = widget.selectedPropertyId == prop.id;
-              final isRent = prop.dealType == AppConstants.dealRent;
-              final hasExact = MapClusterService.hasExactCoordinates(prop);
-
-              return Marker(
-                point: cluster.centroid,
-                width: isSelected ? 160 : 140,
-                height: isSelected ? 74 : 66,
-                child: Semantics(
-                  button: true,
-                  label: '${context.l10n.map_view_details}: ${prop.title}',
-                  child: GestureDetector(
-                    onTap: () =>
-                        widget.onPropertyTap?.call(prop, cluster.centroid),
-                    child: _PropertyPriceMarker(
-                      priceText: formatMapPriceTag(context, prop),
-                      isSelected: isSelected,
-                      isRent: isRent,
-                      hasExact: hasExact,
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            final count = cluster.count;
-            final size = count >= 100 ? 60.0 : (count >= 10 ? 54.0 : 48.0);
-            return Marker(
-              point: cluster.centroid,
-              width: size,
-              height: size,
-              child: Semantics(
-                button: true,
-                label:
-                    '$count ${context.l10n.map_cluster_property_unit} — ${context.l10n.map_cluster_properties_title}',
-                child: GestureDetector(
-                  onTap: () => _handleClusterTap(cluster),
-                  child: _ClusterBadge(count: count),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
+        if (widget.isSatellite) ...overlays,
         RichAttributionWidget(
           alignment: AttributionAlignment.bottomRight,
           attributions: [
             TextSourceAttribution(
               widget.isSatellite
-                  ? 'Esri, Maxar, Earthstar Geographics'
-                  : 'Tiles © Esri — Sources: Esri, HERE, Garmin, USGS, OpenStreetMap contributors, GIS User Community',
+                  ? AppMapSources.satelliteAttribution
+                  : AppMapSources.openFreeMapAttribution,
               onTap: () {
                 final uri = Uri.parse(
                   widget.isSatellite
-                      ? 'https://www.esri.com/'
-                      : 'https://goto.arcgisonline.com/maps/World_Street_Map',
+                      ? AppMapSources.satelliteAttributionUrl
+                      : AppMapSources.openFreeMapAttributionUrl,
                 );
                 canLaunchUrl(uri).then((ok) {
                   if (ok) launchUrl(uri, mode: LaunchMode.externalApplication);

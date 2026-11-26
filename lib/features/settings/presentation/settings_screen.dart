@@ -7,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/device_location_service.dart';
 import '../../../shared/widgets/app_page_body.dart';
+import '../../../shared/widgets/map_cache_tile.dart';
 
 /// Settings screen — per-device preferences (language, theme, display,
 /// location, notifications, about). Uses SharedPreferences through
@@ -166,6 +167,13 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+
+              const SizedBox(height: 20),
+              _sectionHeader(
+                Icons.download_for_offline_outlined,
+                l10n.set_offline_map_title,
+              ),
+              const MapCacheTile(),
 
               const SizedBox(height: 20),
               _sectionHeader(Icons.location_on_outlined, l10n.set_location),
