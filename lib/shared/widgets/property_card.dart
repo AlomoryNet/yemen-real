@@ -328,15 +328,38 @@ class PropertyCard extends ConsumerWidget {
     );
   }
 
-  Widget _price({double size = 18, required WidgetRef ref}) => Text(
-    Formatters.formatCurrencyPreferred(
-      property.price,
-      ref.watch(settingsProvider).currencyCode,
-    ),
-    style: PropertyTextStyles.price(size: size),
-    maxLines: 1,
-    overflow: TextOverflow.ellipsis,
-  );
+  Widget _price({double size = 18, required WidgetRef ref}) {
+    final settings = ref.watch(settingsProvider);
+    final converted =
+        property.currency.toUpperCase() != settings.currencyCode.toUpperCase();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          Formatters.formatDisplayPrice(
+            property.price,
+            property.currency,
+            settings.currencyCode,
+            settings.currencyRates,
+          ),
+          style: PropertyTextStyles.price(size: size),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        // Keep the stored price visible next to the estimate so the user can
+        // always tell which amount is the actual listing value.
+        if (converted)
+          Text(
+            Formatters.formatCurrency(property.price, property.currency),
+            style: PropertyTextStyles.meta(size: size - 5),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+      ],
+    );
+  }
 
   Widget _title({int maxLines = 2, double size = 14}) => Text(
     property.title,

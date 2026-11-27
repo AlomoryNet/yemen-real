@@ -84,7 +84,7 @@ void main() {
 
     test('Correctly identifies connection/network failure error', () {
       final error = Exception(
-        'Failed host lookup: https://fwpckpzrhvvxltdiiatn.supabase.co connection refused',
+        'Failed host lookup: https://<supabase-project>.supabase.co connection refused',
       );
       final appEx = AppException.fromSupabase(error);
 
@@ -236,9 +236,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      expect(find.text('تأكيد البريد الإلكتروني'), findsOneWidget);
       expect(find.text('تم تفعيل بريدك الإلكتروني بنجاح!'), findsOneWidget);
       expect(find.text('المتابعة إلى الصفحة الرئيسية'), findsOneWidget);
-      expect(find.text('تسجيل الدخول بالبريد وكلمة المرور'), findsOneWidget);
+      expect(find.text('ممتلكاتي'), findsOneWidget);
+      expect(find.text('تسجيل الدخول بالبريد وكلمة المرور'), findsNothing);
     });
 
     testWidgets(
@@ -256,6 +258,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
+        expect(find.text('تأكيد البريد الإلكتروني'), findsOneWidget);
         expect(find.text('تم تفعيل بريدك الإلكتروني بنجاح!'), findsOneWidget);
         expect(find.text('المتابعة لإكمال عمليتك'), findsOneWidget);
         expect(find.text('الذهاب إلى الصفحة الرئيسية'), findsOneWidget);
@@ -277,6 +280,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
+        expect(find.text('تأكيد البريد الإلكتروني'), findsOneWidget);
         expect(
           find.text('رابط التفعيل منتهي أو مستخدم مسبقاً'),
           findsOneWidget,

@@ -50,7 +50,7 @@
 ## 3. إثبات نجاح تسجيل الدخول بحساب المدير من خلال الاختبار الفعلي
 
 تم تنفيذ اختبار مصادقة حقيقي ومباشر عبر سحابة Supabase لمشروع الإنتاج الفعلي:
-- **نقطة النهاية:** `https://fwpckpzrhvvxltdiiatn.supabase.co/auth/v1/token?grant_type=password`
+- **نقطة النهاية:** `https://<supabase-project>.supabase.co/auth/v1/token?grant_type=password`
 - **البريد المختبر:** `mo772522233@gmail.com`
 - **نتيجة الاختبار:**
   - رمز الاستجابة: **HTTP 200 OK**

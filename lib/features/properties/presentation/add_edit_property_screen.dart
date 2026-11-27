@@ -1,25 +1,22 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_maplibre/flutter_map_maplibre.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:maplibre/maplibre.dart' as ml;
 import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart' hide Path;
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/constants/map_sources.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../models/property.dart';
+import '../../../models/property_type.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
 import '../../../providers/property_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../services/storage_service.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
@@ -27,6 +24,7 @@ import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
+import 'widgets/location_pin_picker.dart';
 
 class AddEditPropertyScreen extends ConsumerStatefulWidget {
   final Property? propertyToEdit;
@@ -53,9 +51,14 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
   late final TextEditingController _bedroomsController;
   late final TextEditingController _bathroomsController;
 
-  double? _selectedLatitude;
-  double? _selectedLongitude;
-  late final MapController _mapController;
+  /// The picker writes here on every gesture frame, but the form only reads it
+  /// when saving (or when building the contract preview). No `setState` per
+  /// pan frame — that used to rebuild the whole form while MapLibre rendered.
+  late final ValueNotifier<LatLng?> _selectedPin;
+  final GlobalKey<LocationPinPickerState> _pickerKey =
+      GlobalKey<LocationPinPickerState>();
+
+  LatLng? get _savedPin => _selectedPin.value;
 
   String _dealType = AppConstants.dealSale;
   String _propertyTypeId = 'apartment';
@@ -70,7 +73,19 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
   void initState() {
     super.initState();
     final p = widget.propertyToEdit;
+    final initialPin = p != null && p.latitude != null && p.longitude != null
+        ? LatLng(p.latitude!, p.longitude!)
+        : null;
     final authUser = ref.read(authProvider).user;
+    // New listings start with the preferred currency from Settings; editing an
+    // existing listing always keeps the currency it was saved with. An unknown
+    // stored code is normalised so the dropdown never falls back to a raw
+    // two-letter value such as "en".
+    final preferredCurrency =
+        p?.currency ?? ref.read(settingsProvider).currencyCode;
+    _currency = AppConstants.supportedCurrencies.contains(preferredCurrency)
+        ? preferredCurrency
+        : AppConstants.currencyYer;
 
     _titleController = TextEditingController(text: p?.title ?? '');
     _descriptionController = TextEditingController(text: p?.description ?? '');
@@ -99,18 +114,18 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
     if (p != null) {
       _dealType = p.dealType;
       _propertyTypeId = p.propertyTypeId;
-      _currency = p.currency;
+      _currency = AppConstants.supportedCurrencies.contains(p.currency)
+          ? p.currency
+          : AppConstants.currencyYer;
       _hasOwnershipPledge = p.hasOwnershipPledge;
       _imageUrls.addAll(p.images.map((img) => img.imageUrl));
-      _selectedLatitude = p.latitude;
-      _selectedLongitude = p.longitude;
     }
-    _mapController = MapController();
+    _selectedPin = ValueNotifier<LatLng?>(initialPin);
   }
 
   @override
   void dispose() {
-    _mapController.dispose();
+    _selectedPin.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
     _priceController.dispose();
@@ -133,6 +148,35 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         _pendingImages.addAll(picked);
       });
     }
+  }
+
+  /// Backend rows sometimes carry an English value in `name_ar` (or vice
+  /// versa). Pick the language the user actually selected and never show a raw
+  /// code or an empty label.
+  String _propertyTypeLabel(PropertyType type) {
+    return AppConstants.localizedName(
+      arabic: type.nameAr,
+      english: type.nameEn,
+      fallback: context.l10n.addprop_property_type_label,
+    );
+  }
+
+  /// Fixed-height labels keep side-by-side fields aligned when an Arabic
+  /// caption wraps onto a second line.
+  Widget _formLabel(String text) {
+    return SizedBox(
+      height: 36,
+      child: Text(
+        text,
+        style: AppFonts.cairo(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+          color: AppColors.textPrimary,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
   }
 
   void _showSelfReviewModal({required bool isDraft}) {
@@ -176,6 +220,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
               child: Text(
                 context.l10n.addprop_self_review_title,
                 style: AppFonts.cairo(fontWeight: FontWeight.bold),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -281,8 +327,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 100,
+          Flexible(
+            flex: 2,
             child: Text(
               '$label:',
               style: AppFonts.cairo(
@@ -290,9 +336,13 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                 fontWeight: FontWeight.bold,
                 color: AppColors.textMuted,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Expanded(
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 3,
             child: Text(
               value,
               style: AppFonts.cairo(
@@ -353,8 +403,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
         final defaultCoords = AppConstants.getCoordinatesForGovernorate(
           _cityController.text.trim(),
         );
-        final finalLat = _selectedLatitude ?? defaultCoords.$1;
-        final finalLng = _selectedLongitude ?? defaultCoords.$2;
+        final finalLat = _savedPin?.latitude ?? defaultCoords.$1;
+        final finalLng = _savedPin?.longitude ?? defaultCoords.$2;
 
         final newProp = Property(
           id: '',
@@ -401,10 +451,10 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
           addressDetails: _addressController.text.trim().isNotEmpty
               ? _addressController.text.trim()
               : null,
-          latitude: _selectedLatitude ??
+          latitude: _savedPin?.latitude ??
               widget.propertyToEdit!.latitude ??
               defaultCoords.$1,
-          longitude: _selectedLongitude ??
+          longitude: _savedPin?.longitude ??
               widget.propertyToEdit!.longitude ??
               defaultCoords.$2,
           price: double.parse(_priceController.text.trim()),
@@ -572,12 +622,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_deal_type_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       DropdownButtonFormField<String>(
@@ -586,11 +632,21 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                         items: [
                                           DropdownMenuItem(
                                             value: AppConstants.dealSale,
-                                            child: Text(context.l10n.addprop_deal_sale),
+                                            child: Text(
+                                              context.l10n.addprop_deal_sale,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: AppFonts.cairo(fontSize: 13),
+                                            ),
                                           ),
                                           DropdownMenuItem(
                                             value: AppConstants.dealRent,
-                                            child: Text(context.l10n.addprop_deal_rent),
+                                            child: Text(
+                                              context.l10n.addprop_deal_rent,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: AppFonts.cairo(fontSize: 13),
+                                            ),
                                           ),
                                         ],
                                         onChanged: (val) {
@@ -609,12 +665,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_property_type_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       typesAsync.when(
@@ -626,7 +678,15 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                                   .map(
                                                     (t) => DropdownMenuItem(
                                                       value: t.id,
-                                                      child: Text(t.nameAr),
+                                                      child: Text(
+                                                        _propertyTypeLabel(t),
+                                                        maxLines: 1,
+                                                        overflow:
+                                                            TextOverflow.ellipsis,
+                                                        style: AppFonts.cairo(
+                                                          fontSize: 13,
+                                                        ),
+                                                      ),
                                                     ),
                                                   )
                                                   .toList(),
@@ -667,12 +727,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_price_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       TextFormField(
@@ -697,12 +753,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_currency_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       DropdownButtonFormField<String>(
@@ -715,6 +767,12 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                                 child: Text(
                                                   AppConstants.getCurrencyNameAr(
                                                     c,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: AppFonts.cairo(
+                                                    fontSize: 13,
                                                   ),
                                                 ),
                                               ),
@@ -740,12 +798,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_area_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       TextFormField(
@@ -769,12 +823,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_bedrooms_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       TextFormField(
@@ -793,12 +843,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_bathrooms_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       TextFormField(
@@ -832,12 +878,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_governorate_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       DropdownButtonFormField<String>(
@@ -856,27 +898,30 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                                 child: Text(
                                                   AppConstants
                                                       .getGovernorateNameAr(gov),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: AppFonts.cairo(
+                                                    fontSize: 13,
+                                                  ),
                                                 ),
                                               ),
                                             )
                                             .toList(),
                                         onChanged: (val) {
                                           if (val != null) {
-                                            setState(() {
-                                              _cityController.text = val;
-                                              final coords =
-                                                  AppConstants.getCoordinatesForGovernorate(
-                                                    val,
-                                                  );
-                                              _selectedLatitude = coords.$1;
-                                              _selectedLongitude = coords.$2;
-                                            });
-                                            _mapController.move(
-                                              LatLng(
-                                                _selectedLatitude!,
-                                                _selectedLongitude!,
-                                              ),
-                                              12.5,
+                                            // Only the dropdown's text needs a
+                                            // form rebuild; the picker moves the
+                                            // camera and commits the pin itself.
+                                            setState(
+                                              () => _cityController.text = val,
+                                            );
+                                            final coords =
+                                                AppConstants.getCoordinatesForGovernorate(
+                                              val,
+                                            );
+                                            _pickerKey.currentState?.moveTo(
+                                              LatLng(coords.$1, coords.$2),
                                             );
                                           }
                                         },
@@ -891,12 +936,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_district_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       TextFormField(
@@ -999,17 +1040,26 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            // Interactive Location Map Picker
+                            // Location picker — a large map with a fixed centre
+                            // pin. Dragging the map under the pin is far easier
+                            // than hitting a small point on a 220dp map.
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
-                                  Icons.pin_drop_rounded,
-                                  color: AppColors.primary,
-                                  size: 20,
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryMuted,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.pin_drop_rounded,
+                                    color: AppColors.primaryInk,
+                                    size: 20,
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
-                                Flexible(
+                                const SizedBox(width: 10),
+                                Expanded(
                                   child: Text(
                                     context.l10n.addprop_map_picker_label,
                                     style: AppFonts.cairo(
@@ -1021,146 +1071,17 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            Container(
-                              height: 220,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.divider),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Stack(
-                                children: [
-                                  FlutterMap(
-                                    mapController: _mapController,
-                                    options: MapOptions(
-                                      initialCenter: LatLng(
-                                        _selectedLatitude ??
-                                            AppConstants.getCoordinatesForGovernorate(
-                                              _cityController.text.trim(),
-                                            ).$1,
-                                        _selectedLongitude ??
-                                            AppConstants.getCoordinatesForGovernorate(
-                                              _cityController.text.trim(),
-                                            ).$2,
-                                      ),
-                                      initialZoom: 12.5,
-                                      cameraConstraint:
-                                          CameraConstraint.containLatitude(),
-                                      onTap: (tapPosition, point) {
-                                        setState(() {
-                                          _selectedLatitude = point.latitude;
-                                          _selectedLongitude = point.longitude;
-                                        });
-                                      },
-                                    ),
-                                    children: [
-                                      MapLibreLayer(
-                                        style: const ml.MapStyle.url(
-                                          AppMapSources.openFreeMapStyleUrl,
-                                        ),
-                                        onError: (event) => debugPrint(
-                                          'Location map error: ${event.message}',
-                                        ),
-                                        children: [
-                                          if (_selectedLatitude != null &&
-                                              _selectedLongitude != null)
-                                            FlutterMapAdapter(
-                                              child: MarkerLayer(
-                                                markers: [
-                                                  Marker(
-                                                    point: LatLng(
-                                                      _selectedLatitude!,
-                                                      _selectedLongitude!,
-                                                    ),
-                                                    width: 44,
-                                                    height: 44,
-                                                    child: const Icon(
-                                                      Icons.location_on,
-                                                      color: Colors.red,
-                                                      size: 44,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.only(bottom: 56),
-                                        child: RichAttributionWidget(
-                                          alignment:
-                                              AttributionAlignment.bottomRight,
-                                          attributions: [
-                                            TextSourceAttribution(
-                                              AppMapSources
-                                                  .openFreeMapAttribution,
-                                              onTap: () {
-                                                final uri = Uri.parse(
-                                                  AppMapSources
-                                                      .openFreeMapAttributionUrl,
-                                                );
-                                                canLaunchUrl(uri).then((ok) {
-                                                  if (ok) {
-                                                    launchUrl(
-                                                      uri,
-                                                      mode: LaunchMode
-                                                          .externalApplication,
-                                                    );
-                                                  }
-                                                });
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Positioned(
-                                    bottom: 8,
-                                    left: 8,
-                                    right: 8,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withAlpha(235),
-                                        borderRadius: BorderRadius.circular(8),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withAlpha(30),
-                                            blurRadius: 4,
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.touch_app,
-                                            size: 16,
-                                            color: Color(0xFF0F766E),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Expanded(
-                                            child: Text(
-                                              _selectedLatitude != null
-                                                  ? '${context.l10n.addprop_location_pinned} ${_selectedLatitude!.toStringAsFixed(4)}, ${_selectedLongitude!.toStringAsFixed(4)}'
-                                                  : context.l10n.addprop_map_tap_hint,
-                                              style: AppFonts.cairo(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: const Color(0xFF0F766E),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            const SizedBox(height: 10),
+                            LocationPinPicker(
+                              key: _pickerKey,
+                              selectedPin: _selectedPin,
+                              initialCenter: () {
+                                final coords =
+                                    AppConstants.getCoordinatesForGovernorate(
+                                  _cityController.text.trim(),
+                                );
+                                return LatLng(coords.$1, coords.$2);
+                              }(),
                             ),
                           ],
                         ),
@@ -1277,12 +1198,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_phone_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       TextFormField(
@@ -1302,12 +1219,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      _formLabel(
                                         context.l10n.addprop_whatsapp_label,
-                                        style: AppFonts.cairo(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       TextFormField(
@@ -1411,6 +1324,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                   contactPhone: _phoneController.text.trim(),
                                   contactWhatsapp: _whatsappController.text
                                       .trim(),
+                                  latitude: _savedPin?.latitude,
+                                  longitude: _savedPin?.longitude,
                                   createdAt: DateTime.now(),
                                 );
                                 context.push('/contract', extra: tempProp);
@@ -1429,7 +1344,12 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                 onPressed: _isSaving
                                     ? null
                                     : () => _showSelfReviewModal(isDraft: true),
-                                child: Text(context.l10n.addprop_save_draft),
+                                child: Text(
+                                  context.l10n.addprop_save_draft,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -1462,6 +1382,9 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
                             ),
@@ -1508,6 +1431,8 @@ class _AddEditPropertyScreenState extends ConsumerState<AddEditPropertyScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

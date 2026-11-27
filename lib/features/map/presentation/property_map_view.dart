@@ -17,6 +17,7 @@ import '../../../models/property.dart';
 import '../../../core/theme/app_colors.dart';
 import '../services/map_cluster_service.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../shared/widgets/map/user_location.dart';
 import '../../../shared/widgets/property_card.dart';
 
 /// One official governorate polygon from the Yemen ADM1 GeoJSON asset.
@@ -77,6 +78,10 @@ class PropertyMapView extends StatefulWidget {
   final List<LatLng> drawnPolygon;
   final bool showBoundaries;
 
+  /// Device position supplied by the host. Null means permission is not
+  /// granted, so no blue dot is drawn.
+  final LatLng? userLocation;
+
   /// Interaction flags bitmask (defaults to all interactive). Pass
   /// [InteractiveFlag.none] while a freehand drawing gesture is active.
   final int interactionFlags;
@@ -100,6 +105,7 @@ class PropertyMapView extends StatefulWidget {
     this.highlightGovernorate,
     this.drawnPolygon = const [],
     this.showBoundaries = true,
+    this.userLocation,
     this.interactionFlags = InteractiveFlag.all,
     this.onPositionChanged,
     this.onMapTap,
@@ -380,6 +386,9 @@ class _PropertyMapViewState extends State<PropertyMapView>
           );
         }).toList(),
       ),
+      // Last so the device dot sits above property pins and cluster badges.
+      if (widget.userLocation != null)
+        MarkerLayer(markers: [userLocationMarker(widget.userLocation!)]),
     ];
 
     return FlutterMap(

@@ -15,6 +15,14 @@ demo/offline fallback (DemoPropertiesGenerator). State: Riverpod. Routing: GoRou
 6. User is Arabic-first; UI strings are hardcoded Arabic (no l18n/i18n — do not expect runtime
    translations and do not flip locale expecting translated strings).
 7. No destructive deletions of docs files without explicit per-item user approval.
+8. SECRETS: never copy any value from `.env` (or any untracked secret file) into a
+   tracked file — not into Dart, SQL, tests, docs, comments, migrations or reports.
+   `String.fromEnvironment('NAME')` is the ONLY allowed reference to an env variable
+   name; it must have no literal/default value in source. `.env` and `*.env` stay
+   gitignored. Before any commit/push, audit tracked files for old project URLs,
+   anon/service keys, tokens and credentials and redact them (never delete docs
+   files wholesale). Runtime reads via `--dart-define-from-file=.env` are fine;
+   printing, logging or committing the values is not.
 
 ## Environment (do not fight it)
 - Flutter 3.47.6 stable / Dart 3.13.5, JAVA_HOME Corretto 17. Android SDK at
@@ -62,10 +70,142 @@ demo/offline fallback (DemoPropertiesGenerator). State: Riverpod. Routing: GoRou
 ```
 flutter analyze   → expect "No issues found!"
 flutter run -d ZY22G4C24N   (USB, preferred)
-flutter test      → suite (last known: 136 tests)
+flutter test      → suite (last known: 173 tests)
 ```
 
 ## Status - latest
+- Home category fallback fix (uncommitted, 2026-11-27): the live Supabase project
+  currently has **zero** `properties` rows, so the featured/for-sale/for-rent
+  preview providers returned empty lists while the nearby section and `/map`
+  used the generated demo catalogue. The three preview providers and their
+  count providers now fall back to that same demo catalogue only when the
+  backend returns zero rows; non-empty live results and real errors still win.
+  Added regressions in `test/dashboard_category_counts_test.dart`.
+  `flutter analyze` clean; `flutter test` 173/173. USB pass pending final launch.
+- Responsive landing page pass (uncommitted, 2026-11-27): Home now uses a
+  two-column desktop hero (>=900dp) with one search/filter card and one
+  publisher/map row, and its body is wrapped in `AppPageBody` so the existing
+  expanded navigation rail is the desktop sidebar. Added
+  `home_trust_section.dart` (4 stats + 4 M3 trust pillars, 1/2/4-column
+  responsive) before the publisher CTA, new `landing_*` ARB keys in both
+  locales, and `test/landing_page_sections_test.dart`. Existing hero keys,
+  add-property style behaviour and the single-map-CTA rule are unchanged.
+  `flutter analyze` clean; `flutter test` 171/171. USB `ZY22G4C24N`: verified
+  the hero, property feeds, trust stats/pillars and publisher CTA in Arabic and
+  English, light and dark; no runtime errors or overflows, and settings were
+  restored to Arabic/light.
+- Auth callback redesign + real Supabase verification (uncommitted, 2026-11-27):
+  `AuthCallbackScreen` now has a localized `callback_title` AppBar, themed
+  status/email/navigation states, and M3 filled/tonal actions. Added
+  `callback_*` keys to both locales and updated `test/auth_verification_flow_test.dart`.
+  Verified real Supabase login, add-property persistence and cleanup on the
+  linked project; the mobile callback needed a quoted Android URI in the test
+  helper because an unquoted `&` truncated the token fragment. `flutter analyze`
+  clean; full suite included in 171/171.
+- Detail redesign + map perf + DB hardening pass (uncommitted, 2026-11-27):
+  Property detail now uses a self-contained `PropertyImageGallery` (swipeable
+  main image + thumbnail strip; tapping a thumbnail no longer rebuilds the
+  inline map), `Responsive.contentMaxWidth()`, M3 `ColorScheme`/`TextTheme`
+  tokens (no raw colours/text styles in the redesigned sections), tonal/filled
+  action buttons, directional breadcrumb separators and map overlays, a carded
+  320dp map preview with a `RepaintBoundary`, semantic price marker and capped
+  image decode widths. The featured-badge contrast token pair is unchanged.
+  Add/edit's picker is now `LocationPinPicker`: the parent owns a
+  `ValueNotifier<LatLng?>`, save reads it directly, camera frames only update
+  the notifier/caption, host commits are coalesced through one ~90ms `Timer`,
+  and the nearest-governorate caption is cached by coordinate + language.
+  `StorageService()` now falls back to `SupabaseService.client`, and
+  `String.fromEnvironment` no longer carries literal defaults.
+  `supabase/complete_setup.sql` is now rerunnable (all 33 policies are dropped
+  before creation), grants roles explicitly, owns the full 22-governorate /
+  103-district coordinate seed, adds the `pending`-aware status constraint,
+  review columns, `increment_property_views` RPC and the non-admin publish
+  guard. Applied to the linked project with the CLI using credentials loaded
+  only from `.env`; no wipe. Verified: 125 locations, 6 property types, 3
+  settings, 29 policies, both new functions/triggers, and all tables reachable
+  with the service key. Old live Supabase project refs were redacted from
+  tracked docs/tests/migrations; `.env` secrets remain untracked and are never
+  copied into source. `flutter analyze` clean; `flutter test` 169/169.
+- Device-location + pin-picker pass (uncommitted, verified 2026-11-27):
+  `/map`, property detail and add/edit now use Google-Maps-style location
+  behaviour. `DeviceLocationService.currentLocationIfPermitted()` is the silent
+  map-open lookup; the shared `LocateMeButton` is the only path that calls
+  `requestLocation()`. A fresh `getCurrentPosition()` now falls back to
+  `getLastKnownPosition()` so a slow GPS fix no longer leaves the blue dot
+  missing. `UserLocationMarker` / `userLocationMarker()` draw the blue dot on
+  all three hosts (after the property markers, so it stays visible), and each
+  host owns its own camera movement via `onLocated`; plain `/map` recentres on
+  the device while explicit `MapScreenArgs` presets keep their governorate.
+  The add/edit picker is now a 320dp fixed-centre-pin map: drag/zoom/tap moves
+  the pin under a large centre marker, a themed caption shows the nearest
+  governorate plus coordinates, `Clear` restores the hint, and locate adds the
+  blue dot. Currency values are normalized to `YER/SAR/USD`; property types use
+  locale-aware `AppConstants.localizedName()`, so the Arabic dropdown never
+  shows `en`. Added l10n keys (`map_locate_me`, `map_location_found`,
+  `map_location_open_settings`, `map_location_permission_denied`,
+  `map_location_unavailable`, `addprop_map_center_hint`, `addprop_clear_pin`,
+  `addprop_map_zoom_in`, `addprop_map_zoom_out`) and regenerated l10n. Added
+  `test/helpers/fake_geolocator.dart`, `test/user_location_test.dart` and
+  `test/add_edit_property_layout_test.dart`; `flutter analyze` clean and
+  `flutter test` 167/167.
+  - ANR triage: DTD reported `No runtime errors found.`, there was no
+    `data_app_crash` and the process stayed alive. The Android ANR was
+    `Input dispatching timed out (Application does not have a focused window)`,
+    not a Dart crash. MapLibre's `configureAmbientCache()` is deferred until
+    after the first frame and Home's first-run location request is delayed by
+    2s so startup input focus is not blocked. A fresh cold launch with eight
+    rapid early taps left the app alive and produced no new ANR (only the old
+    `anr_2026-11-27-03-14-16-225`).
+  - USB `ZY22G4C24N`: with permission denied, opening `/map` showed no prompt
+    and no blue dot; pressing `My location` raised the OS permission dialog.
+    After grant, a first press showed an unavailable snackbar until the cached
+    fallback was added; reloading and pressing again produced a blue dot and
+    recentred camera. Property detail showed the blue dot on locate; add/edit
+    placed the centre pin at `13.95891, 44.16381 · إب`, showed the blue dot,
+    and `Clear` restored the drag hint. Verified in English/light and
+    Arabic/dark, including the Arabic property-type dropdown (no `en`), with
+    no runtime errors, overflows or new ANR. Everything in this pass and the
+    earlier Settings pass remains uncommitted.
+- Currency field keyboard + design fix (uncommitted, verified 2026-11-26):
+  `AppPageBody` still used `HitTestBehavior.translucent` and unfocused on every
+  `ScrollUpdateNotification`, so tapping the lower rate fields immediately hid
+  the keyboard (the register form had already moved to `deferToChild`). It now
+  uses `deferToChild` and only unfocuses on a real user drag
+  (`ScrollStartNotification.dragDetails != null`), matching `main.dart`. The
+  rate fields were redesigned from raw outlined inputs to the themed filled
+  fields used by auth: label above, exchange icon, `0.00` hint, `YER` suffix,
+  `TextInputAction.done` and no local border override. Added a focused-field
+  keyboard regression in `test/settings_screen_test.dart` (stays visible after
+  the IME resize, still hides on drag). `flutter analyze` clean,
+  `flutter test` 152/152. USB `ZY22G4C24N`: tapping the USD rate showed
+  `mInputShown=true` with only `SHOW_SOFT_INPUT` (no `HIDE_SOFT_INPUT`), typing
+  `300` committed and produced `Example: ≈ 333 US dollar`, reset restored
+  `250.00`/`66.70`, and DTD reported no runtime errors.
+- Settings audit + currency/add-style pass (uncommitted, verified 2026-11-26):
+  `Settings → Add Property button` is now mutually exclusive — `Outline button
+  on Home` (default) shows the outlined CTA on Home and hides the small FAB;
+  `FAB above map FAB` shows the compact `add_home_outlined` FAB above the map
+  FAB on Home and only in `/map` list view. The currency radio now changes more
+  than a label: user-editable USD→YER (default 250) and SAR→YER (default 66.7)
+  rates persist, a live `≈` preview is shown, `Reset rates` restores defaults,
+  cards/detail show converted browsing prices plus the original stored amount,
+  and new listings prefill their currency from the preference. Saved listings,
+  contracts, admin/financial records still keep their original currency; no
+  live FX is fetched. The About version now uses `l10n.about_version(...)` and
+  matches `pubspec.yaml` (`2.4.1+19`). Added "Enable Notifications" helper copy
+  and optional in-app confirmations for report submits, copied links and
+  offline-map downloads; added a confirmed `Reset all settings` card. The
+  `YemenMapScreen` scoped query no longer lets the stored-location default
+  overwrite an explicit dashboard governorate such as `صنعاء` (found by the new
+  FAB-mode regression). Added `test/currency_rates_test.dart`,
+  `test/settings_screen_test.dart`, `test/add_property_style_test.dart`,
+  `test/display_price_widget_test.dart`, `test/app_feedback_test.dart` and map
+  regressions. `flutter analyze` clean, `flutter test` 151/151. Fresh USB
+  `ZY22G4C24N` run + DTD hot reload: verified outline/FAB modes on Home and
+  `/map` list (FAB hidden over the map), USD preference + live preview →
+  converted card and detail prices → add-form prefill → YER/default reset, and
+  `Version: 2.4.1+19`; rate sanitization/persistence is covered by the new
+  unit/widget tests. No runtime errors, overflows or new ANR.
 - MapLibre + OpenFreeMap migration with offline cache (committed `add0b3f`,
   verified 2026-11-26): street maps now use `MapLibreLayer` (`flutter_map_maplibre`)
   inside the existing `FlutterMap` on `/map`, property detail and the add/edit

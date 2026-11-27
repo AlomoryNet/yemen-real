@@ -980,6 +980,72 @@ DONE (map filter + add-action correction, 2026-11-25):
   list-only add-FAB placement check. Verification: `flutter analyze` clean,
   74/74 tests, USB hot restart with no runtime errors.
 
+DONE (responsive landing page pass, 2026-11-27):
+- `home_hero_section.dart` now switches to a two-column landing hero at >=900dp:
+  headline + trust proof on one side, the single search/filter card and the
+  one publisher/map row on the other. Compact windows keep the original
+  stacked layout. The existing `home_add_property_outlined` key, the FAB-mode
+  map shortcut and the single-map-CTA rule are unchanged.
+- Added `home_trust_section.dart`, inserted between the property feeds and the
+  publisher CTA. It renders four stat tiles (440+ properties, 22 governorates,
+  103 districts, free listing) and four M3 semantic-colour trust pillars
+  (verified listings, interactive map, direct contact, local support), with
+  1/2/4-column `Wrap` layouts and Cairo text-theme roles.
+- `home_screen.dart` body now uses `AppPageBody`, so desktop (>=1100dp) keeps
+  the existing expanded navigation rail as the landing page sidebar; mobile
+  and tablet still use the drawer + bottom nav. Auth actions remain in the
+  rail/drawer only.
+- Added `landing_*` ARB keys to both locales, regenerated l10n, and added
+  `test/landing_page_sections_test.dart` (heading, stats, pillars and wide
+  layout). Fixed the previously stale auth-callback test expectation to the
+  real `sh_nav_my_properties` label (`ممتلكاتي`).
+- Verification: `flutter analyze` clean; `flutter test` 171/171. USB
+  `ZY22G4C24N` launch and UI-dump pass confirmed the Arabic/light hero, nearby
+  and category feeds, the new trust title/stats/pillars, and the publisher CTA.
+  Settings were switched to English/dark to verify the same sections render in
+  LTR/dark, then restored to Arabic/light. DTD reported no runtime errors and
+  logcat had no `RenderFlex overflowed` or Flutter exception.
+
+DONE (auth callback redesign + real-mode verification, 2026-11-27):
+- `AuthCallbackScreen` was rebuilt around semantic `ColorScheme`/`TextTheme`
+  tokens: localized AppBar (`callback_title`), status badge, email chip,
+  success/problem messaging, and themed filled/tonal Continue/Home/Profile
+  actions with RTL-safe directional padding. Expired/error states can resend
+  OTP or return to login without leaking raw theme colours.
+- Added `callback_title`, `callback_success_title/message`, `callback_problem_title`,
+  `callback_continue_home`, `callback_continue_operation`, `callback_go_home`
+  and related keys to both ARBs; regenerated l10n. Updated
+  `test/auth_verification_flow_test.dart` for the new AppBar title and action
+  labels (including the real Arabic `sh_nav_my_properties` label `ممتلكاتي`).
+- Real Supabase verification on the linked project: admin-created confirmed
+  test user logged in, a `VerifyListing2026` add-property request persisted as
+  `pending` with owner/location/price/area/bedrooms/bathrooms/pledge intact,
+  `increment_property_views(UUID)` worked, and both temporary records were
+  deleted (0 properties/profiles and absent auth user afterwards). Supabase
+  signup UI was blocked by `email_address_invalid` then rate limiting, and the
+  reset-email UI only returned its throttling notice, so those two paths were
+  not claimed as verified.
+- Mobile callback root cause was a shell-quoting error: an unquoted `&` in the
+  Android deep link truncated the token fragment. With the whole URI quoted,
+  a signed callback opened the new success screen, the drawer showed the
+  verified user, and logcat had no `AuthException` or `No expires_in detected.`
+- Secret audit after all changes: 287 tracked files scanned, 0 literal `.env`
+  values found. `flutter analyze` clean; full suite included in 171/171.
+
+DONE (Home category fallback, 2026-11-27):
+- Diagnosed the blank "Featured / For sale / For rent" cards below the nearby
+  section: the linked Supabase project currently has zero `properties` rows,
+  so `getProperties()`/`getPropertyCount()` returned empty/0. The nearby
+  provider and `/map` already fall back to `DemoPropertiesGenerator`, which is
+  why only the nearby section looked populated.
+- `lib/providers/property_provider.dart` now applies the same fallback to the
+  three dashboard preview providers and their header-count providers, but only
+  when the backend returns an empty list/zero count. A real repository error
+  still bubbles up to `ErrorView`, and any non-empty live result wins over demo
+  data. Added two regressions to `test/dashboard_category_counts_test.dart`
+  (empty-live fallback plus live-results precedence).
+- `flutter analyze` clean; `flutter test` 173/173. USB pass pending final launch.
+
 ## Docs policy
 - AGENTS.md = agent memory (this file). PROJECT_SUMMARY.md = stale human snapshot, keep for context.
 - `docs/reports/` = historical verification (keep) · `docs/screenshots/` = curated only

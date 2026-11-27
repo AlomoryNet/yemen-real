@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../l10n/app_locale.dart';
 import '../l10n/app_strings.dart';
+import '../../models/currency_rates.dart';
 
 class Formatters {
   // Cache per locale so switching language in Settings takes effect
@@ -35,12 +36,30 @@ class Formatters {
     return '$formattedAmount $currencyName';
   }
 
-  /// Format a price label with the user's preferred currency code when no
-  /// explicit code is given. Amounts are never FX-converted: the listing price
-  /// stays in its original currency until a rate source is introduced.
-  static String formatCurrencyPreferred(num amount, String? preferredCurrency) {
-    final code = preferredCurrency ?? AppConstants.currencyYer;
-    return formatCurrency(amount, code);
+  /// Format a browsing price label using the user's preferred currency.
+  ///
+  /// Listings, contracts and reports keep their original currency in storage;
+  /// only this display label is estimated with the user's own reference rates.
+  /// The `≈` prefix makes it clear that the converted number is not the
+  /// stored amount and that no live exchange rate is being fetched.
+  static String formatDisplayPrice(
+    num amount,
+    String originalCode,
+    String preferredCode,
+    CurrencyRates rates,
+  ) {
+    final original = originalCode.toUpperCase();
+    var preferred = preferredCode.toUpperCase();
+    // Unknown stored codes (e.g. legacy data) cannot be converted honestly.
+    if (!AppConstants.supportedCurrencies.contains(original)) {
+      return formatCurrency(amount, original);
+    }
+    if (!AppConstants.supportedCurrencies.contains(preferred)) {
+      preferred = original;
+    }
+    if (original == preferred) return formatCurrency(amount, original);
+    final converted = rates.convert(amount, original, preferred);
+    return '≈ ${formatCurrency(converted, preferred)}';
   }
 
   static String formatArea(num area) {

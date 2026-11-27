@@ -11,6 +11,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../services/device_location_service.dart';
 import '../../../models/map_query.dart';
 import '../../../models/property.dart';
 import '../../../models/property_type.dart';
@@ -25,6 +26,7 @@ import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/map/user_location.dart';
 import '../../../core/theme/property_text_styles.dart';
 import '../../../shared/widgets/property_card.dart';
 import '../../../shared/widgets/property_filter_sheet.dart';
@@ -139,7 +141,15 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
   /// governorate the user picked before it completed.
   String? _seededGovernorate;
 
+  /// Only a plain /map visit may infer its governorate from stored location.
+  /// Dashboard presets carry explicit filters (sometimes with the generic
+  /// `general` source), and must keep the governorate they were given.
+  late final bool _inferDefaultGovernorate;
+
   double _currentZoom = _defaultZoom;
+  LatLng? _userLocation;
+  bool _userLocationAppliedToCamera = false;
+  bool _skipNextQueryFit = false;
   LatLng? _lastSearchCenter;
   LatLng? _initialFocus;
   double? _initialZoom;
@@ -398,6 +408,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
   @override
   void initState() {
     super.initState();
+    _inferDefaultGovernorate = widget.initialFilters == null;
     _mapController = MapController();
     _cameraAnimationController = AnimationController(
       vsync: this,
@@ -430,6 +441,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
     // The provider may still be loading persisted coordinates; _initMapCenter
     // refines the default governorate once SharedPreferences is available.
     _initMapCenter();
+    _restoreUserLocation();
     _listScrollController.addListener(() {
       if (!_listScrollController.hasClients || !mounted) return;
       final position = _listScrollController.position;
@@ -449,7 +461,9 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
   /// only plain /map visits refine the default governorate from SharedPreferences.
   Future<void> _initMapCenter() async {
     final current = ref.read(mapQueryProvider);
-    if (current.source != MapQuerySource.general) {
+    // Explicit dashboard/search presets own their governorate. A plain /map
+    // visit is the only case allowed to refine it from stored coordinates.
+    if (!_inferDefaultGovernorate || current.source != MapQuerySource.general) {
       if (_initialFocus == null) return;
       _lastSearchCenter = _initialFocus;
       _currentZoom = _initialZoom ?? _defaultZoom;
@@ -468,6 +482,8 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
     }
 
     if (!mounted) return;
+    // A live user position won the race while preferences were loading.
+    if (_userLocationAppliedToCamera) return;
     final latest = ref.read(mapQueryProvider);
     // Do not overwrite a governorate the user changed while prefs were loading.
     if (latest.source != MapQuerySource.general ||
@@ -487,6 +503,54 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
           .read(mapQueryProvider.notifier)
           .update((query) => query.copyWith(governorate: governorate.name));
     }
+  }
+
+  /// Show the device dot when permission is already granted, without prompting.
+  /// A stored location (saved by the first-run flow or Settings) has already
+  /// driven the initial camera, so only a permission granted outside those
+  /// flows needs an extra camera move here.
+  Future<void> _restoreUserLocation() async {
+    final result = await DeviceLocationService.currentLocationIfPermitted();
+    if (!mounted || !result.hasPosition) return;
+    final position = result.position!;
+    setState(() => _userLocation = position);
+
+    final settings = ref.read(settingsProvider);
+    final query = ref.read(mapQueryProvider);
+    if (!_inferDefaultGovernorate ||
+        settings.latitude != null ||
+        query.source != MapQuerySource.general) {
+      return;
+    }
+
+    _userLocationAppliedToCamera = true;
+    _pendingFitToFiltered = false;
+    final governorate = _governorateForLocation(position);
+    if (query.governorate != governorate.name) {
+      _skipNextQueryFit = true;
+      ref.read(mapQueryProvider.notifier).update(
+            (current) => current.copyWith(governorate: governorate.name),
+          );
+    }
+
+    setState(() {
+      _lastSearchCenter = position;
+      _currentZoom = 15;
+    });
+
+    // Before the first frame the FlutterMap options above own the camera;
+    // afterwards animate so the change is visible to the user.
+    try {
+      _mapController.camera;
+      _animatedMapMove(position, 15);
+    } catch (_) {
+      // MapController is not attached yet — initialCenter has been updated.
+    }
+  }
+
+  void _onUserLocated(LatLng position) {
+    setState(() => _userLocation = position);
+    _animatedMapMove(position, math.max(_currentZoom, 15));
   }
 
   @override
@@ -515,17 +579,21 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
 
   void _animatedMapMove(LatLng destLocation, double destZoom) {
     if (!mounted) return;
-    final camera = _mapController.camera;
-    _cameraLatFrom = camera.center.latitude;
-    _cameraLatTo = destLocation.latitude;
-    _cameraLngFrom = camera.center.longitude;
-    _cameraLngTo = destLocation.longitude;
-    _cameraZoomFrom = camera.zoom;
-    _cameraZoomTo = destZoom;
-    _hasCameraAnimation = true;
-    _cameraAnimationController
-      ..reset()
-      ..forward();
+    try {
+      final camera = _mapController.camera;
+      _cameraLatFrom = camera.center.latitude;
+      _cameraLatTo = destLocation.latitude;
+      _cameraLngFrom = camera.center.longitude;
+      _cameraLngTo = destLocation.longitude;
+      _cameraZoomFrom = camera.zoom;
+      _cameraZoomTo = destZoom;
+      _hasCameraAnimation = true;
+      _cameraAnimationController
+        ..reset()
+        ..forward();
+    } catch (_) {
+      // Controller can still be unattached during the first frame.
+    }
   }
 
   /// A filter change makes fit-to-results the only camera authority. Leaving a
@@ -751,6 +819,12 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
         );
       }
       if (previous != null && previous.cameraKey == next.cameraKey) return;
+      // The silent "point at me" update is a camera move of its own; letting
+      // fit-to-results run here would immediately undo it.
+      if (_skipNextQueryFit) {
+        _skipNextQueryFit = false;
+        return;
+      }
       _requestFitToFiltered();
       if (_selectedProperty != null) {
         setState(() => _selectedProperty = null);
@@ -865,6 +939,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
                       highlightGovernorate: query.governorate,
                       drawnPolygon: _drawnPolygon,
                       showBoundaries: true,
+                      userLocation: _userLocation,
                       interactionFlags: _isDrawingMode
                           ? InteractiveFlag.none
                           : InteractiveFlag.all,
@@ -1106,8 +1181,9 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
                     children: [
                       // Primary list action: compact add-property FAB. It is
                       // deliberately hidden over the map, where draw/layers
-                      // controls already occupy this stack.
-                      if (isListView) ...[
+                      // controls already occupy this stack, and in the
+                      // Settings "Outline button on Home" mode.
+                      if (isListView && settings.addPropertyStyle == 'fab') ...[
                         const AddPropertyFab(
                           key: ValueKey('map_add_property_fab'),
                           heroTag: 'map_add_property',
@@ -1115,6 +1191,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
                         const SizedBox(height: 8),
                       ],
                       if (!isListView) ...[
+                        LocateMeButton(
+                          heroTag: 'map_locate_me',
+                          onLocated: _onUserLocated,
+                        ),
+                        const SizedBox(height: 8),
                         _buildSmallMapFab(
                           heroTag: 'map_draw_area',
                           icon: Icons.draw_rounded,

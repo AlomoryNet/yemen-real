@@ -10,9 +10,11 @@ import '../../../providers/settings_provider.dart';
 
 /// Dashboard hero: branding plus a single search field and one filter button.
 ///
+/// On wide windows the copy and the search surface sit side-by-side, which
+/// gives the landing page a clear reading order without duplicating actions.
+/// Compact windows keep the stacked layout so the search stays thumb-reachable.
 /// All filtering controls live in the shared filter sheet opened by
-/// [onFilterRequested], so the hero stays compact regardless of how many
-/// governorates, districts or property types are available.
+/// [onFilterRequested].
 class HomeHeroSection extends ConsumerWidget {
   const HomeHeroSection({
     super.key,
@@ -29,9 +31,9 @@ class HomeHeroSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
     final useOutlinedAdd =
         ref.watch(settingsProvider).addPropertyStyle == 'outlined';
+    final isMobile = Responsive.isMobile(context);
 
     return Container(
       width: double.infinity,
@@ -42,180 +44,290 @@ class HomeHeroSection extends ConsumerWidget {
           colors: [AppColors.primaryDark, AppColors.primary],
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 48),
+      padding: EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: isMobile ? 36 : 52,
+      ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 860),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(25),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.accent.withAlpha(120)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          constraints: BoxConstraints(
+            maxWidth: Responsive.isDesktop(context) ? 1180 : 860,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 900;
+              if (!wide) {
+                return Column(
                   children: [
-                    const Icon(
-                      Icons.verified,
-                      size: 16,
-                      color: AppColors.accentLight,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      l10n.dash_trusted_platform,
-                      style: AppFonts.cairo(
-                        color: AppColors.textLight,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    _buildTrustBadge(context),
+                    const SizedBox(height: 16),
+                    _buildHeadline(context, centered: true, compact: isMobile),
+                    const SizedBox(height: 28),
+                    _buildSearchCard(context),
+                    const SizedBox(height: 14),
+                    useOutlinedAdd
+                        ? _buildAddPropertyBanner(context)
+                        : _buildMapBanner(context),
                   ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.dash_hero_title,
-                textAlign: TextAlign.center,
-                style: AppFonts.cairo(
-                  fontSize: Responsive.isMobile(context) ? 26 : 38,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  height: 1.25,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                l10n.dash_hero_subtitle,
-                textAlign: TextAlign.center,
-                style: AppFonts.cairo(
-                  fontSize: Responsive.isMobile(context) ? 13 : 16,
-                  color: AppColors.textLight.withAlpha(210),
-                ),
-              ),
-              const SizedBox(height: 28),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(50),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final compact = constraints.maxWidth < 560;
+                );
+              }
 
-                    return Row(
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: l10n.dash_search_hint,
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color: AppColors.primaryInk,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(color: AppColors.border),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                            ),
-                            onSubmitted: (_) => onSearchSubmit(),
-                          ),
+                        _buildTrustBadge(context),
+                        const SizedBox(height: 18),
+                        _buildHeadline(
+                          context,
+                          centered: false,
+                          compact: false,
                         ),
-                        const SizedBox(width: 8),
-                        Badge(
-                          isLabelVisible: activeFilterCount > 0,
-                          label: Text(
-                            '$activeFilterCount',
-                            style: AppFonts.cairo(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.onAccent,
-                            ),
-                          ),
-                          backgroundColor: AppColors.accent,
-                          child: compact
-                              ? FilledButton.tonal(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: AppColors.primaryMuted,
-                                    foregroundColor: AppColors.primaryInk,
-                                    minimumSize: const Size(48, 48),
-                                    padding: EdgeInsets.zero,
-                                    shape: const StadiumBorder(),
-                                  ),
-                                  onPressed: onFilterRequested,
-                                  child: const Icon(Icons.tune_rounded, size: 18),
-                                )
-                              : FilledButton.tonalIcon(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: AppColors.primaryMuted,
-                                    foregroundColor: AppColors.primaryInk,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                    shape: const StadiumBorder(),
-                                  ),
-                                  onPressed: onFilterRequested,
-                                  icon: const Icon(Icons.tune_rounded, size: 18),
-                                  label: Text(l10n.map_filters),
-                                ),
-                        ),
-                        const SizedBox(width: 8),
-                        compact
-                            ? ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: AppColors.textLight,
-                                  minimumSize: const Size(48, 48),
-                                  padding: EdgeInsets.zero,
-                                  shape: const StadiumBorder(),
-                                ),
-                                onPressed: onSearchSubmit,
-                                child: const Icon(Icons.search, size: 18),
-                              )
-                            : ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: AppColors.textLight,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  shape: const StadiumBorder(),
-                                ),
-                                onPressed: onSearchSubmit,
-                                icon: const Icon(Icons.search, size: 18),
-                                label: Text(l10n.dash_search_button),
-                              ),
+                        const SizedBox(height: 20),
+                        _buildHeroProof(context),
                       ],
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 14),
-              if (useOutlinedAdd)
-                _buildAddPropertyBanner(context)
-              else
-                _buildMapBanner(context),
-            ],
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      children: [
+                        _buildSearchCard(context),
+                        const SizedBox(height: 14),
+                        useOutlinedAdd
+                            ? _buildAddPropertyBanner(context)
+                            : _buildMapBanner(context),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTrustBadge(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.accent.withAlpha(120)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.verified, size: 16, color: AppColors.accentLight),
+          const SizedBox(width: 6),
+          Text(
+            l10n.dash_trusted_platform,
+            style: AppFonts.cairo(
+              color: AppColors.textLight,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeadline(
+    BuildContext context, {
+    required bool centered,
+    required bool compact,
+  }) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final alignment = centered ? TextAlign.center : TextAlign.start;
+
+    return Column(
+      crossAxisAlignment: centered
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.dash_hero_title,
+          textAlign: alignment,
+          style: AppFonts.cairo(
+            textStyle: theme.textTheme.displaySmall,
+            fontSize: compact ? 26 : (centered ? 38 : 42),
+            fontWeight: FontWeight.bold,
+            color: AppColors.textLight,
+            height: 1.22,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          l10n.dash_hero_subtitle,
+          textAlign: alignment,
+          style: AppFonts.cairo(
+            fontSize: compact ? 13 : 16,
+            color: AppColors.textLight.withAlpha(210),
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeroProof(BuildContext context) {
+    final l10n = context.l10n;
+    final items = <_HeroProof>[
+      _HeroProof(Icons.verified_outlined, l10n.landing_trust_verified_title),
+      _HeroProof(
+        Icons.location_on_outlined,
+        l10n.landing_stat_governorates_label,
+      ),
+      _HeroProof(Icons.chat_bubble_outline, l10n.landing_trust_direct_title),
+    ];
+
+    return Wrap(
+      spacing: 10,
+      runSpacing: 8,
+      children: items
+          .map(
+            (item) => Container(
+              padding: EdgeInsetsDirectional.fromSTEB(10, 8, 10, 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(24),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppColors.accent.withAlpha(90)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(item.icon, size: 16, color: AppColors.accentLight),
+                  const SizedBox(width: 6),
+                  Text(
+                    item.label,
+                    style: AppFonts.cairo(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildSearchCard(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 420;
+
+          return Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: l10n.dash_search_hint,
+                    prefixIcon: Icon(Icons.search, color: AppColors.primaryInk),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                  onSubmitted: (_) => onSearchSubmit(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Badge(
+                isLabelVisible: activeFilterCount > 0,
+                label: Text(
+                  '$activeFilterCount',
+                  style: AppFonts.cairo(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.onAccent,
+                  ),
+                ),
+                backgroundColor: AppColors.accent,
+                child: compact
+                    ? FilledButton.tonal(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primaryMuted,
+                          foregroundColor: AppColors.primaryInk,
+                          minimumSize: const Size(48, 48),
+                          padding: EdgeInsets.zero,
+                          shape: const StadiumBorder(),
+                        ),
+                        onPressed: onFilterRequested,
+                        child: const Icon(Icons.tune_rounded, size: 18),
+                      )
+                    : FilledButton.tonalIcon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primaryMuted,
+                          foregroundColor: AppColors.primaryInk,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: const StadiumBorder(),
+                        ),
+                        onPressed: onFilterRequested,
+                        icon: const Icon(Icons.tune_rounded, size: 18),
+                        label: Text(l10n.map_filters),
+                      ),
+              ),
+              const SizedBox(width: 8),
+              compact
+                  ? ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.textLight,
+                        minimumSize: const Size(48, 48),
+                        padding: EdgeInsets.zero,
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: onSearchSubmit,
+                      child: const Icon(Icons.search, size: 18),
+                    )
+                  : ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.textLight,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: onSearchSubmit,
+                      icon: const Icon(Icons.search, size: 18),
+                      label: Text(l10n.dash_search_button),
+                    ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -249,10 +361,7 @@ class HomeHeroSection extends ConsumerWidget {
           Text(
             context.l10n.dash_add_property_prompt,
             textAlign: TextAlign.center,
-            style: AppFonts.cairo(
-              color: AppColors.textSecondary,
-              fontSize: 11,
-            ),
+            style: AppFonts.cairo(color: AppColors.textSecondary, fontSize: 11),
           ),
         ],
       ),
@@ -317,4 +426,11 @@ class HomeHeroSection extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _HeroProof {
+  const _HeroProof(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
 }

@@ -3,8 +3,8 @@
 **تاريخ ووقت التنفيذ:** 2026-10-17 05:27 (توقيت محلي)  
 **إصدار التطبيق:** 1.1.0+2  
 **بيئة العمل:** Flutter / Dart / Supabase  
-**معرّف المشروع (Supabase Ref):** `fwpckpzrhvvxltdiiatn`  
-**عنوان المشروع (Supabase URL):** `https://fwpckpzrhvvxltdiiatn.supabase.co`  
+**معرّف المشروع (Supabase Ref):** `<supabase-project>`  
+**عنوان المشروع (Supabase URL):** `https://<supabase-project>.supabase.co`  
 
 ---
 
@@ -12,7 +12,7 @@
 
 1. **فحص أمني وتحقق كامل لمفتاح الربط في `.env`:**
    - تم فحص قيمة `SUPABASE_ANON_KEY` بدون كشفها في السجلات.
-   - التحقق من نوع المفتاح: يمثل مفتاح JWT قياسي عام (Public Anon Key) بطول 208 محارف، يبدأ بـ `eyJhbG...` وله الدور `role: "anon"` ومُصدَر من `iss: "supabase"` للمشروع `fwpckpzrhvvxltdiiatn`.
+   - التحقق من نوع المفتاح: يمثل مفتاح JWT قياسي عام (Public Anon Key) بطول 208 محارف، يبدأ بـ `eyJhbG...` وله الدور `role: "anon"` ومُصدَر من `iss: "supabase"` للمشروع `<supabase-project>`.
    - تم التأكد التام أن القيمة ليست رابط اتصال PostgreSQL ولا مفتاحاً سرياً (`service_role` أو `sb_sec_`).
 2. **فحص سجلات Git وملفات التجاهل:**
    - فحص سجل المستودع كاملاً عبر `git log --all --full-history -- ".env"`، وتأكيد عدم رفع أي ملف `.env` أو أي أسرار إلى المستودع عبر التاريخ بالكامل.
@@ -116,7 +116,7 @@
 الخطوة الوحيدة المتبقية التي تتطلب تدخلك المباشر من لوحة التحكم السحابية Supabase:
 
 ### تطبيق ملف جداول قاعدة البيانات:
-1. افتح مشروعك في متصفح الويب: [لوحة تحكم Supabase](https://supabase.com/dashboard/project/fwpckpzrhvvxltdiiatn).
+1. افتح مشروعك في متصفح الويب: [لوحة تحكم Supabase](https://supabase.com/dashboard/project/<supabase-project>).
 2. من القائمة الجانبية اليسرى، انقر على **SQL Editor** (أيقونة `>_`).
 3. اضغط على **New query**.
 4. افتح الملف المحلي [supabase/complete_setup.sql](file:///e:/yemen%20real/supabase/complete_setup.sql)، وانسخ كافة محتوياته (أو اسحب الملف وأفلته).

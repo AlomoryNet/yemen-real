@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- Migration: Purge All Users & Establish Sole Super Administrator
 -- Target: Yemen Real Estate Portal (بوابة اليمن العقارية)
--- Supabase Project: https://fwpckpzrhvvxltdiiatn.supabase.co
+-- Supabase Project: https://<supabase-project>.supabase.co
 -- Sole Administrator: mo772522233@gmail.com
 -- Password: 772606709
 -- ==============================================================================

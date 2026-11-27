@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/device_location_service.dart';
@@ -313,6 +315,13 @@ class SettingsScreen extends ConsumerWidget {
                     l10n.notifications_on,
                     style: AppFonts.cairo(fontWeight: FontWeight.w600),
                   ),
+                  subtitle: Text(
+                    l10n.set_notifications_hint,
+                    style: AppFonts.cairo(
+                      fontSize: 11.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   value: settings.notificationsEnabled,
                   onChanged: (v) => notifier.setNotificationsEnabled(v),
                 ),
@@ -322,6 +331,7 @@ class SettingsScreen extends ConsumerWidget {
               _sectionHeader(Icons.attach_money_rounded, l10n.set_currency),
               Card(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _subHeader(l10n.set_currency),
                     _radioTile<String>(
@@ -342,6 +352,59 @@ class SettingsScreen extends ConsumerWidget {
                       groupValue: settings.currencyCode,
                       onChanged: (v) => notifier.setCurrency(v!),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                      child: Text(
+                        l10n.set_currency_hint,
+                        style: AppFonts.cairo(
+                          fontSize: 11.5,
+                          height: 1.5,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    _RateField(
+                      key: const ValueKey('usd_rate_field'),
+                      label: l10n.set_currency_rate_usd,
+                      value: settings.usdToYerRate,
+                      onChanged: notifier.setUsdToYerRate,
+                    ),
+                    _RateField(
+                      key: const ValueKey('sar_rate_field'),
+                      label: l10n.set_currency_rate_sar,
+                      value: settings.sarToYerRate,
+                      onChanged: notifier.setSarToYerRate,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: TextButton.icon(
+                        key: const ValueKey('reset_currency_rates'),
+                        onPressed: notifier.resetCurrencyRates,
+                        icon: const Icon(Icons.restart_alt_rounded, size: 17),
+                        label: Text(l10n.set_currency_rate_reset),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primaryInk,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                      child: Text(
+                        l10n.set_currency_preview(
+                          Formatters.formatDisplayPrice(
+                            100000,
+                            AppConstants.currencyYer,
+                            settings.currencyCode,
+                            settings.currencyRates,
+                          ),
+                        ),
+                        style: AppFonts.cairo(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -361,7 +424,7 @@ class SettingsScreen extends ConsumerWidget {
                         style: AppFonts.cairo(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        '${l10n.about_version} ${AppConstants.appVersion}',
+                        l10n.about_version(AppConstants.appVersion),
                       ),
                     ),
                     ListTile(
@@ -408,6 +471,29 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+              Card(
+                child: ListTile(
+                  key: const ValueKey('reset_all_settings'),
+                  leading: Icon(
+                    Icons.restore_rounded,
+                    color: AppColors.primaryInk,
+                  ),
+                  title: Text(
+                    l10n.reset_settings,
+                    style: AppFonts.cairo(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    l10n.set_reset_all_hint,
+                    style: AppFonts.cairo(
+                      fontSize: 11.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  onTap: () => _showResetDialog(context, notifier),
                 ),
               ),
             ],
@@ -473,6 +559,37 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  void _showResetDialog(BuildContext context, SettingsNotifier notifier) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          l10n.set_reset_all_confirm,
+          style: AppFonts.cairo(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          l10n.set_reset_all_hint,
+          style: AppFonts.cairo(fontSize: 13.5, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel, style: AppFonts.cairo()),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await notifier.resetAll();
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: Text(l10n.reset_settings, style: AppFonts.cairo()),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showLegalDialog(
     BuildContext context, {
     required String title,
@@ -518,6 +635,111 @@ class SettingsScreen extends ConsumerWidget {
       onChanged: onChanged,
       activeColor: AppColors.primary,
       dense: true,
+    );
+  }
+}
+
+/// Numeric field for a user-entered display-only exchange rate.
+///
+/// Typing a valid number commits immediately; the field only rewrites its
+/// text when the value changed elsewhere (e.g. "Reset rates"), so the cursor
+/// never jumps while the user is typing.
+class _RateField extends StatefulWidget {
+  const _RateField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  State<_RateField> createState() => _RateFieldState();
+}
+
+class _RateFieldState extends State<_RateField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: _format(widget.value));
+  }
+
+  @override
+  void didUpdateWidget(covariant _RateField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value && !_matches(widget.value)) {
+      _controller.text = _format(widget.value);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  static String _format(double value) => value.toStringAsFixed(2);
+
+  bool _matches(double value) {
+    final typed = double.tryParse(_controller.text.replaceAll(',', '.'));
+    return typed != null && (typed - value).abs() < 0.0001;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Match the auth forms: a label above the themed filled field, an icon
+    // that explains the meaning, and the target currency as a suffix. No local
+    // border override — the app's InputDecorationTheme owns focus/error state.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.label,
+            style: AppFonts.cairo(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Semantics(
+            label: widget.label,
+            child: TextField(
+              controller: _controller,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textInputAction: TextInputAction.done,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
+              decoration: InputDecoration(
+                hintText: '0.00',
+                prefixIcon: const Icon(Icons.currency_exchange_outlined),
+                suffixText: AppConstants.currencyYer,
+                suffixStyle: AppFonts.cairo(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              onEditingComplete: () =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
+              onChanged: (text) {
+                final parsed = double.tryParse(text.replaceAll(',', '.'));
+                if (parsed != null) widget.onChanged(parsed);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

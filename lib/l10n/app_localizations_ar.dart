@@ -636,6 +636,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get forgot_return_to_login => 'الرجوع لتسجيل الدخول';
 
   @override
+  String get callback_title => 'تأكيد البريد الإلكتروني';
+
+  @override
   String get callback_expired_message => 'رابط التفعيل منتهي الصلاحية أو تم استخدامه مسبقاً. يرجى طلب رابط جديد للمتابعة.';
 
   @override
@@ -1821,6 +1824,54 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dash_yemen_map => 'خريطة اليمن';
 
   @override
+  String get landing_eyebrow => 'بوابتك للعقارات في اليمن';
+
+  @override
+  String get landing_stat_properties => 'عقار للبيع والإيجار';
+
+  @override
+  String get landing_stat_governorates => 'محافظة يمنية';
+
+  @override
+  String get landing_stat_governorates_label => 'تغطية كل المحافظات';
+
+  @override
+  String get landing_stat_districts => 'مديرية ومنطقة';
+
+  @override
+  String get landing_stat_free => 'إعلان مجاني';
+
+  @override
+  String get landing_trust_title => 'لماذا تختار بوابة اليمن العقارية؟';
+
+  @override
+  String get landing_trust_subtitle => 'تجربة عقارية واضحة وموثوقة، مصممة لتسهيل البحث والنشر في كل المحافظات اليمنية.';
+
+  @override
+  String get landing_trust_verified_title => 'إعلانات موثّقة';
+
+  @override
+  String get landing_trust_verified_desc => 'تُراجَع الإعلانات قبل نشرها، وتُوثَّق ملكية المعلن لحماية الباحثين والمالكين.';
+
+  @override
+  String get landing_trust_map_title => 'خريطة تفاعلية';
+
+  @override
+  String get landing_trust_map_desc => 'تصفّح العقارات على خريطة اليمن واكتشف ما يقرب منك بسهولة.';
+
+  @override
+  String get landing_trust_direct_title => 'تواصل مباشر';
+
+  @override
+  String get landing_trust_direct_desc => 'تواصل مع المالك عبر الهاتف أو واتساب دون وسطاء أو رسوم مخفية.';
+
+  @override
+  String get landing_trust_support_title => 'دعم محلي';
+
+  @override
+  String get landing_trust_support_desc => 'فريق يفهم السوق العقاري اليمني ويساعدك في كل خطوة من خطوات البحث أو النشر.';
+
+  @override
   String get fav_empty_action => 'تصفح العقارات الآن';
 
   @override
@@ -2136,6 +2187,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get set_currency_usd => 'الدولار الأمريكي (\$)';
 
   @override
+  String get set_currency_hint => 'تُقدَّر الأسعار بهذه العملة حسب الأسعار أدناه (≈). الإعلانات الجديدة تستخدمها تلقائيًا، بينما تبقى الإعلانات المحفوظة والعقود والتقارير بعملتها الأصلية.';
+
+  @override
+  String get set_currency_rate_usd => '1 دولار أمريكي = ريال يمني';
+
+  @override
+  String get set_currency_rate_sar => '1 ريال سعودي = ريال يمني';
+
+  @override
+  String get set_currency_rate_reset => 'استعادة الأسعار الافتراضية';
+
+  @override
+  String set_currency_preview(Object price) {
+    return 'مثال: $price';
+  }
+
+  @override
   String get set_distance_unit => 'وحدة المسافة';
 
   @override
@@ -2185,6 +2253,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get set_offline_map_unsupported => 'غير متاح على هذا الجهاز';
+
+  @override
+  String get set_notifications_hint => 'يعرض تأكيدات داخل التطبيق للبلاغات وروابط المشاركة وتنزيل الخرائط دون اتصال.';
+
+  @override
+  String get set_reset_all_hint => 'يعيد اللغة والمظهر والعرض والموقع والإشعارات والعملة إلى الإعدادات الافتراضية.';
+
+  @override
+  String get set_reset_all_confirm => 'إعادة تعيين جميع الإعدادات؟';
 
   @override
   String get map_all => 'الكل';
@@ -2338,6 +2415,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get map_loading_search => 'جاري البحث في قاعدة البيانات...';
+
+  @override
+  String get map_locate_me => 'موقعي';
+
+  @override
+  String get map_location_found => 'تم التمركز على موقعك';
+
+  @override
+  String get map_location_open_settings => 'الإعدادات';
+
+  @override
+  String get map_location_permission_denied => 'إذن الموقع متوقف. اسمح به من إعدادات التطبيق لعرض موقعك على الخريطة.';
+
+  @override
+  String get map_location_unavailable => 'تعذّر تحديد موقعك. يرجى المحاولة مرة أخرى.';
 
   @override
   String get map_location_missing_message => 'لم يتم تحديد موقع هذا العقار على الخريطة بعد. يرجى التواصل مع صاحب العقار لتحديد الموقع.';
@@ -2719,6 +2811,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addprop_map_tap_hint => 'انقر على أي نقطة في الخريطة لتثبيت موقع العقار بدقة';
+
+  @override
+  String get addprop_map_center_hint => 'اسحب الخريطة حتى يستقر الدبوس على موقع العقار';
+
+  @override
+  String get addprop_clear_pin => 'إزالة';
+
+  @override
+  String get addprop_map_zoom_in => 'تكبير الخريطة';
+
+  @override
+  String get addprop_map_zoom_out => 'تصغير الخريطة';
 
   @override
   String get addprop_sqm_unit => 'م²';

@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- Migration & Maintenance: User Purge & Sole Administrator Promotion
 -- Target: Yemen Real Estate Portal (بوابة اليمن العقارية)
--- Target Project: https://fwpckpzrhvvxltdiiatn.supabase.co
+-- Target Project: https://<supabase-project>.supabase.co
 -- Sole Publishing Administrator: Eng. Mohammed Al-Saqqaf (mo772522233@gmail.com)
 -- Target UUID: daa0d684-f82b-4878-9d86-ce2810be9786
 -- ==============================================================================

@@ -15,7 +15,7 @@ import 'app_navigation_rail.dart';
 ///
 /// The wrapper also mirrors the effective brightness into [AppColors] (so
 /// directly-styled text follows the theme) and dismisses the keyboard when the
-/// user taps outside a field or scrolls.
+/// user taps outside a field or deliberately scrolls the page.
 class AppPageBody extends StatelessWidget {
   final Widget child;
 
@@ -24,11 +24,18 @@ class AppPageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = GestureDetector(
-      behavior: HitTestBehavior.translucent,
+      // `translucent` also receives taps that land on a TextField, so opening
+      // the keyboard on lower fields (currency rates, register form) instantly
+      // unfocused them. Mirrors the global fix in main.dart: only react to taps
+      // no interactive child consumed.
+      behavior: HitTestBehavior.deferToChild,
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-      child: NotificationListener<ScrollNotification>(
+      child: NotificationListener<ScrollStartNotification>(
         onNotification: (notification) {
-          if (notification is ScrollUpdateNotification) {
+          // Only a real user drag dismisses the keyboard. Programmatic scroll
+          // updates (including the viewport shift when the IME opens) must not
+          // steal focus from the field being edited.
+          if (notification.dragDetails != null) {
             FocusManager.instance.primaryFocus?.unfocus();
           }
           return false; // let other listeners see the notification

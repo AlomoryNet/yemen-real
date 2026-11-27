@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +38,12 @@ void main() async {
   ];
 
   // Keep MapLibre's ambient tile/style cache bounded on low-storage devices.
-  await MapOfflineService.configureAmbientCache();
+  // Creating the native OfflineManager before the first frame adds several
+  // seconds to cold start on low-end devices; defer it until the UI is
+  // interactive so an early tap cannot be reported as an ANR.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(MapOfflineService.configureAmbientCache());
+  });
 
   runApp(const ProviderScope(child: YemenRealEstateApp()));
 }
@@ -51,6 +58,7 @@ class YemenRealEstateApp extends ConsumerStatefulWidget {
 class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
     with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<Uri>? _authLinkSubscription;
 
   @override
   void initState() {
@@ -70,12 +78,44 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
         }
       });
     }
+    // Supabase consumes the same link stream to establish the session. We only
+    // need to open the callback screen so the user sees success/error feedback.
+    // Subscribing here (instead of reading getInitialLink once) also covers the
+    // cold-start case: Android delivers the launch intent when the plugin
+    // attaches, which can be after this widget's initState.
+    if (!kIsWeb) {
+      _authLinkSubscription = AppLinks().uriLinkStream.listen(_openAuthCallback);
+    }
+  }
+
+  void _openAuthCallback(Uri uri) {
+    if (!mounted) return;
+    final fragmentParams = Uri.splitQueryString(uri.fragment);
+    bool has(String key) =>
+        uri.queryParameters.containsKey(key) ||
+        fragmentParams.containsKey(key);
+    final isAuthCallback = has('access_token') ||
+        has('code') ||
+        has('error') ||
+        has('error_code') ||
+        has('error_description');
+    if (!isAuthCallback) return;
+
+    final location = Uri(
+      path: '/login-callback',
+      queryParameters: uri.queryParameters.isEmpty ? null : uri.queryParameters,
+      fragment: uri.fragment.isEmpty ? null : uri.fragment,
+    ).toString();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) appRouter.go(location);
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _authSubscription?.cancel();
+    _authLinkSubscription?.cancel();
     super.dispose();
   }
 

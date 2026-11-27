@@ -22,6 +22,8 @@ void main() {
     expect(notifier.state.notificationsEnabled, true);
     expect(notifier.state.searchRadiusKm, 25);
     expect(notifier.state.currencyCode, 'YER');
+    expect(notifier.state.usdToYerRate, 250);
+    expect(notifier.state.sarToYerRate, 66.7);
     expect(notifier.state.distanceUnit, 'km');
     expect(notifier.state.textSize, 'medium');
     expect(notifier.state.defaultMapView, 'map');
@@ -47,6 +49,53 @@ void main() {
     expect(notifier.state.currencyCode, 'USD');
     await notifier.setCurrency('YER');
     expect(notifier.state.currencyCode, 'YER');
+  });
+
+  test('currency reference rates change, validate and persist', () async {
+    final notifier = await readyNotifier();
+    await notifier.setUsdToYerRate(310.5);
+    await notifier.setSarToYerRate(82.75);
+    expect(notifier.state.usdToYerRate, 310.5);
+    expect(notifier.state.sarToYerRate, 82.75);
+    expect(notifier.state.currencyRates.convert(1, 'USD', 'YER'), 310.5);
+
+    await notifier.setUsdToYerRate(-5);
+    expect(notifier.state.usdToYerRate, 250);
+
+    await notifier.resetCurrencyRates();
+    expect(notifier.state.usdToYerRate, 250);
+    expect(notifier.state.sarToYerRate, 66.7);
+
+    final reloaded = SettingsNotifier();
+    await reloaded.loaded;
+    expect(reloaded.state.usdToYerRate, 250);
+    expect(reloaded.state.sarToYerRate, 66.7);
+  });
+
+  test('resetAll restores every preference', () async {
+    final notifier = await readyNotifier();
+    await notifier.setThemeMode(ThemeMode.dark);
+    await notifier.setCurrency('USD');
+    await notifier.setTextSize('large');
+    await notifier.setDistanceUnit('miles');
+    await notifier.setDefaultMapView('list');
+    await notifier.setAddPropertyStyle('fab');
+    await notifier.setUsdToYerRate(400);
+
+    await notifier.resetAll();
+
+    expect(notifier.state.themeMode, ThemeMode.system);
+    expect(notifier.state.currencyCode, 'YER');
+    expect(notifier.state.usdToYerRate, 250);
+    expect(notifier.state.textSize, 'medium');
+    expect(notifier.state.distanceUnit, 'km');
+    expect(notifier.state.defaultMapView, 'map');
+    expect(notifier.state.addPropertyStyle, 'outlined');
+
+    final reloaded = SettingsNotifier();
+    await reloaded.loaded;
+    expect(reloaded.state.currencyCode, 'YER');
+    expect(reloaded.state.textSize, 'medium');
   });
 
   test('distance unit changes via setDistanceUnit', () async {

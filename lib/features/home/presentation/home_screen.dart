@@ -17,12 +17,14 @@ import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
+import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/property_category_section.dart';
 import '../../../shared/widgets/property_filter_sheet.dart';
 import '../../map/presentation/map_screen_args.dart';
 import 'home_hero_section.dart';
 import 'home_nearby_section.dart';
 import 'home_publisher_cta.dart';
+import 'home_trust_section.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -45,8 +47,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final settingsNotifier = ref.read(settingsProvider.notifier);
     final settings = ref.read(settingsProvider);
     final centerNotifier = ref.read(homeCenterProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _requestLocationOnFirstRun(settings, settingsNotifier, centerNotifier);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Keep the first interactive frame free of plugin work. On the USB test
+      // device an immediate geolocator call made the cold-start window miss
+      // input focus and triggered an ANR; a short delay keeps the first-run
+      // prompt while letting the window settle first.
+      await Future<void>.delayed(const Duration(seconds: 2));
+      await _requestLocationOnFirstRun(
+        settings,
+        settingsNotifier,
+        centerNotifier,
+      );
     });
   }
 
@@ -133,10 +144,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (dealType != null && dealType.isNotEmpty) {
       searchNotifier.setDealType(dealType);
     }
-    context.push(
-      '/map',
-      extra: MapScreenArgs.category(dealType: dealType),
-    );
+    context.push('/map', extra: MapScreenArgs.category(dealType: dealType));
   }
 
   void _openFeatured() {
@@ -163,10 +171,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // A failed count request must not crash the dashboard; the section simply
     // hides its total while the bounded preview keeps rendering.
     final featuredCount = ref.watch(featuredCountProvider).valueOrNull;
-    final forSaleCount =
-        ref.watch(propertiesForSaleCountProvider).valueOrNull;
+    final forSaleCount = ref.watch(propertiesForSaleCountProvider).valueOrNull;
     final forRentCount = ref.watch(propertiesForRentCountProvider).valueOrNull;
     final nearbyProperties = ref.watch(nearbyPropertiesProvider);
+    final useFabAdd =
+        ref.watch(settingsProvider.select((s) => s.addPropertyStyle)) == 'fab';
     final center = ref.watch(homeCenterProvider);
     final radiusKm = ref.watch(homeSearchRadiusProvider);
     final dashboardFilter = ref.watch(dashboardFilterProvider);
@@ -186,11 +195,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // the wider extended map FAB, which made it look detached.
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const AddPropertyFab(
-            key: ValueKey('home_add_property_fab'),
-            heroTag: 'home_add_property',
-          ),
-          const SizedBox(height: 12),
+          // Settings owns the add-property placement: the small FAB appears
+          // here only in "FAB above map FAB" mode. In outlined mode the hero
+          // outlined button is the single Home add action.
+          if (useFabAdd) ...[
+            const AddPropertyFab(
+              key: ValueKey('home_add_property_fab'),
+              heroTag: 'home_add_property',
+            ),
+            const SizedBox(height: 12),
+          ],
           FloatingActionButton.extended(
             key: const ValueKey('dashboard_map_fab'),
             heroTag: 'dashboard_map_fab',
@@ -203,147 +217,161 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            HomeHeroSection(
-              searchController: ref
-                  .read(dashboardFilterProvider.notifier)
-                  .searchController,
-              onSearchSubmit: _onSearchSubmit,
-              onFilterRequested: _onFilterRequested,
-              activeFilterCount: dashboardFilter.activeFilterCount,
-            ),
+      body: AppPageBody(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              HomeHeroSection(
+                searchController: ref
+                    .read(dashboardFilterProvider.notifier)
+                    .searchController,
+                onSearchSubmit: _onSearchSubmit,
+                onFilterRequested: _onFilterRequested,
+                activeFilterCount: dashboardFilter.activeFilterCount,
+              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: HomeNearbySection(
-                    nearbyProperties: nearbyProperties,
-                    usingFallback: usingFallback,
-                    locationResolved: true,
-                    onViewAll: () => _openNearby(center, radiusKm),
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: HomeNearbySection(
+                      nearbyProperties: nearbyProperties,
+                      usingFallback: usingFallback,
+                      locationResolved: true,
+                      onViewAll: () => _openNearby(center, radiusKm),
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 30,
-                  ),
-                  child: Column(
-                    children: [
-                      featuredAsync.when(
-                        data: (properties) => PropertyCategorySection(
-                          title: l10n.dash_featured_title,
-                          subtitle: l10n.dash_featured_subtitle,
-                          countText: featuredCount == null
-                              ? null
-                              : '$featuredCount ${l10n.map_properties_available}',
-                          properties: properties,
-                          icon: Icons.star_rounded,
-                          onViewAll: _openFeatured,
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 30,
+                    ),
+                    child: Column(
+                      children: [
+                        featuredAsync.when(
+                          data: (properties) => PropertyCategorySection(
+                            title: l10n.dash_featured_title,
+                            subtitle: l10n.dash_featured_subtitle,
+                            countText: featuredCount == null
+                                ? null
+                                : '$featuredCount ${l10n.map_properties_available}',
+                            properties: properties,
+                            icon: Icons.star_rounded,
+                            onViewAll: _openFeatured,
+                          ),
+                          loading: () => PropertyCategorySection.loading(
+                            title: l10n.dash_featured_title,
+                            subtitle: l10n.dash_featured_subtitle,
+                            loadingMessage: l10n.dash_loading_featured,
+                            icon: Icons.star_rounded,
+                            onViewAll: _openFeatured,
+                          ),
+                          error: (error, _) => PropertyCategorySection.error(
+                            title: l10n.dash_featured_title,
+                            subtitle: l10n.dash_featured_subtitle,
+                            message: error.toString(),
+                            icon: Icons.star_rounded,
+                            onViewAll: _openFeatured,
+                            onRetry: () =>
+                                ref.refresh(featuredPropertiesProvider),
+                          ),
                         ),
-                        loading: () => PropertyCategorySection.loading(
-                          title: l10n.dash_featured_title,
-                          subtitle: l10n.dash_featured_subtitle,
-                          loadingMessage: l10n.dash_loading_featured,
-                          icon: Icons.star_rounded,
-                          onViewAll: _openFeatured,
-                        ),
-                        error: (error, _) => PropertyCategorySection.error(
-                          title: l10n.dash_featured_title,
-                          subtitle: l10n.dash_featured_subtitle,
-                          message: error.toString(),
-                          icon: Icons.star_rounded,
-                          onViewAll: _openFeatured,
-                          onRetry: () =>
-                              ref.refresh(featuredPropertiesProvider),
-                        ),
-                      ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      forSaleAsync.when(
-                        data: (properties) => PropertyCategorySection(
-                          title: l10n.dash_for_sale_title,
-                          subtitle: l10n.dash_for_sale_subtitle,
-                          countText: forSaleCount == null
-                              ? null
-                              : '$forSaleCount ${l10n.map_properties_available}',
-                          properties: properties,
-                          icon: Icons.sell_outlined,
-                          onViewAll: () => _openCategory(AppConstants.dealSale),
+                        forSaleAsync.when(
+                          data: (properties) => PropertyCategorySection(
+                            title: l10n.dash_for_sale_title,
+                            subtitle: l10n.dash_for_sale_subtitle,
+                            countText: forSaleCount == null
+                                ? null
+                                : '$forSaleCount ${l10n.map_properties_available}',
+                            properties: properties,
+                            icon: Icons.sell_outlined,
+                            onViewAll: () =>
+                                _openCategory(AppConstants.dealSale),
+                          ),
+                          loading: () => PropertyCategorySection.loading(
+                            title: l10n.dash_for_sale_title,
+                            subtitle: l10n.dash_for_sale_subtitle,
+                            loadingMessage: l10n.dash_loading_for_sale,
+                            icon: Icons.sell_outlined,
+                            onViewAll: () =>
+                                _openCategory(AppConstants.dealSale),
+                          ),
+                          error: (error, _) => PropertyCategorySection.error(
+                            title: l10n.dash_for_sale_title,
+                            subtitle: l10n.dash_for_sale_subtitle,
+                            message: error.toString(),
+                            icon: Icons.sell_outlined,
+                            onViewAll: () =>
+                                _openCategory(AppConstants.dealSale),
+                            onRetry: () =>
+                                ref.refresh(propertiesForSaleProvider),
+                          ),
                         ),
-                        loading: () => PropertyCategorySection.loading(
-                          title: l10n.dash_for_sale_title,
-                          subtitle: l10n.dash_for_sale_subtitle,
-                          loadingMessage: l10n.dash_loading_for_sale,
-                          icon: Icons.sell_outlined,
-                          onViewAll: () => _openCategory(AppConstants.dealSale),
-                        ),
-                        error: (error, _) => PropertyCategorySection.error(
-                          title: l10n.dash_for_sale_title,
-                          subtitle: l10n.dash_for_sale_subtitle,
-                          message: error.toString(),
-                          icon: Icons.sell_outlined,
-                          onViewAll: () => _openCategory(AppConstants.dealSale),
-                          onRetry: () => ref.refresh(propertiesForSaleProvider),
-                        ),
-                      ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      forRentAsync.when(
-                        data: (properties) => PropertyCategorySection(
-                          title: l10n.dash_for_rent_title,
-                          subtitle: l10n.dash_for_rent_subtitle,
-                          countText: forRentCount == null
-                              ? null
-                              : '$forRentCount ${l10n.map_properties_available}',
-                          properties: properties,
-                          icon: Icons.key_outlined,
-                          onViewAll: () => _openCategory(AppConstants.dealRent),
+                        forRentAsync.when(
+                          data: (properties) => PropertyCategorySection(
+                            title: l10n.dash_for_rent_title,
+                            subtitle: l10n.dash_for_rent_subtitle,
+                            countText: forRentCount == null
+                                ? null
+                                : '$forRentCount ${l10n.map_properties_available}',
+                            properties: properties,
+                            icon: Icons.key_outlined,
+                            onViewAll: () =>
+                                _openCategory(AppConstants.dealRent),
+                          ),
+                          loading: () => PropertyCategorySection.loading(
+                            title: l10n.dash_for_rent_title,
+                            subtitle: l10n.dash_for_rent_subtitle,
+                            loadingMessage: l10n.dash_loading_for_rent,
+                            icon: Icons.key_outlined,
+                            onViewAll: () =>
+                                _openCategory(AppConstants.dealRent),
+                          ),
+                          error: (error, _) => PropertyCategorySection.error(
+                            title: l10n.dash_for_rent_title,
+                            subtitle: l10n.dash_for_rent_subtitle,
+                            message: error.toString(),
+                            icon: Icons.key_outlined,
+                            onViewAll: () =>
+                                _openCategory(AppConstants.dealRent),
+                            onRetry: () =>
+                                ref.refresh(propertiesForRentProvider),
+                          ),
                         ),
-                        loading: () => PropertyCategorySection.loading(
-                          title: l10n.dash_for_rent_title,
-                          subtitle: l10n.dash_for_rent_subtitle,
-                          loadingMessage: l10n.dash_loading_for_rent,
-                          icon: Icons.key_outlined,
-                          onViewAll: () => _openCategory(AppConstants.dealRent),
-                        ),
-                        error: (error, _) => PropertyCategorySection.error(
-                          title: l10n.dash_for_rent_title,
-                          subtitle: l10n.dash_for_rent_subtitle,
-                          message: error.toString(),
-                          icon: Icons.key_outlined,
-                          onViewAll: () => _openCategory(AppConstants.dealRent),
-                          onRetry: () => ref.refresh(propertiesForRentProvider),
-                        ),
-                      ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      const HomePublisherCta(),
-                    ],
+                        const HomeTrustSection(),
+
+                        const SizedBox(height: 24),
+
+                        const HomePublisherCta(),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            const AppFooter(),
-          ],
+              const AppFooter(),
+            ],
+          ),
         ),
       ),
     );

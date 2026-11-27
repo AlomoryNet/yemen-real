@@ -208,6 +208,37 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 
 -- ==============================================================================
+-- Schema upgrades for the current app lifecycle (idempotent)
+-- ==============================================================================
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+
+ALTER TABLE public.properties
+ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS images_updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Drop any existing status CHECK so older databases accept the full lifecycle.
+DO $$
+DECLARE
+    constraint_row RECORD;
+BEGIN
+    FOR constraint_row IN
+        SELECT conname
+        FROM pg_constraint
+        WHERE conrelid = 'public.properties'::regclass
+          AND contype = 'c'
+          AND pg_get_constraintdef(oid) ILIKE '%status%'
+    LOOP
+        EXECUTE format('ALTER TABLE public.properties DROP CONSTRAINT %I', constraint_row.conname);
+    END LOOP;
+END $$;
+
+ALTER TABLE public.properties
+ADD CONSTRAINT chk_properties_status
+CHECK (status IN ('draft', 'pending', 'published', 'hidden', 'archived', 'rejected'));
+
+-- ==============================================================================
 -- Indexes for Performance
 -- ==============================================================================
 CREATE INDEX IF NOT EXISTS idx_properties_status ON public.properties(status);
@@ -264,18 +295,49 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+-- Regular users cannot publish directly; their submissions enter review.
+CREATE OR REPLACE FUNCTION public.enforce_property_publishing_rules()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF public.is_admin(auth.uid()) OR auth.uid() IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    IF TG_OP = 'INSERT' AND NEW.status = 'published' THEN
+        NEW.status := 'pending';
+    ELSIF TG_OP = 'UPDATE' AND NEW.status = 'published'
+          AND OLD.status IS DISTINCT FROM 'published' THEN
+        NEW.status := 'pending';
+    END IF;
+
+    IF TG_OP = 'UPDATE' THEN
+        NEW.reviewed_by := OLD.reviewed_by;
+        NEW.reviewed_at := OLD.reviewed_at;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS trg_enforce_property_publishing_rules ON public.properties;
+CREATE TRIGGER trg_enforce_property_publishing_rules
+BEFORE INSERT OR UPDATE ON public.properties
+FOR EACH ROW EXECUTE FUNCTION public.enforce_property_publishing_rules();
+
 -- Automatic User Profile Creation on Signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, full_name, phone, role)
+    INSERT INTO public.profiles (id, full_name, email, phone, role)
     VALUES (
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'full_name', 'مستخدم جديد'),
+        NEW.email,
         NEW.raw_user_meta_data->>'phone',
         'user'
     )
-    ON CONFLICT (id) DO NOTHING;
+    ON CONFLICT (id) DO UPDATE SET
+        email = COALESCE(public.profiles.email, EXCLUDED.email);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
@@ -299,6 +361,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+-- View counter RPC used by PropertyRepository.getPropertyById().
+CREATE OR REPLACE FUNCTION public.increment_property_views(prop_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE public.properties
+    SET views_count = COALESCE(views_count, 0) + 1
+    WHERE id = prop_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE ALL ON FUNCTION public.increment_property_views(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.increment_property_views(UUID) TO anon, authenticated;
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -317,13 +392,22 @@ ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+-- Explicit role grants. RLS still decides which rows each role can see.
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated, service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+GRANT INSERT ON public.reports TO anon;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+
 -- ------------------------------------------------------------------------------
 -- Profiles Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
 CREATE POLICY "Public profiles are viewable by everyone"
 ON public.profiles FOR SELECT
 USING (true);
 
+DROP POLICY IF EXISTS "Users can update own profile except role" ON public.profiles;
 CREATE POLICY "Users can update own profile except role"
 ON public.profiles FOR UPDATE
 TO authenticated
@@ -336,6 +420,7 @@ WITH CHECK (
     )
 );
 
+DROP POLICY IF EXISTS "Admins can update any profile" ON public.profiles;
 CREATE POLICY "Admins can update any profile"
 ON public.profiles FOR UPDATE
 TO authenticated
@@ -344,19 +429,23 @@ USING (public.is_admin(auth.uid()));
 -- ------------------------------------------------------------------------------
 -- Property Types & Locations Policies (Public read, admin write)
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Property types viewable by everyone" ON public.property_types;
 CREATE POLICY "Property types viewable by everyone"
 ON public.property_types FOR SELECT
 USING (is_active = TRUE OR public.is_admin(auth.uid()));
 
+DROP POLICY IF EXISTS "Admins manage property types" ON public.property_types;
 CREATE POLICY "Admins manage property types"
 ON public.property_types FOR ALL
 TO authenticated
 USING (public.is_admin(auth.uid()));
 
+DROP POLICY IF EXISTS "Locations viewable by everyone" ON public.locations;
 CREATE POLICY "Locations viewable by everyone"
 ON public.locations FOR SELECT
 USING (is_active = TRUE OR public.is_admin(auth.uid()));
 
+DROP POLICY IF EXISTS "Admins manage locations" ON public.locations;
 CREATE POLICY "Admins manage locations"
 ON public.locations FOR ALL
 TO authenticated
@@ -365,6 +454,7 @@ USING (public.is_admin(auth.uid()));
 -- ------------------------------------------------------------------------------
 -- Properties Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Public can view published properties" ON public.properties;
 CREATE POLICY "Public can view published properties"
 ON public.properties FOR SELECT
 USING (
@@ -373,11 +463,13 @@ USING (
     OR public.is_admin(auth.uid())
 );
 
+DROP POLICY IF EXISTS "Authenticated users can insert own properties" ON public.properties;
 CREATE POLICY "Authenticated users can insert own properties"
 ON public.properties FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = owner_id);
 
+DROP POLICY IF EXISTS "Owners and admins can update properties" ON public.properties;
 CREATE POLICY "Owners and admins can update properties"
 ON public.properties FOR UPDATE
 TO authenticated
@@ -390,6 +482,7 @@ WITH CHECK (
     OR public.is_admin(auth.uid())
 );
 
+DROP POLICY IF EXISTS "Owners and admins can delete properties" ON public.properties;
 CREATE POLICY "Owners and admins can delete properties"
 ON public.properties FOR DELETE
 TO authenticated
@@ -401,10 +494,12 @@ USING (
 -- ------------------------------------------------------------------------------
 -- Property Images Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Property images viewable by everyone" ON public.property_images;
 CREATE POLICY "Property images viewable by everyone"
 ON public.property_images FOR SELECT
 USING (true);
 
+DROP POLICY IF EXISTS "Owners and admins can insert property images" ON public.property_images;
 CREATE POLICY "Owners and admins can insert property images"
 ON public.property_images FOR INSERT
 TO authenticated
@@ -415,6 +510,7 @@ WITH CHECK (
     )
 );
 
+DROP POLICY IF EXISTS "Owners and admins can update property images" ON public.property_images;
 CREATE POLICY "Owners and admins can update property images"
 ON public.property_images FOR UPDATE
 TO authenticated
@@ -425,6 +521,7 @@ USING (
     )
 );
 
+DROP POLICY IF EXISTS "Owners and admins can delete property images" ON public.property_images;
 CREATE POLICY "Owners and admins can delete property images"
 ON public.property_images FOR DELETE
 TO authenticated
@@ -438,16 +535,19 @@ USING (
 -- ------------------------------------------------------------------------------
 -- Favorites Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Users can view own favorites" ON public.favorites;
 CREATE POLICY "Users can view own favorites"
 ON public.favorites FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can add own favorites" ON public.favorites;
 CREATE POLICY "Users can add own favorites"
 ON public.favorites FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can remove own favorites" ON public.favorites;
 CREATE POLICY "Users can remove own favorites"
 ON public.favorites FOR DELETE
 TO authenticated
@@ -456,6 +556,7 @@ USING (auth.uid() = user_id);
 -- ------------------------------------------------------------------------------
 -- Rental Requests Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Users can view own rental requests" ON public.rental_requests;
 CREATE POLICY "Users can view own rental requests"
 ON public.rental_requests FOR SELECT
 TO authenticated
@@ -468,11 +569,13 @@ USING (
     OR public.is_admin(auth.uid())
 );
 
+DROP POLICY IF EXISTS "Authenticated users can submit rental requests" ON public.rental_requests;
 CREATE POLICY "Authenticated users can submit rental requests"
 ON public.rental_requests FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Owners and admins can update rental request status" ON public.rental_requests;
 CREATE POLICY "Owners and admins can update rental request status"
 ON public.rental_requests FOR UPDATE
 TO authenticated
@@ -487,6 +590,7 @@ USING (
 -- ------------------------------------------------------------------------------
 -- Commissions Policies (Admin ONLY)
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Admins can manage commissions" ON public.commissions;
 CREATE POLICY "Admins can manage commissions"
 ON public.commissions FOR ALL
 TO authenticated
@@ -495,10 +599,12 @@ USING (public.is_admin(auth.uid()));
 -- ------------------------------------------------------------------------------
 -- Reports Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Anyone authenticated or guest can submit reports" ON public.reports;
 CREATE POLICY "Anyone authenticated or guest can submit reports"
 ON public.reports FOR INSERT
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Admins can view and manage reports" ON public.reports;
 CREATE POLICY "Admins can view and manage reports"
 ON public.reports FOR ALL
 TO authenticated
@@ -507,10 +613,12 @@ USING (public.is_admin(auth.uid()));
 -- ------------------------------------------------------------------------------
 -- Platform Settings Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Platform settings viewable by everyone" ON public.platform_settings;
 CREATE POLICY "Platform settings viewable by everyone"
 ON public.platform_settings FOR SELECT
 USING (true);
 
+DROP POLICY IF EXISTS "Admins can manage platform settings" ON public.platform_settings;
 CREATE POLICY "Admins can manage platform settings"
 ON public.platform_settings FOR ALL
 TO authenticated
@@ -519,6 +627,7 @@ USING (public.is_admin(auth.uid()));
 -- ------------------------------------------------------------------------------
 -- Audit Logs Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Admins can view audit logs" ON public.audit_logs;
 CREATE POLICY "Admins can view audit logs"
 ON public.audit_logs FOR SELECT
 TO authenticated
@@ -527,11 +636,13 @@ USING (public.is_admin(auth.uid()));
 -- ------------------------------------------------------------------------------
 -- Notifications Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
 CREATE POLICY "Users can view own notifications"
 ON public.notifications FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
 CREATE POLICY "Users can update own notifications"
 ON public.notifications FOR UPDATE
 TO authenticated
@@ -562,11 +673,13 @@ SET public = true, file_size_limit = 5242880;
 -- 2. Storage Policies
 
 -- Public Read access
+DROP POLICY IF EXISTS "Public can view property images" ON storage.objects;
 CREATE POLICY "Public can view property images"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'property-images');
 
 -- Authenticated Users Upload access
+DROP POLICY IF EXISTS "Authenticated users can upload property images" ON storage.objects;
 CREATE POLICY "Authenticated users can upload property images"
 ON storage.objects FOR INSERT
 TO authenticated
@@ -576,6 +689,7 @@ WITH CHECK (
 );
 
 -- Owners and Admins Update access
+DROP POLICY IF EXISTS "Owners and admins can update property images" ON storage.objects;
 CREATE POLICY "Owners and admins can update property images"
 ON storage.objects FOR UPDATE
 TO authenticated
@@ -588,6 +702,7 @@ USING (
 );
 
 -- Owners and Admins Delete access
+DROP POLICY IF EXISTS "Owners and admins can delete property images" ON storage.objects;
 CREATE POLICY "Owners and admins can delete property images"
 ON storage.objects FOR DELETE
 TO authenticated
@@ -641,6 +756,331 @@ VALUES
     ('20000000-0000-0000-0000-000000000007', 'شملان ومذبح', 'Shamlan & Mathbah', '10000000-0000-0000-0000-000000000001', 15.3950, 44.1560, 7, true),
     ('20000000-0000-0000-0000-000000000008', 'دار سلم ودار الحيد', 'Dar Silm', '10000000-0000-0000-0000-000000000001', 15.2670, 44.2230, 8, true)
 ON CONFLICT (id) DO NOTHING;
+
+-- Remaining governorates. Coordinates are practical centroids used by the
+-- app when a listing has no exact pin; district rows below are approximate
+-- district centres and can be refined locally without changing their IDs.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('10000000-0000-0000-0000-000000000004', 'محافظة صنعاء', 'Sanaa Governorate', NULL, 15.2200, 44.3500, 4, true),
+    ('10000000-0000-0000-0000-000000000005', 'حضرموت', 'Hadramaut Governorate', NULL, 14.5425, 49.1242, 5, true),
+    ('10000000-0000-0000-0000-000000000006', 'إب', 'Ibb Governorate', NULL, 13.9667, 44.1833, 6, true),
+    ('10000000-0000-0000-0000-000000000007', 'الحديدة', 'Al Hudaydah Governorate', NULL, 14.7978, 42.9545, 7, true),
+    ('10000000-0000-0000-0000-000000000008', 'مأرب', 'Marib Governorate', NULL, 15.4624, 45.3258, 8, true),
+    ('10000000-0000-0000-0000-000000000009', 'ذمار', 'Dhamar Governorate', NULL, 14.5427, 44.4051, 9, true),
+    ('10000000-0000-0000-0000-000000000010', 'شبوة', 'Shabwah Governorate', NULL, 14.5377, 46.8319, 10, true),
+    ('10000000-0000-0000-0000-000000000011', 'لحج', 'Lahij Governorate', NULL, 13.0583, 44.8828, 11, true),
+    ('10000000-0000-0000-0000-000000000012', 'أبين', 'Abyan Governorate', NULL, 13.1287, 45.3805, 12, true),
+    ('10000000-0000-0000-0000-000000000013', 'صعدة', 'Saada Governorate', NULL, 16.9402, 43.7639, 13, true),
+    ('10000000-0000-0000-0000-000000000014', 'المهرة', 'Al Mahrah Governorate', NULL, 16.2079, 52.1760, 14, true),
+    ('10000000-0000-0000-0000-000000000015', 'عمران', 'Amran Governorate', NULL, 15.6594, 43.9439, 15, true),
+    ('10000000-0000-0000-0000-000000000016', 'حجة', 'Hajjah Governorate', NULL, 15.6942, 43.6021, 16, true),
+    ('10000000-0000-0000-0000-000000000017', 'البيضاء', 'Al Bayda Governorate', NULL, 13.9852, 45.5727, 17, true),
+    ('10000000-0000-0000-0000-000000000018', 'الضالع', 'Ad Dali Governorate', NULL, 13.6957, 44.7314, 18, true),
+    ('10000000-0000-0000-0000-000000000019', 'ريمة', 'Raymah Governorate', NULL, 14.6289, 43.7128, 19, true),
+    ('10000000-0000-0000-0000-000000000020', 'المحويت', 'Al Mahwit Governorate', NULL, 15.4701, 43.5449, 20, true),
+    ('10000000-0000-0000-0000-000000000021', 'سقطرى', 'Socotra Governorate', NULL, 12.6500, 54.0167, 21, true),
+    ('10000000-0000-0000-0000-000000000022', 'الجوف', 'Al Jawf Governorate', NULL, 16.1404, 44.9609, 22, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar,
+    name_en = EXCLUDED.name_en,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- More Sanaa Capital districts (matching the app's district picker).
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000009', 'عصر', 'Asr', '10000000-0000-0000-0000-000000000001', 15.3350, 44.2000, 9, true),
+    ('20000000-0000-0000-0000-000000000010', 'الحصبة', 'Al Hasabah', '10000000-0000-0000-0000-000000000001', 15.3300, 44.1900, 10, true),
+    ('20000000-0000-0000-0000-000000000011', 'مذبح', 'Mathbah', '10000000-0000-0000-0000-000000000001', 15.3800, 44.1700, 11, true),
+    ('20000000-0000-0000-0000-000000000012', 'الروضة', 'Al Rawdah', '10000000-0000-0000-0000-000000000001', 15.3500, 44.2200, 12, true),
+    ('20000000-0000-0000-0000-000000000013', 'نقم', 'Nuqum', '10000000-0000-0000-0000-000000000001', 15.3100, 44.2300, 13, true),
+    ('20000000-0000-0000-0000-000000000014', 'شميلة', 'Shamaila', '10000000-0000-0000-0000-000000000001', 15.3000, 44.2100, 14, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Sanaa Governorate districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000015', 'بني مطر', 'Bani Matar', '10000000-0000-0000-0000-000000000004', 15.2500, 44.2300, 1, true),
+    ('20000000-0000-0000-0000-000000000016', 'سنحان', 'Sanhan', '10000000-0000-0000-0000-000000000004', 15.1700, 44.3000, 2, true),
+    ('20000000-0000-0000-0000-000000000017', 'همدان', 'Hamdan', '10000000-0000-0000-0000-000000000004', 15.3000, 44.4000, 3, true),
+    ('20000000-0000-0000-0000-000000000018', 'بني حشيش', 'Bani Hashish', '10000000-0000-0000-0000-000000000004', 15.2500, 44.5000, 4, true),
+    ('20000000-0000-0000-0000-000000000019', 'بلاد الروس', 'Bilad Ar Rus', '10000000-0000-0000-0000-000000000004', 15.3000, 44.5500, 5, true),
+    ('20000000-0000-0000-0000-000000000020', 'أرحب', 'Arhab', '10000000-0000-0000-0000-000000000004', 15.4500, 44.4000, 6, true),
+    ('20000000-0000-0000-0000-000000000021', 'خولان', 'Khawlan', '10000000-0000-0000-0000-000000000004', 15.3500, 44.7000, 7, true),
+    ('20000000-0000-0000-0000-000000000022', 'الحيمة الداخلية', 'Al Haymah Al Dakhiliyah', '10000000-0000-0000-0000-000000000004', 15.1500, 43.9500, 8, true),
+    ('20000000-0000-0000-0000-000000000023', 'الحيمة الخارجية', 'Al Haymah Al Kharijiyah', '10000000-0000-0000-0000-000000000004', 15.1000, 43.8500, 9, true),
+    ('20000000-0000-0000-0000-000000000024', 'مناخة', 'Manakhah', '10000000-0000-0000-0000-000000000004', 15.1000, 43.9800, 10, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Aden districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000025', 'المعلا', 'Al Mafla', '10000000-0000-0000-0000-000000000002', 12.7850, 45.0350, 1, true),
+    ('20000000-0000-0000-0000-000000000026', 'كريتر', 'Crater', '10000000-0000-0000-0000-000000000002', 12.7800, 45.0300, 2, true),
+    ('20000000-0000-0000-0000-000000000027', 'خور مكسر', 'Khormaksar', '10000000-0000-0000-0000-000000000002', 12.7500, 45.0300, 3, true),
+    ('20000000-0000-0000-0000-000000000028', 'المنصورة', 'Al Mansoura', '10000000-0000-0000-0000-000000000002', 12.7900, 45.0000, 4, true),
+    ('20000000-0000-0000-0000-000000000029', 'دار سعد', 'Dar Sad', '10000000-0000-0000-0000-000000000002', 12.8100, 44.9900, 5, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Taiz districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000030', 'القاهرة', 'Al Qahirah', '10000000-0000-0000-0000-000000000003', 13.5800, 44.0200, 1, true),
+    ('20000000-0000-0000-0000-000000000031', 'المظفر', 'Al Muzaffar', '10000000-0000-0000-0000-000000000003', 13.5650, 44.0100, 2, true),
+    ('20000000-0000-0000-0000-000000000032', 'السلام', 'Al Salam', '10000000-0000-0000-0000-000000000003', 13.5900, 44.0000, 3, true),
+    ('20000000-0000-0000-0000-000000000033', 'حيفان', 'Hayfan', '10000000-0000-0000-0000-000000000003', 13.4500, 44.0500, 4, true),
+    ('20000000-0000-0000-0000-000000000034', 'المخا', 'Al Mokha', '10000000-0000-0000-0000-000000000003', 13.3200, 43.2500, 5, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Hadramaut districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000035', 'المكلا', 'Al Mukalla', '10000000-0000-0000-0000-000000000005', 14.5400, 49.1300, 1, true),
+    ('20000000-0000-0000-0000-000000000036', 'سيئون', 'Seiyun', '10000000-0000-0000-0000-000000000005', 16.0500, 48.9900, 2, true),
+    ('20000000-0000-0000-0000-000000000037', 'تريم', 'Tarim', '10000000-0000-0000-0000-000000000005', 16.0560, 48.9960, 3, true),
+    ('20000000-0000-0000-0000-000000000038', 'شبام', 'Shibam', '10000000-0000-0000-0000-000000000005', 16.0200, 48.9900, 4, true),
+    ('20000000-0000-0000-0000-000000000039', 'سيحوت', 'Sayhut', '10000000-0000-0000-0000-000000000005', 15.9000, 52.2000, 5, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Ibb districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000040', 'إب', 'Ibb', '10000000-0000-0000-0000-000000000006', 14.0050, 44.1650, 1, true),
+    ('20000000-0000-0000-0000-000000000041', 'يريم', 'Yarim', '10000000-0000-0000-0000-000000000006', 13.9800, 44.8300, 2, true),
+    ('20000000-0000-0000-0000-000000000042', 'دمت', 'Dhamt', '10000000-0000-0000-0000-000000000006', 13.9000, 44.4000, 3, true),
+    ('20000000-0000-0000-0000-000000000043', 'السبرة', 'As Sabrah', '10000000-0000-0000-0000-000000000006', 13.9500, 44.1000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Al Hudaydah districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000044', 'الحديدة', 'Al Hudaydah', '10000000-0000-0000-0000-000000000007', 14.7978, 42.9545, 1, true),
+    ('20000000-0000-0000-0000-000000000045', 'المنصورية', 'Al Mansuriyah', '10000000-0000-0000-0000-000000000007', 14.7000, 42.9500, 2, true),
+    ('20000000-0000-0000-0000-000000000046', 'الزيدية', 'Al Zaydiyah', '10000000-0000-0000-0000-000000000007', 15.1500, 43.1000, 3, true),
+    ('20000000-0000-0000-0000-000000000047', 'باجل', 'Bajil', '10000000-0000-0000-0000-000000000007', 15.0000, 43.0000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Marib districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000048', 'مأرب', 'Marib', '10000000-0000-0000-0000-000000000008', 15.4624, 45.3258, 1, true),
+    ('20000000-0000-0000-0000-000000000049', 'صرواح', 'Sawa', '10000000-0000-0000-0000-000000000008', 15.5500, 45.1500, 2, true),
+    ('20000000-0000-0000-0000-000000000050', 'العبدية', 'Al Abdiyah', '10000000-0000-0000-0000-000000000008', 14.9500, 45.6000, 3, true),
+    ('20000000-0000-0000-0000-000000000051', 'حريب', 'Harib', '10000000-0000-0000-0000-000000000008', 15.2000, 46.0000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Dhamar districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000052', 'ذمار', 'Dhamar', '10000000-0000-0000-0000-000000000009', 14.5427, 44.4051, 1, true),
+    ('20000000-0000-0000-0000-000000000053', 'ردا', 'Rewa', '10000000-0000-0000-0000-000000000009', 14.6000, 44.7000, 2, true),
+    ('20000000-0000-0000-0000-000000000054', 'وصاب', 'Wasab', '10000000-0000-0000-0000-000000000009', 14.4000, 43.9000, 3, true),
+    ('20000000-0000-0000-0000-000000000055', 'عنس', 'Anas', '10000000-0000-0000-0000-000000000009', 14.5000, 44.5000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Shabwah districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000056', 'عتق', 'Ataq', '10000000-0000-0000-0000-000000000010', 14.5377, 46.8319, 1, true),
+    ('20000000-0000-0000-0000-000000000057', 'بيحان', 'Bayhan', '10000000-0000-0000-0000-000000000010', 14.7500, 45.9000, 2, true),
+    ('20000000-0000-0000-0000-000000000058', 'نجمان', 'Najman', '10000000-0000-0000-0000-000000000010', 14.3000, 46.2000, 3, true),
+    ('20000000-0000-0000-0000-000000000059', 'المرفأ', 'Al Marfa', '10000000-0000-0000-0000-000000000010', 13.9500, 47.0000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Lahij districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000060', 'لحج', 'Lahij', '10000000-0000-0000-0000-000000000011', 13.0583, 44.8828, 1, true),
+    ('20000000-0000-0000-0000-000000000061', 'الحوطة', 'Al Huta', '10000000-0000-0000-0000-000000000011', 13.0500, 44.9000, 2, true),
+    ('20000000-0000-0000-0000-000000000062', 'تبن', 'Tuban', '10000000-0000-0000-0000-000000000011', 12.9500, 45.0000, 3, true),
+    ('20000000-0000-0000-0000-000000000063', 'ردفان', 'Radfan', '10000000-0000-0000-0000-000000000011', 13.3000, 45.0000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Abyan districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000064', 'زنجبار', 'Zinjibar', '10000000-0000-0000-0000-000000000012', 13.1287, 45.3805, 1, true),
+    ('20000000-0000-0000-0000-000000000065', 'جعار', 'Jaar', '10000000-0000-0000-0000-000000000012', 13.1330, 45.3600, 2, true),
+    ('20000000-0000-0000-0000-000000000066', 'شقرة', 'Shuqra', '10000000-0000-0000-0000-000000000012', 13.4000, 45.6500, 3, true),
+    ('20000000-0000-0000-0000-000000000067', 'لودر', 'Lawdar', '10000000-0000-0000-0000-000000000012', 13.9000, 45.8500, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Saada districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000068', 'صعدة', 'Saada', '10000000-0000-0000-0000-000000000013', 16.9402, 43.7639, 1, true),
+    ('20000000-0000-0000-0000-000000000069', 'رزح', 'Razih', '10000000-0000-0000-0000-000000000013', 16.9000, 43.3000, 2, true),
+    ('20000000-0000-0000-0000-000000000070', 'ساغر', 'Saghir', '10000000-0000-0000-0000-000000000013', 17.1500, 43.9000, 3, true),
+    ('20000000-0000-0000-0000-000000000071', 'باقم', 'Baqim', '10000000-0000-0000-0000-000000000013', 17.2500, 43.4000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Al Mahrah districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000072', 'الغيظة', 'Al Ghaydah', '10000000-0000-0000-0000-000000000014', 16.2079, 52.1760, 1, true),
+    ('20000000-0000-0000-0000-000000000073', 'حوف', 'Hawf', '10000000-0000-0000-0000-000000000014', 16.0000, 52.8000, 2, true),
+    ('20000000-0000-0000-0000-000000000074', 'مسارة', 'Masarah', '10000000-0000-0000-0000-000000000014', 16.5000, 51.5000, 3, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Amran districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000075', 'عمران', 'Amran', '10000000-0000-0000-0000-000000000015', 15.6594, 43.9439, 1, true),
+    ('20000000-0000-0000-0000-000000000076', 'حوث', 'Hut', '10000000-0000-0000-0000-000000000015', 15.7000, 43.6000, 2, true),
+    ('20000000-0000-0000-0000-000000000077', 'السودان', 'As Sudan', '10000000-0000-0000-0000-000000000015', 15.5000, 44.0000, 3, true),
+    ('20000000-0000-0000-0000-000000000078', 'بني العوام', 'Bani Al Awam', '10000000-0000-0000-0000-000000000015', 15.5500, 43.8500, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Hajjah districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000079', 'حجة', 'Hajjah', '10000000-0000-0000-0000-000000000016', 15.6942, 43.6021, 1, true),
+    ('20000000-0000-0000-0000-000000000080', 'مستبا', 'Mustaba', '10000000-0000-0000-0000-000000000016', 16.1000, 43.4000, 2, true),
+    ('20000000-0000-0000-0000-000000000081', 'أحور', 'Ahor', '10000000-0000-0000-0000-000000000016', 15.9500, 43.2000, 3, true),
+    ('20000000-0000-0000-0000-000000000082', 'كسمه', 'Kusmah', '10000000-0000-0000-0000-000000000016', 15.8000, 43.3000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Al Bayda districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000083', 'البيضاء', 'Al Bayda', '10000000-0000-0000-0000-000000000017', 13.9852, 45.5727, 1, true),
+    ('20000000-0000-0000-0000-000000000084', 'رداع', 'Radaa', '10000000-0000-0000-0000-000000000017', 14.0500, 45.5000, 2, true),
+    ('20000000-0000-0000-0000-000000000085', 'القريشية', 'Al Quraishiyah', '10000000-0000-0000-0000-000000000017', 13.9000, 45.4000, 3, true),
+    ('20000000-0000-0000-0000-000000000086', 'السوما', 'As Sumah', '10000000-0000-0000-0000-000000000017', 14.1000, 45.7000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Ad Dali districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000087', 'الضالع', 'Ad Dali', '10000000-0000-0000-0000-000000000018', 13.6957, 44.7314, 1, true),
+    ('20000000-0000-0000-0000-000000000088', 'قعطبة', 'Qaatabah', '10000000-0000-0000-0000-000000000018', 13.6000, 44.3000, 2, true),
+    ('20000000-0000-0000-0000-000000000089', 'الشارع', 'Ash Shariah', '10000000-0000-0000-0000-000000000018', 13.8000, 44.6000, 3, true),
+    ('20000000-0000-0000-0000-000000000090', 'حتوم', 'Hutum', '10000000-0000-0000-0000-000000000018', 13.6500, 44.5000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Raymah districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000091', 'الجبين', 'Al Jabin', '10000000-0000-0000-0000-000000000019', 14.6289, 43.7128, 1, true),
+    ('20000000-0000-0000-0000-000000000092', 'السلف', 'As Salaf', '10000000-0000-0000-0000-000000000019', 14.7000, 43.6000, 2, true),
+    ('20000000-0000-0000-0000-000000000093', 'كعام', 'Kaam', '10000000-0000-0000-0000-000000000019', 14.5500, 43.8000, 3, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Al Mahwit districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000094', 'المحويت', 'Al Mahwit', '10000000-0000-0000-0000-000000000020', 15.4701, 43.5449, 1, true),
+    ('20000000-0000-0000-0000-000000000095', 'الطويلة', 'At Tawilah', '10000000-0000-0000-0000-000000000020', 15.5000, 43.4000, 2, true),
+    ('20000000-0000-0000-0000-000000000096', 'حفاش', 'Hafash', '10000000-0000-0000-0000-000000000020', 15.4000, 43.5000, 3, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Socotra districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000097', 'حديبو', 'Hadibo', '10000000-0000-0000-0000-000000000021', 12.6500, 54.0167, 1, true),
+    ('20000000-0000-0000-0000-000000000098', 'قلنسية', 'Qalansiyah', '10000000-0000-0000-0000-000000000021', 12.7000, 53.5000, 2, true),
+    ('20000000-0000-0000-0000-000000000099', 'موري', 'Mori', '10000000-0000-0000-0000-000000000021', 12.5500, 53.9000, 3, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
+
+-- Al Jawf districts.
+INSERT INTO public.locations (id, name_ar, name_en, parent_id, latitude, longitude, sort_order, is_active)
+VALUES
+    ('20000000-0000-0000-0000-000000000100', 'الجوف', 'Al Jawf', '10000000-0000-0000-0000-000000000022', 16.1404, 44.9609, 1, true),
+    ('20000000-0000-0000-0000-000000000101', 'الحزم', 'Al Hazm', '10000000-0000-0000-0000-000000000022', 16.1500, 44.8000, 2, true),
+    ('20000000-0000-0000-0000-000000000102', 'برط', 'Bart', '10000000-0000-0000-0000-000000000022', 16.4000, 44.7000, 3, true),
+    ('20000000-0000-0000-0000-000000000103', 'الغاط', 'Al Ghat', '10000000-0000-0000-0000-000000000022', 15.9000, 44.4000, 4, true)
+ON CONFLICT (id) DO UPDATE SET
+    name_ar = EXCLUDED.name_ar, name_en = EXCLUDED.name_en,
+    parent_id = EXCLUDED.parent_id, latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude, sort_order = EXCLUDED.sort_order,
+    is_active = EXCLUDED.is_active;
 
 -- 3. Platform Settings
 INSERT INTO public.platform_settings (key, value, description)

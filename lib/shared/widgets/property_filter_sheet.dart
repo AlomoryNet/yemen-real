@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 
 import '../../core/constants/app_constants.dart';
-import '../../core/l10n/app_locale.dart';
 import '../../core/l10n/context_l10n.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/property_filter_selection.dart';
@@ -515,9 +514,11 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
           .map(
             (type) => (
               id: type.id,
-              label: AppLocale.isArabic
-                  ? type.nameAr
-                  : (type.nameEn.isNotEmpty ? type.nameEn : type.nameAr),
+              label: AppConstants.localizedName(
+                arabic: type.nameAr,
+                english: type.nameEn,
+                fallback: l10n.property_type,
+              ),
               icon: _typeIcon(type.id),
             ),
           )

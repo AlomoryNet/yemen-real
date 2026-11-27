@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/currency_rates.dart';
+
 /// User preferences persisted locally with SharedPreferences — the standard
 /// approach for settings that are per-device and don't need a backend.
 class SettingsState {
@@ -15,6 +17,8 @@ class SettingsState {
   final double? latitude;
   final double? longitude;
   final String currencyCode; // 'YER' | 'SAR' | 'USD'
+  final double usdToYerRate; // display-only reference rate, user-editable
+  final double sarToYerRate;
   final String distanceUnit; // 'km' | 'miles'
   final String textSize; // 'small' | 'medium' | 'large'
   final String defaultMapView; // 'list' | 'map'
@@ -30,6 +34,8 @@ class SettingsState {
     this.latitude,
     this.longitude,
     this.currencyCode = 'YER',
+    this.usdToYerRate = CurrencyRates.defaultUsdToYer,
+    this.sarToYerRate = CurrencyRates.defaultSarToYer,
     this.distanceUnit = 'km',
     this.textSize = 'medium',
     this.defaultMapView = 'map',
@@ -46,6 +52,8 @@ class SettingsState {
     double? latitude,
     double? longitude,
     String? currencyCode,
+    double? usdToYerRate,
+    double? sarToYerRate,
     String? distanceUnit,
     String? textSize,
     String? defaultMapView,
@@ -61,6 +69,8 @@ class SettingsState {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       currencyCode: currencyCode ?? this.currencyCode,
+      usdToYerRate: usdToYerRate ?? this.usdToYerRate,
+      sarToYerRate: sarToYerRate ?? this.sarToYerRate,
       distanceUnit: distanceUnit ?? this.distanceUnit,
       textSize: textSize ?? this.textSize,
       defaultMapView: defaultMapView ?? this.defaultMapView,
@@ -78,6 +88,12 @@ class SettingsState {
   double displayDistance(num kilometers) => distanceUnit == 'miles'
       ? kilometers / 1.609344
       : kilometers.toDouble();
+
+  /// Reference rates entered in Settings, never fetched from a network.
+  CurrencyRates get currencyRates => CurrencyRates(
+    usdToYer: usdToYerRate,
+    sarToYer: sarToYerRate,
+  );
 }
 
 class SettingsNotifier extends StateNotifier<SettingsState> {
@@ -98,6 +114,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   static const _kLatitude = 'settings_latitude';
   static const _kLongitude = 'settings_longitude';
   static const _kCurrency = 'settings_currency';
+  static const _kUsdRate = 'settings_usd_to_yer_rate';
+  static const _kSarRate = 'settings_sar_to_yer_rate';
   static const _kDistanceUnit = 'settings_distance_unit';
   static const _kTextSize = 'settings_text_size';
   static const _kDefaultMapView = 'settings_default_map_view';
@@ -120,6 +138,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
         latitude: prefs.getDouble(_kLatitude),
         longitude: prefs.getDouble(_kLongitude),
         currencyCode: prefs.getString(_kCurrency) ?? 'YER',
+        usdToYerRate: CurrencyRates.sanitize(
+          prefs.getDouble(_kUsdRate) ?? CurrencyRates.defaultUsdToYer,
+          CurrencyRates.defaultUsdToYer,
+        ),
+        sarToYerRate: CurrencyRates.sanitize(
+          prefs.getDouble(_kSarRate) ?? CurrencyRates.defaultSarToYer,
+          CurrencyRates.defaultSarToYer,
+        ),
         distanceUnit: prefs.getString(_kDistanceUnit) ?? 'km',
         textSize: prefs.getString(_kTextSize) ?? 'medium',
         defaultMapView: prefs.getString(_kDefaultMapView) ?? 'map',
@@ -187,6 +213,33 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await prefs.setString(_kCurrency, currency);
   }
 
+  /// Display-only reference rate: 1 USD = [rate] YER.
+  Future<void> setUsdToYerRate(double rate) async {
+    final safeRate = CurrencyRates.sanitize(
+      rate,
+      CurrencyRates.defaultUsdToYer,
+    );
+    state = state.copyWith(usdToYerRate: safeRate);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_kUsdRate, safeRate);
+  }
+
+  /// Display-only reference rate: 1 SAR = [rate] YER.
+  Future<void> setSarToYerRate(double rate) async {
+    final safeRate = CurrencyRates.sanitize(
+      rate,
+      CurrencyRates.defaultSarToYer,
+    );
+    state = state.copyWith(sarToYerRate: safeRate);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_kSarRate, safeRate);
+  }
+
+  Future<void> resetCurrencyRates() async {
+    await setUsdToYerRate(CurrencyRates.defaultUsdToYer);
+    await setSarToYerRate(CurrencyRates.defaultSarToYer);
+  }
+
   Future<void> setDistanceUnit(String unit) async {
     state = state.copyWith(distanceUnit: unit);
     final prefs = await SharedPreferences.getInstance();
@@ -242,6 +295,31 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await prefs.remove(_kLatitude);
     await prefs.remove(_kLongitude);
     await prefs.setBool(_kLocationPrompt, false);
+  }
+
+  /// Settings → reset everything back to the app defaults.
+  Future<void> resetAll() async {
+    state = const SettingsState();
+    final prefs = await SharedPreferences.getInstance();
+    for (final key in [
+      _kLocale,
+      _kTheme,
+      _kAddStyle,
+      _kCountVisibility,
+      _kNotifications,
+      _kRadius,
+      _kLocationPrompt,
+      _kLatitude,
+      _kLongitude,
+      _kCurrency,
+      _kUsdRate,
+      _kSarRate,
+      _kDistanceUnit,
+      _kTextSize,
+      _kDefaultMapView,
+    ]) {
+      await prefs.remove(key);
+    }
   }
 }
 

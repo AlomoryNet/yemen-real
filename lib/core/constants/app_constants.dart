@@ -8,7 +8,8 @@ class AppConstants {
   static const String appNameAr = 'بوابة اليمن العقارية';
   static const String appNameEn = 'Yemen Real Estate Portal';
   static const String appTaglineAr = 'منصتك الموثوقة للعقارات في اليمن';
-  static const String appVersion = '1.3.0';
+  // Keep in sync with `version:` in pubspec.yaml (2.4.1+19).
+  static const String appVersion = '2.4.1+19';
 
   // Developer & Copyright Branding
   static const String developerNameAr = 'شركة هيبه سوفت';
@@ -460,6 +461,50 @@ class AppConstants {
     'سقطرى': (12.6500, 54.0167),
     'الجوف': (16.1404, 44.9609),
   };
+
+  /// Picks a display name from backend fields that may have been stored in the
+  /// wrong language. Raw locale codes (`en`/`ar`) and empty strings are never
+  /// shown to the user.
+  static String localizedName({
+    required String arabic,
+    required String english,
+    required String fallback,
+  }) {
+    final ar = arabic.trim();
+    final en = english.trim();
+    final lowerAr = ar.toLowerCase();
+    final lowerEn = en.toLowerCase();
+    // A backend row may store a locale code in either column. Never surface
+    // `en`/`ar` as if it were a human-readable name.
+    bool usable(String value, String lower) =>
+        value.isNotEmpty && lower != 'en' && lower != 'ar';
+
+    if (AppLocale.isArabic) {
+      if (usable(ar, lowerAr)) return ar;
+      if (usable(en, lowerEn)) return en;
+      return fallback;
+    }
+    if (usable(en, lowerEn)) return en;
+    if (usable(ar, lowerAr)) return ar;
+    return fallback;
+  }
+
+  /// Closest governorate key for a raw pin coordinate. Uses a simple degree
+  /// distance — enough for a human-readable "near …" caption, not for routing.
+  static String? getNearestGovernorate(double latitude, double longitude) {
+    String? nearest;
+    var best = double.infinity;
+    for (final entry in governorateCoordinates.entries) {
+      final dLat = entry.value.$1 - latitude;
+      final dLng = entry.value.$2 - longitude;
+      final distance = dLat * dLat + dLng * dLng;
+      if (distance < best) {
+        best = distance;
+        nearest = entry.key;
+      }
+    }
+    return nearest;
+  }
 
   static (double, double) getCoordinatesForGovernorate(String? gov) {
     if (gov == null || gov.isEmpty) {

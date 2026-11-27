@@ -1,14 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_fonts.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/supabase_service.dart';
-import '../../../shared/widgets/app_logo.dart';
+import 'widgets/auth_ui.dart';
 
 enum CallbackStatus { verifying, success, expired, error }
 
@@ -64,15 +66,13 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
         (errorDesc != null && errorDesc.toLowerCase().contains('expired'))) {
       setState(() {
         _status = CallbackStatus.expired;
-        _errorMessage =
-            context.l10n.callback_expired_message;
+        _errorMessage = context.l10n.callback_expired_message;
       });
       return;
     } else if (errorCode != null || errorDesc != null) {
       setState(() {
         _status = CallbackStatus.error;
-        _errorMessage =
-            errorDesc ?? context.l10n.callback_link_error;
+        _errorMessage = errorDesc ?? context.l10n.callback_link_error;
       });
       return;
     }
@@ -165,46 +165,50 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
     final sent = await ref
         .read(authProvider.notifier)
         .resendConfirmationEmail(email);
+    if (!mounted) return;
     setState(() => _isResending = false);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            sent
-                ? context.l10n.callback_resend_success
-                : (ref.read(authProvider).errorMessage ??
-                      context.l10n.callback_resend_failed),
-            style: AppFonts.cairo(),
-          ),
-          backgroundColor: sent ? AppColors.success : AppColors.error,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          sent
+              ? context.l10n.callback_resend_success
+              : (ref.read(authProvider).errorMessage ??
+                  context.l10n.callback_resend_failed),
+          style: AppFonts.cairo(color: AppColors.textLight),
         ),
-      );
-    }
+        backgroundColor: sent ? AppColors.success : AppColors.error,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const AppLogo(size: 34),
+        title: Text(context.l10n.callback_title),
         centerTitle: true,
-        automaticallyImplyLeading: false,
       ),
-      body: Center(
+      body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: AppColors.divider),
-              ),
-              elevation: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: _buildContent(context),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsetsDirectional.fromSTEB(16, 20, 16, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Card(
+                color: colorScheme.surface,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: AppColors.divider),
+                ),
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(24, 28, 24, 24),
+                  child: _buildContent(context),
+                ),
               ),
             ),
           ),
@@ -216,280 +220,236 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
   Widget _buildContent(BuildContext context) {
     switch (_status) {
       case CallbackStatus.verifying:
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 20),
-            const SizedBox(
-              width: 50,
-              height: 50,
-              child: CircularProgressIndicator(strokeWidth: 3),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              context.l10n.callback_verifying,
-              style: AppFonts.cairo(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              context.l10n.callback_waiting,
-              style: AppFonts.cairo(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-          ],
-        );
-
+        return _buildVerifying(context);
       case CallbackStatus.success:
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: AppColors.successMuted,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.success,
-                size: 56,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              context.l10n.callback_success_title,
-              style: AppFonts.cairo(
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              context.l10n.callback_success_message,
-              style: AppFonts.cairo(
-                fontSize: 13.5,
-                color: AppColors.textSecondary,
-                height: 1.6,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (_verifiedEmail != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMuted,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.email_outlined,
-                      size: 18,
-                      color: AppColors.primaryInk,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _verifiedEmail!,
-                      style: AppFonts.cairo(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 28),
-            Builder(
-              builder: (context) {
-                final target = widget.queryParams?['redirectTo'];
-                final hasTarget =
-                    target != null && target.isNotEmpty && target != '/';
-
-                return Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.textLight,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () => context.go(hasTarget ? target : '/'),
-                        icon: Icon(
-                          hasTarget ? Icons.arrow_back : Icons.home_outlined,
-                        ),
-                        label: Text(
-                          hasTarget
-                              ? context.l10n.callback_continue_operation
-                              : context.l10n.callback_continue_home,
-                          style: AppFonts.cairo(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () => context.go(hasTarget ? '/' : '/login'),
-                        icon: Icon(
-                          hasTarget ? Icons.home_outlined : Icons.login,
-                        ),
-                        label: Text(
-                          hasTarget
-                              ? context.l10n.callback_go_home
-                              : context.l10n.callback_login_credentials,
-                          style: AppFonts.cairo(fontSize: 13),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
-        );
-
+        return _buildSuccess(context);
       case CallbackStatus.expired:
       case CallbackStatus.error:
-        final isExpired = _status == CallbackStatus.expired;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isExpired
-                    ? AppColors.warningMuted
-                    : AppColors.errorMuted,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isExpired ? Icons.schedule_outlined : Icons.error_outline,
-                color: isExpired ? AppColors.accentInk : AppColors.error,
-                size: 54,
-              ),
+        return _buildProblem(context);
+    }
+  }
+
+  Widget _statusBadge({
+    required IconData icon,
+    required Color fill,
+    required Color ink,
+  }) {
+    return ExcludeSemantics(
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
+        child: Icon(icon, color: ink, size: 40),
+      ),
+    );
+  }
+
+  Widget _buildVerifying(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 12),
+        Semantics(
+          label: context.l10n.callback_verifying,
+          child: SizedBox(
+            width: 52,
+            height: 52,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: AppColors.primaryInk,
             ),
-            const SizedBox(height: 20),
-            Text(
-              isExpired
-                  ? context.l10n.callback_expired_title
-                  : context.l10n.callback_cannot_confirm,
-              style: AppFonts.cairo(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _errorMessage ??
-                  (isExpired
-                      ? context.l10n.callback_expired_fallback
-                      : context.l10n.callback_error_fallback),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          context.l10n.callback_verifying,
+          style: AppFonts.cairo(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          context.l10n.callback_waiting,
+          style: AppFonts.cairo(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _buildSuccess(BuildContext context) {
+    final target = widget.queryParams?['redirectTo'];
+    final hasTarget = target != null && target.isNotEmpty && target != '/';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _statusBadge(
+          icon: Icons.check_circle_rounded,
+          fill: AppColors.successFill,
+          ink: AppColors.successInk,
+        ),
+        const SizedBox(height: 20),
+        Text(
+          context.l10n.callback_success_title,
+          style: AppFonts.cairo(
+            fontSize: 21,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          context.l10n.callback_success_message,
+          style: AppFonts.cairo(
+            fontSize: 13.5,
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        if (_verifiedEmail != null) ...[
+          const SizedBox(height: 18),
+          _emailChip(context, _verifiedEmail!),
+        ],
+        const SizedBox(height: 28),
+        AuthPrimaryButton(
+          label: hasTarget
+              ? context.l10n.callback_continue_operation
+              : context.l10n.callback_continue_home,
+          icon: hasTarget ? Icons.arrow_forward : Icons.home_outlined,
+          onPressed: () => context.go(hasTarget ? target : '/'),
+        ),
+        const SizedBox(height: 10),
+        AuthSecondaryButton(
+          label: hasTarget
+              ? context.l10n.callback_go_home
+              : context.l10n.sh_nav_my_properties,
+          icon: hasTarget ? Icons.home_outlined : Icons.apartment_outlined,
+          onPressed: () => context.go(hasTarget ? '/' : '/my-properties'),
+        ),
+      ],
+    );
+  }
+
+  Widget _emailChip(BuildContext context, String email) {
+    return Container(
+      padding: EdgeInsetsDirectional.fromSTEB(14, 10, 14, 10),
+      decoration: BoxDecoration(
+        color: AppColors.primaryFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryInk.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.email_outlined, size: 18, color: AppColors.primaryInk),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              email,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: AppFonts.cairo(
                 fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 22),
-            TextField(
-              controller: _resendEmailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: context.l10n.callback_resend_email_label,
-                labelStyle: AppFonts.cairo(fontSize: 12.5),
-                prefixIcon: const Icon(Icons.email_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryInk,
               ),
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textLight,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: _isResending ? null : _resendLink,
-                icon: _isResending
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.textLight,
-                        ),
-                      )
-                    : const Icon(Icons.send_rounded, size: 18),
-                label: Text(
-                  _isResending ? context.l10n.callback_sending : context.l10n.callback_send_new_link,
-                  style: AppFonts.cairo(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProblem(BuildContext context) {
+    final isExpired = _status == CallbackStatus.expired;
+    final fill = isExpired ? AppColors.warningFill : AppColors.errorFill;
+    final ink = isExpired ? AppColors.warningInk : AppColors.errorInk;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _statusBadge(
+          icon: isExpired ? Icons.schedule_outlined : Icons.error_outline,
+          fill: fill,
+          ink: ink,
+        ),
+        const SizedBox(height: 20),
+        Text(
+          isExpired
+              ? context.l10n.callback_expired_title
+              : context.l10n.callback_cannot_confirm,
+          style: AppFonts.cairo(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          _errorMessage ??
+              (isExpired
+                  ? context.l10n.callback_expired_fallback
+                  : context.l10n.callback_error_fallback),
+          style: AppFonts.cairo(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 22),
+        TextField(
+          controller: _resendEmailController,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _resendLink(),
+          decoration: InputDecoration(
+            labelText: context.l10n.callback_resend_email_label,
+            labelStyle: AppFonts.cairo(fontSize: 12.5),
+            prefixIcon: const Icon(Icons.email_outlined),
+            filled: true,
+            fillColor: AppColors.surfaceVariant,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.divider),
             ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => context.go('/login'),
-              child: Text(
-                context.l10n.callback_back_login,
-                style: AppFonts.cairo(
-                  fontSize: 13,
-                  color: AppColors.primaryInk,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.primaryInk, width: 1.5),
             ),
-          ],
-        );
-    }
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        AuthPrimaryButton(
+          label: context.l10n.callback_send_new_link,
+          icon: Icons.send_rounded,
+          loading: _isResending,
+          onPressed: _resendLink,
+        ),
+        const SizedBox(height: 10),
+        AuthSecondaryButton(
+          label: context.l10n.callback_back_login,
+          icon: Icons.login,
+          onPressed: () => context.go('/login'),
+        ),
+      ],
+    );
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/app_constants.dart';
+import '../data/demo_properties_generator.dart';
 import '../models/property.dart';
 import '../models/user_property_stats.dart';
 import '../repositories/property_repository.dart';
+import '../services/supabase_service.dart';
 
 final propertyRepositoryProvider = Provider<PropertyRepository>((ref) {
   return PropertyRepository();
@@ -119,39 +121,91 @@ final propertyFilterProvider =
       return PropertyFilterNotifier();
     });
 
+/// Preview/count fallback for an empty live catalogue.
+///
+/// The Home nearby section and `/map` already fall back to the generated demo
+/// catalogue when Supabase has no published rows. The category feeds below
+/// "Properties near you" previously queried only the live backend, so a fresh
+/// project rendered three empty cards next to a populated nearby section. Use
+/// the same fallback here, but only when the backend actually returned zero
+/// rows; a real error still reaches the section's ErrorView.
+List<Property> _fallbackPreviewProperties({
+  String? dealType,
+  bool onlyFeatured = false,
+}) {
+  final source = SupabaseService.demoProperties.isNotEmpty
+      ? SupabaseService.demoProperties
+      : DemoPropertiesGenerator.cachedDemoProperties;
+
+  final list = source
+      .where((property) => property.status == AppConstants.statusPublished)
+      .toList();
+  if (onlyFeatured) {
+    list.removeWhere((property) => !property.isFeatured);
+  }
+  if (dealType != null && dealType.isNotEmpty) {
+    list.removeWhere((property) => property.dealType != dealType);
+  }
+  // Match the repository's default "newest" ordering.
+  list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  return list;
+}
+
 // Featured Properties Provider
 final featuredPropertiesProvider = FutureProvider<List<Property>>((ref) async {
   final repo = ref.watch(propertyRepositoryProvider);
-  return await repo.getProperties(onlyFeatured: true, limit: 10);
+  final remote = await repo.getProperties(onlyFeatured: true, limit: 10);
+  if (remote.isNotEmpty) return remote;
+  return _fallbackPreviewProperties(onlyFeatured: true).take(10).toList();
 });
 
 // Latest Properties for Sale
 final propertiesForSaleProvider = FutureProvider<List<Property>>((ref) async {
   final repo = ref.watch(propertyRepositoryProvider);
-  return await repo.getProperties(dealType: AppConstants.dealSale, limit: 10);
+  final remote = await repo.getProperties(
+    dealType: AppConstants.dealSale,
+    limit: 10,
+  );
+  if (remote.isNotEmpty) return remote;
+  return _fallbackPreviewProperties(
+    dealType: AppConstants.dealSale,
+  ).take(10).toList();
 });
 
 // Latest Properties for Rent
 final propertiesForRentProvider = FutureProvider<List<Property>>((ref) async {
   final repo = ref.watch(propertyRepositoryProvider);
-  return await repo.getProperties(dealType: AppConstants.dealRent, limit: 10);
+  final remote = await repo.getProperties(
+    dealType: AppConstants.dealRent,
+    limit: 10,
+  );
+  if (remote.isNotEmpty) return remote;
+  return _fallbackPreviewProperties(
+    dealType: AppConstants.dealRent,
+  ).take(10).toList();
 });
 
 // True totals for the dashboard section headers. The preview providers above
 // cap their lists at 10, so the header must not use preview.length as the count.
 final featuredCountProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(propertyRepositoryProvider);
-  return await repo.getPropertyCount(onlyFeatured: true);
+  final remote = await repo.getPropertyCount(onlyFeatured: true);
+  if (remote > 0) return remote;
+  return _fallbackPreviewProperties(onlyFeatured: true).length;
 });
 
 final propertiesForSaleCountProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(propertyRepositoryProvider);
-  return await repo.getPropertyCount(dealType: AppConstants.dealSale);
+  final remote = await repo.getPropertyCount(dealType: AppConstants.dealSale);
+  if (remote > 0) return remote;
+  return _fallbackPreviewProperties(dealType: AppConstants.dealSale).length;
 });
 
 final propertiesForRentCountProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(propertyRepositoryProvider);
-  return await repo.getPropertyCount(dealType: AppConstants.dealRent);
+  final remote = await repo.getPropertyCount(dealType: AppConstants.dealRent);
+  if (remote > 0) return remote;
+  return _fallbackPreviewProperties(dealType: AppConstants.dealRent).length;
 });
 
 // Pending Properties Awaiting Admin Review Provider

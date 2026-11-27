@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:yemen_real_estate_portal/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yemen_real_estate_portal/config/app_config.dart';
 import 'package:yemen_real_estate_portal/core/l10n/app_locale.dart';
 import 'package:yemen_real_estate_portal/features/map/presentation/yemen_map_screen.dart';
+import 'package:yemen_real_estate_portal/models/property_type.dart';
+import 'package:yemen_real_estate_portal/providers/location_provider.dart';
+import 'package:yemen_real_estate_portal/providers/settings_provider.dart';
 import 'package:yemen_real_estate_portal/services/supabase_service.dart';
 import 'helpers/maplibre_test_stub.dart';
 
@@ -27,12 +31,12 @@ void main() {
     addTearDown(() => tester.view.resetPhysicalSize());
 
     await tester.pumpWidget(
-      const ProviderScope(
+      ProviderScope(
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: Locale('ar', 'YE'),
-          home: YemenMapScreen(),
+          home: YemenMapScreen(key: UniqueKey()),
         ),
       ),
     );
@@ -48,10 +52,46 @@ void main() {
     expect(find.byIcon(Icons.tune), findsOneWidget);
     expect(find.text('عرض القائمة'), findsOneWidget);
 
-    // The compact add-property FAB belongs to the list view only.
+    // The compact add-property FAB belongs to the list view *and* to the
+    // "FAB above map FAB" setting. The default outline mode hides it.
     expect(find.byKey(const ValueKey('map_add_property_fab')), findsNothing);
     await tester.tap(find.text('عرض القائمة'));
     await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const ValueKey('map_add_property_fab')), findsNothing);
+  });
+
+  testWidgets('map list shows the add-property FAB only in FAB mode', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    SharedPreferences.setMockInitialValues({});
+    // This test writes a non-default add-property style to the mock prefs;
+    // reset them so later map tests still see the real app defaults.
+    addTearDown(() => SharedPreferences.setMockInitialValues({}));
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await container.read(settingsProvider.notifier).loaded;
+    await container
+        .read(settingsProvider.notifier)
+        .setAddPropertyStyle('fab');
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('ar', 'YE'),
+          home: YemenMapScreen(key: UniqueKey(),initialListView: true),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
     expect(find.byKey(const ValueKey('map_add_property_fab')), findsOneWidget);
     expect(find.byIcon(Icons.add_home_outlined), findsOneWidget);
   });
@@ -64,12 +104,12 @@ void main() {
     addTearDown(() => tester.view.resetPhysicalSize());
 
     await tester.pumpWidget(
-      const ProviderScope(
+      ProviderScope(
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: Locale('ar', 'YE'),
-          home: YemenMapScreen(),
+          home: YemenMapScreen(key: UniqueKey()),
         ),
       ),
     );
@@ -99,12 +139,12 @@ void main() {
     addTearDown(() => tester.view.resetPhysicalSize());
 
     await tester.pumpWidget(
-      const ProviderScope(
+      ProviderScope(
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: Locale('en', 'US'),
-          home: YemenMapScreen(),
+          home: YemenMapScreen(key: UniqueKey()),
         ),
       ),
     );
@@ -118,10 +158,57 @@ void main() {
     expect(find.text('شقق سكنية'), findsNothing);
   });
 
+  testWidgets('Arabic filter sheet never shows a raw en property type', (
+    tester,
+  ) async {
+    final previousLocale = AppLocale.current;
+    addTearDown(() => AppLocale.current = previousLocale);
+    AppLocale.current = const Locale('ar', 'YE');
+
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          propertyTypesProvider.overrideWith(
+            (ref) async => [
+              PropertyType(
+                id: 'apartment',
+                // Backend bug being guarded against: the Arabic column holds
+                // the locale code instead of the translated name.
+                nameAr: 'en',
+                nameEn: 'شقق سكنية',
+              ),
+            ],
+          ),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('ar', 'YE'),
+          home: YemenMapScreen(key: UniqueKey()),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.text('الفلاتر ✓'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('en'), findsNothing);
+    expect(find.text('شقق سكنية'), findsWidgets);
+  });
+
   testWidgets('صنعاء + بيت بوس filter shows both listings', (tester) async {
     tester.view.physicalSize = const Size(1080, 1920);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
+    // Force a fresh element: MaterialApp reuses a same-type home route and
+    // would otherwise keep the previous test's seeded map query.
+    await tester.pumpWidget(const SizedBox.shrink());
 
     await tester.pumpWidget(
       ProviderScope(
@@ -129,7 +216,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('ar', 'YE'),
-          home: const YemenMapScreen(
+          home: YemenMapScreen(key: UniqueKey(),
             initialListView: true,
             initialFilters: MapScreenArgs(city: 'صنعاء', district: 'بيت بوس'),
           ),
@@ -154,6 +241,7 @@ void main() {
     tester.view.physicalSize = const Size(1080, 1920);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
+    await tester.pumpWidget(const SizedBox.shrink());
 
     await tester.pumpWidget(
       ProviderScope(
@@ -161,7 +249,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en', 'US'),
-          home: const YemenMapScreen(
+          home: YemenMapScreen(key: UniqueKey(),
             initialListView: true,
             initialFilters: MapScreenArgs(city: 'صنعاء', district: 'بيت بوس'),
           ),
@@ -194,7 +282,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en', 'US'),
-          home: const YemenMapScreen(initialListView: true),
+          home: YemenMapScreen(key: UniqueKey(),initialListView: true),
         ),
       ),
     );
@@ -247,7 +335,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en', 'US'),
-          home: const YemenMapScreen(initialListView: true),
+          home: YemenMapScreen(key: UniqueKey(),initialListView: true),
         ),
       ),
     );
@@ -292,7 +380,7 @@ void main() {
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: const Locale('ar', 'YE'),
-            home: const YemenMapScreen(
+            home: YemenMapScreen(key: UniqueKey(),
               initialFilters: MapScreenArgs(city: 'صنعاء', district: 'بيت بوس'),
             ),
           ),

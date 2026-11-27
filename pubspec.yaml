@@ -47,6 +47,7 @@ dependencies:
   cached_network_image: ^3.4.1
 
   # Device capabilities & Utilities
+  app_links: ^6.4.1
   url_launcher: ^6.3.1
   image_picker: ^1.1.2
   shared_preferences: ^2.5.2

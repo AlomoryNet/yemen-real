@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_maplibre/flutter_map_maplibre.dart';
@@ -13,13 +12,16 @@ import '../../../core/constants/map_sources.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/property_text_styles.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/app_feedback.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../models/property.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
 import '../../../providers/property_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../repositories/report_repository.dart';
+import '../../../services/device_location_service.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_footer.dart';
 import '../../../shared/widgets/app_header.dart';
@@ -28,9 +30,11 @@ import '../../../shared/widgets/app_page_body.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/external_contact_buttons.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/map/user_location.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../property_requests/presentation/rental_request_modal.dart';
+import 'widgets/property_image_gallery.dart';
 import '../../../core/l10n/app_strings.dart';
 
 class PropertyDetailScreen extends ConsumerStatefulWidget {
@@ -44,7 +48,33 @@ class PropertyDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
-  int _activeImageIndex = 0;
+  final MapController _mapController = MapController();
+  LatLng? _userLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreUserLocation();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  /// The detail map is read-only, so just reveal the blue dot when the user
+  /// already granted permission — never prompt from a passive screen.
+  Future<void> _restoreUserLocation() async {
+    final result = await DeviceLocationService.currentLocationIfPermitted();
+    if (!mounted || !result.hasPosition) return;
+    setState(() => _userLocation = result.position);
+  }
+
+  void _onUserLocated(LatLng position) {
+    setState(() => _userLocation = position);
+    _mapController.move(position, 15);
+  }
 
   void _showReportDialog(BuildContext context, Property property) {
     final reasonController = TextEditingController();
@@ -136,14 +166,11 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                 );
                 if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        context.l10n.detail_report_submitted,
-                        style: AppFonts.cairo(),
-                      ),
-                      backgroundColor: AppColors.success,
-                    ),
+                  showOptionalFeedback(
+                    context,
+                    ref,
+                    context.l10n.detail_report_submitted,
+                    backgroundColor: AppColors.success,
                   );
                 }
               },
@@ -201,13 +228,16 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           orElse: () => false,
         );
     final isDesktop = Responsive.isDesktop(context);
+    final colors = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
       child: Column(
         children: [
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
+              constraints: BoxConstraints(
+                maxWidth: Responsive.contentMaxWidth(context),
+              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -219,33 +249,51 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     // Navigation breadcrumb
                     Row(
                       children: [
-                        InkWell(
-                          onTap: () => context.go('/'),
+                        TextButton(
+                          onPressed: () => context.go('/'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                           child: Text(
                             context.l10n.detail_home,
                             style: AppFonts.cairo(
-                              color: AppColors.textMuted,
-                              fontSize: 13,
+                              textStyle:
+                                  Theme.of(context).textTheme.bodySmall,
+                              color: colors.onSurfaceVariant,
                             ),
                           ),
                         ),
-                        Text(
-                          ' / ',
-                          style: TextStyle(color: AppColors.textMuted),
+                        Icon(
+                          Directionality.of(context) == TextDirection.rtl
+                              ? Icons.chevron_left
+                              : Icons.chevron_right,
+                          size: 14,
+                          color: colors.onSurfaceVariant,
                         ),
-                        InkWell(
-                          onTap: () => context.go('/map'),
+                        TextButton(
+                          onPressed: () => context.go('/map'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                           child: Text(
                             context.l10n.detail_properties,
                             style: AppFonts.cairo(
-                              color: AppColors.textMuted,
-                              fontSize: 13,
+                              textStyle:
+                                  Theme.of(context).textTheme.bodySmall,
+                              color: colors.onSurfaceVariant,
                             ),
                           ),
                         ),
-                        Text(
-                          ' / ',
-                          style: TextStyle(color: AppColors.textMuted),
+                        Icon(
+                          Directionality.of(context) == TextDirection.rtl
+                              ? Icons.chevron_left
+                              : Icons.chevron_right,
+                          size: 14,
+                          color: colors.onSurfaceVariant,
                         ),
                         Expanded(
                           child: Text(
@@ -253,9 +301,10 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppFonts.cairo(
-                              color: AppColors.textPrimary,
+                              textStyle:
+                                  Theme.of(context).textTheme.bodySmall,
+                              color: colors.onSurface,
                               fontWeight: FontWeight.bold,
-                              fontSize: 13,
                             ),
                           ),
                         ),
@@ -273,7 +322,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildImageGallery(property),
+                                PropertyImageGallery(images: property.images),
                                 const SizedBox(height: 24),
                                 _buildPropertyDetails(property),
                               ],
@@ -295,7 +344,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildImageGallery(property),
+                          PropertyImageGallery(images: property.images),
                           const SizedBox(height: 20),
                           _buildActionSidebar(
                             context,
@@ -318,116 +367,43 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     );
   }
 
-  Widget _buildImageGallery(Property property) {
-    final images = property.images;
-    final hasImages = images.isNotEmpty;
-
-    return Column(
-      children: [
-        // Main Image Display
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: AspectRatio(
-            aspectRatio: 16 / 10,
-            child: hasImages
-                ? CachedNetworkImage(
-                    imageUrl: images[_activeImageIndex].imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) =>
-                        Container(color: AppColors.surfaceVariant),
-                    errorWidget: (_, __, ___) => _buildImagePlaceholder(),
-                  )
-                : _buildImagePlaceholder(),
-          ),
-        ),
-
-        // Thumbnails Strip
-        if (hasImages && images.length > 1) ...[
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 70,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: images.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final isSelected = index == _activeImageIndex;
-                return Tooltip(
-                  message: '${context.l10n.detail_view_image} ${index + 1}',
-                  child: InkWell(
-                    onTap: () => setState(() => _activeImageIndex = index),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 90,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.primary
-                              : Colors.transparent,
-                          width: 2.5,
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: CachedNetworkImage(
-                        imageUrl: images[index].imageUrl,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildImagePlaceholder() {
-    return Container(
-      color: AppColors.surfaceVariant,
-      child: Center(
-        child: Icon(Icons.apartment, size: 60, color: AppColors.textMuted),
-      ),
-    );
-  }
-
   Widget _buildActionSidebar(
     BuildContext context,
     Property property,
     bool isFav,
     FavoritesNotifier favNotifier,
   ) {
+    final settings = ref.watch(settingsProvider);
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final priceConverted =
+        property.currency.toUpperCase() != settings.currencyCode.toUpperCase();
+
     return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: AppColors.divider),
-      ),
-      elevation: 2,
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Price & Deal badge
             Row(
               children: [
                 Expanded(
                   child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       StatusBadge.dealType(property.dealType),
                       if (property.isFeatured)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 10,
+                            vertical: 5,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.accentBadgeFill,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             context.l10n.sh_property_featured,
@@ -437,13 +413,13 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                     ],
                   ),
                 ),
-                IconButton(
+                IconButton.filledTonal(
                   tooltip: isFav
                       ? context.l10n.remove_favorite
                       : context.l10n.save_favorite,
                   icon: Icon(
                     isFav ? Icons.favorite : Icons.favorite_border,
-                    color: isFav ? AppColors.error : AppColors.textSecondary,
+                    color: isFav ? colors.error : colors.onSurfaceVariant,
                   ),
                   onPressed: () {
                     final auth = ref.read(authProvider);
@@ -460,56 +436,67 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            // Price text
+            // Display price in the preferred currency, with the stored amount
+            // kept visible whenever a conversion is applied.
             Text(
-              Formatters.formatCurrency(property.price, property.currency),
+              Formatters.formatDisplayPrice(
+                property.price,
+                property.currency,
+                settings.currencyCode,
+                settings.currencyRates,
+              ),
               style: AppFonts.cairo(
-                fontSize: 26,
+                textStyle: textTheme.headlineSmall,
+                color: colors.primary,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primaryInk,
-                height: 1.2,
+              ),
+            ),
+            if (priceConverted)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  Formatters.formatCurrency(
+                    property.price,
+                    property.currency,
+                  ),
+                  style: AppFonts.cairo(
+                    textStyle: textTheme.bodyMedium,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 20),
+            Divider(color: colors.outlineVariant),
+            const SizedBox(height: 20),
+
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                backgroundColor: colors.primaryContainer,
+                child: Icon(
+                  Icons.person_outline,
+                  color: colors.onPrimaryContainer,
+                ),
+              ),
+              title: Text(
+                property.owner?.fullName ?? tr.misc_verified_advertiser,
+                style: AppFonts.cairo(
+                  textStyle: textTheme.titleSmall,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                '${context.l10n.detail_publish_date} ${Formatters.formatDate(property.createdAt)}',
+                style: AppFonts.cairo(
+                  textStyle: textTheme.bodySmall,
+                  color: colors.onSurfaceVariant,
+                ),
               ),
             ),
             const SizedBox(height: 16),
-            Divider(color: AppColors.divider),
-            const SizedBox(height: 16),
 
-            // Publisher Info
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: AppColors.primaryMuted,
-                  child: Icon(Icons.person, color: AppColors.primaryInk),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        property.owner?.fullName ?? tr.misc_verified_advertiser,
-                        style: AppFonts.cairo(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '${context.l10n.detail_publish_date} ${Formatters.formatDate(property.createdAt)}',
-                        style: AppFonts.cairo(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // External Contact Buttons (WhatsApp & Phone call)
             ExternalContactButtons(
               contactPhone: property.contactPhone,
               contactWhatsapp: property.contactWhatsapp,
@@ -517,24 +504,25 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               propertyId: property.id,
             ),
 
-            // Rental Request Button (if for rent)
             if (property.isForRent) ...[
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     foregroundColor: AppColors.onAccent,
                     padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   icon: const Icon(Icons.assignment_outlined, size: 20),
                   label: Text(
                     context.l10n.detail_send_rental_request,
-                    style: AppFonts.cairo(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.cairo(textStyle: textTheme.labelLarge),
                   ),
                   onPressed: () {
                     final auth = ref.read(authProvider);
@@ -558,22 +546,23 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: AppColors.primaryInk, width: 1.5),
+                  side: BorderSide(color: colors.primary, width: 1.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 icon: Icon(
                   Icons.description_outlined,
-                  color: AppColors.primaryInk,
+                  color: colors.primary,
                   size: 20,
                 ),
                 label: Text(
                   context.l10n.detail_contract_preview,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: AppFonts.cairo(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryInk,
+                    textStyle: textTheme.labelLarge,
+                    color: colors.primary,
                   ),
                 ),
                 onPressed: () => context.push('/contract', extra: property),
@@ -581,44 +570,43 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             ),
 
             const SizedBox(height: 16),
-
-            // Secondary Actions (Share & Report)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 TextButton.icon(
                   onPressed: () => _showReportDialog(context, property),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.flag_outlined,
-                    size: 16,
-                    color: AppColors.error,
+                    size: 18,
+                    color: colors.error,
                   ),
                   label: Text(
                     context.l10n.detail_report_action,
-                    style: AppFonts.cairo(fontSize: 12, color: AppColors.error),
+                    style: AppFonts.cairo(
+                      textStyle: textTheme.labelLarge,
+                      color: colors.error,
+                    ),
                   ),
                 ),
                 TextButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          context.l10n.detail_link_copied,
-                          style: AppFonts.cairo(),
-                        ),
-                      ),
+                    showOptionalFeedback(
+                      context,
+                      ref,
+                      context.l10n.detail_link_copied,
                     );
                   },
                   icon: Icon(
                     Icons.share_outlined,
-                    size: 16,
-                    color: AppColors.textSecondary,
+                    size: 18,
+                    color: colors.onSurfaceVariant,
                   ),
                   label: Text(
                     context.l10n.detail_share_ad,
                     style: AppFonts.cairo(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+                      textStyle: textTheme.labelLarge,
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -631,31 +619,33 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
   }
 
   Widget _buildPropertyDetails(Property property) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title
         Text(
           property.title,
           style: AppFonts.cairo(
-            fontSize: 22,
+            textStyle: textTheme.headlineSmall,
+            color: colors.onSurface,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 10),
 
-        // Location text
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.location_on, color: AppColors.primaryInk, size: 18),
-            const SizedBox(width: 6),
+            Icon(Icons.location_on_outlined, color: colors.primary, size: 20),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 '${AppConstants.getGovernorateNameAr(property.city)} - ${AppConstants.getDistrictNameAr(property.district)} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
                 style: AppFonts.cairo(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
+                  textStyle: textTheme.bodyLarge,
+                  color: colors.onSurfaceVariant,
                 ),
               ),
             ),
@@ -663,17 +653,17 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Specs Grid
         Container(
-          padding: const EdgeInsets.all(18),
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.divider),
+            color: colors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colors.outlineVariant),
           ),
           child: Wrap(
             spacing: 24,
-            runSpacing: 16,
+            runSpacing: 20,
             children: [
               _buildFeatureItem(
                 Icons.straighten,
@@ -712,26 +702,24 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         ),
         const SizedBox(height: 28),
 
-        // Full Description
         Text(
           context.l10n.detail_description_title,
           style: AppFonts.cairo(
-            fontSize: 18,
+            textStyle: textTheme.titleLarge,
+            color: colors.onSurface,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 10),
         Text(
           property.description,
           style: AppFonts.cairo(
-            fontSize: 14,
-            height: 1.8,
-            color: AppColors.textSecondary,
+            textStyle: textTheme.bodyLarge,
+            height: 1.7,
+            color: colors.onSurfaceVariant,
           ),
         ),
 
-        // Embedded Interactive Map Section
         _buildLocationMapSection(context, property),
       ],
     );
@@ -741,237 +729,241 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     final coords = (property.latitude != null && property.longitude != null)
         ? (property.latitude!, property.longitude!)
         : AppConstants.getCoordinatesForGovernorate(property.city);
-
     final latLng = LatLng(coords.$1, coords.$2);
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 32),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primaryMuted,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.map_rounded,
-                color: AppColors.primaryInk,
-                size: 22,
-              ),
+            CircleAvatar(
+              backgroundColor: colors.secondaryContainer,
+              foregroundColor: colors.onSecondaryContainer,
+              child: const Icon(Icons.map_rounded, size: 22),
             ),
-            const SizedBox(width: 10),
-            Text(
-              context.l10n.detail_map_section_title,
-              style: AppFonts.cairo(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.detail_map_section_title,
+                    style: AppFonts.cairo(
+                      textStyle: textTheme.titleLarge,
+                      color: colors.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${AppConstants.getGovernorateNameAr(property.city)} — ${AppConstants.getDistrictNameAr(property.district)} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
+                    style: AppFonts.cairo(
+                      textStyle: textTheme.bodyMedium,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          '${AppConstants.getGovernorateNameAr(property.city)} — ${AppConstants.getDistrictNameAr(property.district)} ${property.addressDetails != null ? '(${property.addressDetails})' : ''}',
-          style: AppFonts.cairo(fontSize: 13, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          height: 300,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.divider),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              FlutterMap(
-                options: MapOptions(
-                  initialCenter: latLng,
-                  initialZoom: 14.5,
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all,
-                  ),
-                  cameraConstraint: CameraConstraint.containLatitude(),
-                ),
-                children: [
-                  MapLibreLayer(
-                    style: const ml.MapStyle.url(
-                      AppMapSources.openFreeMapStyleUrl,
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 320,
+          child: Card(
+            clipBehavior: Clip.antiAlias,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: colors.outlineVariant),
+            ),
+            child: Stack(
+              children: [
+                RepaintBoundary(
+                  child: FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: latLng,
+                      initialZoom: 14.5,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.all,
+                      ),
+                      cameraConstraint: CameraConstraint.containLatitude(),
                     ),
-                    onError: (event) =>
-                        debugPrint('Detail map error: ${event.message}'),
                     children: [
-                      FlutterMapAdapter(
-                        child: MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: latLng,
-                              width: 140,
-                              height: 52,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.shadow,
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 3),
+                      MapLibreLayer(
+                        style: const ml.MapStyle.url(
+                          AppMapSources.openFreeMapStyleUrl,
+                        ),
+                        onError: (event) =>
+                            debugPrint('Detail map error: ${event.message}'),
+                        children: [
+                          FlutterMapAdapter(
+                            child: MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: latLng,
+                                  width: 140,
+                                  height: 52,
+                                  child: Semantics(
+                                    label: Formatters.formatCurrency(
+                                      property.price,
+                                      property.currency,
                                     ),
-                                  ],
-                                  border: Border.all(
-                                    color: AppColors.surface,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on,
-                                      color: AppColors.textLight,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        Formatters.formatCurrency(
-                                          property.price,
-                                          property.currency,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: colors.primary,
+                                        borderRadius: BorderRadius.circular(999),
+                                        border: Border.all(
+                                          color: colors.surface,
+                                          width: 2,
                                         ),
-                                        style: const TextStyle(
-                                          color: AppColors.textLight,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.location_on,
+                                            color: colors.onPrimary,
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              Formatters.formatCurrency(
+                                                property.price,
+                                                property.currency,
+                                              ),
+                                              style: AppFonts.cairo(
+                                                textStyle:
+                                                    textTheme.labelSmall,
+                                                color: colors.onPrimary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
+                              ],
+                            ),
+                          ),
+                          if (_userLocation != null)
+                            FlutterMapAdapter(
+                              child: MarkerLayer(
+                                markers: [userLocationMarker(_userLocation!)],
                               ),
+                            ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 72),
+                        child: RichAttributionWidget(
+                          alignment: AttributionAlignment.bottomRight,
+                          attributions: [
+                            TextSourceAttribution(
+                              AppMapSources.openFreeMapAttribution,
+                              onTap: () {
+                                final uri = Uri.parse(
+                                  AppMapSources.openFreeMapAttributionUrl,
+                                );
+                                canLaunchUrl(uri).then((ok) {
+                                  if (ok) {
+                                    launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  }
+                                });
+                              },
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 64),
-                    child: RichAttributionWidget(
-                      alignment: AttributionAlignment.bottomRight,
-                      attributions: [
-                        TextSourceAttribution(
-                          AppMapSources.openFreeMapAttribution,
-                          onTap: () {
-                            final uri = Uri.parse(
-                              AppMapSources.openFreeMapAttributionUrl,
-                            );
-                            canLaunchUrl(uri).then((ok) {
-                              if (ok) {
-                                launchUrl(
-                                  uri,
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              }
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              // Floating Buttons on Map
-              Positioned(
-                bottom: 12,
-                left: 12,
-                right: 12,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textLight,
-                        elevation: 4,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      icon: const Icon(Icons.map_rounded, size: 16),
-                      label: Text(
-                        context.l10n.detail_open_full_map,
-                        style: AppFonts.cairo(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onPressed: () => context.push('/map'),
-                    ),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.surface,
-                        foregroundColor: AppColors.textPrimary,
-                        elevation: 4,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      icon: Icon(
-                        Icons.directions_outlined,
-                        color: AppColors.primaryInk,
-                        size: 16,
-                      ),
-                      label: Text(
-                        context.l10n.detail_directions_google_maps,
-                        style: AppFonts.cairo(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onPressed: () async {
-                        final gmapsUri = Uri.parse(
-                          'https://www.google.com/maps/search/?api=1&query=${coords.$1},${coords.$2}',
-                        );
-                        if (await canLaunchUrl(gmapsUri)) {
-                          await launchUrl(
-                            gmapsUri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-                      },
-                    ),
-                  ],
                 ),
-              ),
-            ],
+                PositionedDirectional(
+                  top: 12,
+                  end: 12,
+                  child: LocateMeButton(
+                    heroTag: 'detail_locate_me',
+                    onLocated: _onUserLocated,
+                  ),
+                ),
+                PositionedDirectional(
+                  start: 12,
+                  end: 12,
+                  bottom: 12,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.map_rounded, size: 16),
+                        label: Text(
+                          context.l10n.detail_open_full_map,
+                          style: AppFonts.cairo(
+                            textStyle: textTheme.labelLarge,
+                          ),
+                        ),
+                        onPressed: () => context.push('/map'),
+                      ),
+                      FilledButton.tonalIcon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.directions_outlined, size: 16),
+                        label: Text(
+                          context.l10n.detail_directions_google_maps,
+                          style: AppFonts.cairo(
+                            textStyle: textTheme.labelLarge,
+                          ),
+                        ),
+                        onPressed: () async {
+                          final gmapsUri = Uri.parse(
+                            'https://www.google.com/maps/search/?api=1&query=${coords.$1},${coords.$2}',
+                          );
+                          if (await canLaunchUrl(gmapsUri)) {
+                            await launchUrl(
+                              gmapsUri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -979,12 +971,15 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
   }
 
   Widget _buildFeatureItem(IconData icon, String label, String value) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return SizedBox(
-      width: 150,
+      width: 160,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: AppColors.primaryInk),
+          Icon(icon, size: 20, color: colors.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -993,16 +988,16 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                 Text(
                   label,
                   style: AppFonts.cairo(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
+                    textStyle: textTheme.bodySmall,
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
                 Text(
                   value,
                   style: AppFonts.cairo(
-                    fontSize: 13,
+                    textStyle: textTheme.titleSmall,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: colors.onSurface,
                   ),
                 ),
               ],

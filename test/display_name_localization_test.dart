@@ -53,4 +53,50 @@ void main() {
       }
     }
   });
+
+  test('backend locale codes are never displayed as property-type names', () {
+    AppLocale.current = const Locale('ar', 'YE');
+    expect(
+      AppConstants.localizedName(
+        arabic: 'en',
+        english: 'شقق سكنية',
+        fallback: 'نوع العقار',
+      ),
+      'شقق سكنية',
+    );
+    expect(
+      AppConstants.localizedName(
+        arabic: 'ar',
+        english: 'Apartments',
+        fallback: 'نوع العقار',
+      ),
+      'Apartments',
+    );
+
+    AppLocale.current = const Locale('en', 'US');
+    expect(
+      AppConstants.localizedName(
+        arabic: 'شقق سكنية',
+        english: 'en',
+        fallback: 'Property type',
+      ),
+      'شقق سكنية',
+    );
+    expect(
+      AppConstants.localizedName(
+        arabic: 'ar',
+        english: 'Apartments',
+        fallback: 'Property type',
+      ),
+      'Apartments',
+    );
+    expect(
+      AppConstants.localizedName(
+        arabic: 'en',
+        english: 'ar',
+        fallback: 'Property type',
+      ),
+      'Property type',
+    );
+  });
 }

@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
+import '../../core/utils/app_feedback.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_fonts.dart';
 import '../../l10n/app_localizations.dart';
@@ -12,14 +14,14 @@ import '../../services/map_offline_service.dart';
 ///
 /// The country pack covers zoom 5–10; areas the user actually browses are
 /// retained by MapLibre's bounded ambient cache at higher zoom levels.
-class MapCacheTile extends StatefulWidget {
+class MapCacheTile extends ConsumerStatefulWidget {
   const MapCacheTile({super.key});
 
   @override
-  State<MapCacheTile> createState() => _MapCacheTileState();
+  ConsumerState<MapCacheTile> createState() => _MapCacheTileState();
 }
 
-class _MapCacheTileState extends State<MapCacheTile> {
+class _MapCacheTileState extends ConsumerState<MapCacheTile> {
   StreamSubscription<DownloadProgress>? _subscription;
   OfflineRegion? _region;
   double? _progress;
@@ -67,13 +69,11 @@ class _MapCacheTileState extends State<MapCacheTile> {
           if (progress.downloadCompleted) _downloading = false;
         });
         if (progress.downloadCompleted && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.set_offline_map_downloaded,
-              ),
-              backgroundColor: AppColors.primary,
-            ),
+          showOptionalFeedback(
+            context,
+            ref,
+            AppLocalizations.of(context)!.set_offline_map_downloaded,
+            backgroundColor: AppColors.primary,
           );
         }
       },

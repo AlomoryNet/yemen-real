@@ -4,6 +4,14 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 
 ## Next up
 
+- [ ] **Supabase signup/reset email delivery (tomorrow, 2026-11-28)** —
+      "Supabase signup-email and reset-email delivery were not claimed as verified because the project returned email_address_invalid and then throttling."
+      Next: retry with a valid recipient/domain after the rate-limit window,
+      confirm the signup verification email and the forgot-password reset email
+      actually arrive, then run both flows end to end on `ZY22G4C24N`. Do not
+      mark done until both messages are observed; keep credentials in `.env`
+      only.
+
 - [x] **MapLibre + OpenFreeMap street maps with local tile cache** (2026-11-26,
       committed `add0b3f`; `flutter analyze` clean, `flutter test` 136/136):
       - [x] `MapLibreLayer` replaces Esri street tiles on `/map`, property detail

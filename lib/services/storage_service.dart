@@ -5,12 +5,14 @@ import '../config/app_config.dart';
 import '../core/constants/app_constants.dart';
 import '../core/exceptions/app_exception.dart';
 import '../core/l10n/app_strings.dart';
+import 'supabase_service.dart';
 
 class StorageService {
   final SupabaseClient? _supabaseClient;
   final ImagePicker _picker = ImagePicker();
 
-  StorageService({SupabaseClient? client}) : _supabaseClient = client;
+  StorageService({SupabaseClient? client})
+      : _supabaseClient = client ?? SupabaseService.client;
 
   /// Pick an image from gallery
   Future<XFile?> pickImageFromGallery() async {

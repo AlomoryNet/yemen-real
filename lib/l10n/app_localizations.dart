@@ -1337,6 +1337,12 @@ abstract class AppLocalizations {
   /// **'Return to sign in'**
   String get forgot_return_to_login;
 
+  /// No description provided for @callback_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verification'**
+  String get callback_title;
+
   /// No description provided for @callback_expired_message.
   ///
   /// In en, this message translates to:
@@ -3707,6 +3713,102 @@ abstract class AppLocalizations {
   /// **'Yemen Map'**
   String get dash_yemen_map;
 
+  /// No description provided for @landing_eyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Your gateway to Yemeni real estate'**
+  String get landing_eyebrow;
+
+  /// No description provided for @landing_stat_properties.
+  ///
+  /// In en, this message translates to:
+  /// **'properties for sale and rent'**
+  String get landing_stat_properties;
+
+  /// No description provided for @landing_stat_governorates.
+  ///
+  /// In en, this message translates to:
+  /// **'Yemeni governorates'**
+  String get landing_stat_governorates;
+
+  /// No description provided for @landing_stat_governorates_label.
+  ///
+  /// In en, this message translates to:
+  /// **'All governorates covered'**
+  String get landing_stat_governorates_label;
+
+  /// No description provided for @landing_stat_districts.
+  ///
+  /// In en, this message translates to:
+  /// **'districts and areas'**
+  String get landing_stat_districts;
+
+  /// No description provided for @landing_stat_free.
+  ///
+  /// In en, this message translates to:
+  /// **'free listing'**
+  String get landing_stat_free;
+
+  /// No description provided for @landing_trust_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Why choose Yemen Real Estate Portal?'**
+  String get landing_trust_title;
+
+  /// No description provided for @landing_trust_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A clear, trusted property experience designed to make searching and listing easy across every Yemeni governorate.'**
+  String get landing_trust_subtitle;
+
+  /// No description provided for @landing_trust_verified_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified listings'**
+  String get landing_trust_verified_title;
+
+  /// No description provided for @landing_trust_verified_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Listings are reviewed before publication and advertiser ownership is documented to protect buyers and owners.'**
+  String get landing_trust_verified_desc;
+
+  /// No description provided for @landing_trust_map_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Interactive map'**
+  String get landing_trust_map_title;
+
+  /// No description provided for @landing_trust_map_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse properties on the Yemen map and discover what is close to you.'**
+  String get landing_trust_map_desc;
+
+  /// No description provided for @landing_trust_direct_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct contact'**
+  String get landing_trust_direct_title;
+
+  /// No description provided for @landing_trust_direct_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach owners by phone or WhatsApp directly, with no brokers or hidden fees.'**
+  String get landing_trust_direct_desc;
+
+  /// No description provided for @landing_trust_support_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Local support'**
+  String get landing_trust_support_title;
+
+  /// No description provided for @landing_trust_support_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'A team that understands the Yemeni property market and helps at every step of searching or listing.'**
+  String get landing_trust_support_desc;
+
   /// No description provided for @fav_empty_action.
   ///
   /// In en, this message translates to:
@@ -4337,6 +4439,36 @@ abstract class AppLocalizations {
   /// **'US Dollar (\$)'**
   String get set_currency_usd;
 
+  /// No description provided for @set_currency_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Prices are estimated in this currency using the rates below (≈). New listings use it by default; saved listings, contracts and reports keep their original currency.'**
+  String get set_currency_hint;
+
+  /// No description provided for @set_currency_rate_usd.
+  ///
+  /// In en, this message translates to:
+  /// **'1 US Dollar = YER'**
+  String get set_currency_rate_usd;
+
+  /// No description provided for @set_currency_rate_sar.
+  ///
+  /// In en, this message translates to:
+  /// **'1 Saudi Riyal = YER'**
+  String get set_currency_rate_sar;
+
+  /// No description provided for @set_currency_rate_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset rates'**
+  String get set_currency_rate_reset;
+
+  /// No description provided for @set_currency_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: {price}'**
+  String set_currency_preview(Object price);
+
   /// No description provided for @set_distance_unit.
   ///
   /// In en, this message translates to:
@@ -4438,6 +4570,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not available on this platform'**
   String get set_offline_map_unsupported;
+
+  /// No description provided for @set_notifications_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows in-app confirmations for reports, shared links and offline map downloads.'**
+  String get set_notifications_hint;
+
+  /// No description provided for @set_reset_all_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Restores language, theme, display, location, notifications and currency choices.'**
+  String get set_reset_all_hint;
+
+  /// No description provided for @set_reset_all_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all settings?'**
+  String get set_reset_all_confirm;
 
   /// No description provided for @map_all.
   ///
@@ -4744,6 +4894,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Searching the database...'**
   String get map_loading_search;
+
+  /// No description provided for @map_locate_me.
+  ///
+  /// In en, this message translates to:
+  /// **'My location'**
+  String get map_locate_me;
+
+  /// No description provided for @map_location_found.
+  ///
+  /// In en, this message translates to:
+  /// **'Centered on your location'**
+  String get map_location_found;
+
+  /// No description provided for @map_location_open_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get map_location_open_settings;
+
+  /// No description provided for @map_location_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is off. Allow it in app settings to show your position on the map.'**
+  String get map_location_permission_denied;
+
+  /// No description provided for @map_location_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t determine your location. Please try again.'**
+  String get map_location_unavailable;
 
   /// No description provided for @map_location_missing_message.
   ///
@@ -5506,6 +5686,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap any point on the map to set the exact property location'**
   String get addprop_map_tap_hint;
+
+  /// No description provided for @addprop_map_center_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the map until the pin sits on the property location'**
+  String get addprop_map_center_hint;
+
+  /// No description provided for @addprop_clear_pin.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get addprop_clear_pin;
+
+  /// No description provided for @addprop_map_zoom_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get addprop_map_zoom_in;
+
+  /// No description provided for @addprop_map_zoom_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get addprop_map_zoom_out;
 
   /// No description provided for @addprop_sqm_unit.
   ///

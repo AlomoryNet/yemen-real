@@ -31,9 +31,8 @@ class SupabaseService {
 
     // Environment declarations are compile-time constants: without `const`
     // Dart returns the default value and Supabase gets a relative REST URL.
-    const supabaseUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
-    const supabaseAnonKey =
-        String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
+    const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+    const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
     try {
       await Supabase.initialize(
         url: supabaseUrl,

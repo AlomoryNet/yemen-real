@@ -636,6 +636,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgot_return_to_login => 'Return to sign in';
 
   @override
+  String get callback_title => 'Email verification';
+
+  @override
   String get callback_expired_message => 'This activation link has expired or has already been used. Please request a new link to continue.';
 
   @override
@@ -1821,6 +1824,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dash_yemen_map => 'Yemen Map';
 
   @override
+  String get landing_eyebrow => 'Your gateway to Yemeni real estate';
+
+  @override
+  String get landing_stat_properties => 'properties for sale and rent';
+
+  @override
+  String get landing_stat_governorates => 'Yemeni governorates';
+
+  @override
+  String get landing_stat_governorates_label => 'All governorates covered';
+
+  @override
+  String get landing_stat_districts => 'districts and areas';
+
+  @override
+  String get landing_stat_free => 'free listing';
+
+  @override
+  String get landing_trust_title => 'Why choose Yemen Real Estate Portal?';
+
+  @override
+  String get landing_trust_subtitle => 'A clear, trusted property experience designed to make searching and listing easy across every Yemeni governorate.';
+
+  @override
+  String get landing_trust_verified_title => 'Verified listings';
+
+  @override
+  String get landing_trust_verified_desc => 'Listings are reviewed before publication and advertiser ownership is documented to protect buyers and owners.';
+
+  @override
+  String get landing_trust_map_title => 'Interactive map';
+
+  @override
+  String get landing_trust_map_desc => 'Browse properties on the Yemen map and discover what is close to you.';
+
+  @override
+  String get landing_trust_direct_title => 'Direct contact';
+
+  @override
+  String get landing_trust_direct_desc => 'Reach owners by phone or WhatsApp directly, with no brokers or hidden fees.';
+
+  @override
+  String get landing_trust_support_title => 'Local support';
+
+  @override
+  String get landing_trust_support_desc => 'A team that understands the Yemeni property market and helps at every step of searching or listing.';
+
+  @override
   String get fav_empty_action => 'Browse properties now';
 
   @override
@@ -2136,6 +2187,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get set_currency_usd => 'US Dollar (\$)';
 
   @override
+  String get set_currency_hint => 'Prices are estimated in this currency using the rates below (≈). New listings use it by default; saved listings, contracts and reports keep their original currency.';
+
+  @override
+  String get set_currency_rate_usd => '1 US Dollar = YER';
+
+  @override
+  String get set_currency_rate_sar => '1 Saudi Riyal = YER';
+
+  @override
+  String get set_currency_rate_reset => 'Reset rates';
+
+  @override
+  String set_currency_preview(Object price) {
+    return 'Example: $price';
+  }
+
+  @override
   String get set_distance_unit => 'Distance unit';
 
   @override
@@ -2185,6 +2253,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get set_offline_map_unsupported => 'Not available on this platform';
+
+  @override
+  String get set_notifications_hint => 'Shows in-app confirmations for reports, shared links and offline map downloads.';
+
+  @override
+  String get set_reset_all_hint => 'Restores language, theme, display, location, notifications and currency choices.';
+
+  @override
+  String get set_reset_all_confirm => 'Reset all settings?';
 
   @override
   String get map_all => 'All';
@@ -2338,6 +2415,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get map_loading_search => 'Searching the database...';
+
+  @override
+  String get map_locate_me => 'My location';
+
+  @override
+  String get map_location_found => 'Centered on your location';
+
+  @override
+  String get map_location_open_settings => 'Settings';
+
+  @override
+  String get map_location_permission_denied => 'Location permission is off. Allow it in app settings to show your position on the map.';
+
+  @override
+  String get map_location_unavailable => 'Couldn\'t determine your location. Please try again.';
 
   @override
   String get map_location_missing_message => 'This property isn\'t pinned on the map yet. Please contact the owner to confirm its location.';
@@ -2719,6 +2811,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addprop_map_tap_hint => 'Tap any point on the map to set the exact property location';
+
+  @override
+  String get addprop_map_center_hint => 'Drag the map until the pin sits on the property location';
+
+  @override
+  String get addprop_clear_pin => 'Clear';
+
+  @override
+  String get addprop_map_zoom_in => 'Zoom in';
+
+  @override
+  String get addprop_map_zoom_out => 'Zoom out';
 
   @override
   String get addprop_sqm_unit => 'm²';
