@@ -23,6 +23,11 @@ demo/offline fallback (DemoPropertiesGenerator). State: Riverpod. Routing: GoRou
    anon/service keys, tokens and credentials and redact them (never delete docs
    files wholesale). Runtime reads via `--dart-define-from-file=.env` are fine;
    printing, logging or committing the values is not.
+9. RELEASES: when the user says "create new release", always publish the GitHub
+   release with both the generated source archives AND an APK asset. Build the APK
+   from the pushed tag and upload it to that same release. Debug signing is the
+   current fallback (there is no keystore in the repo); ask for signing details if
+   a properly signed APK is required.
 
 ## Environment (do not fight it)
 - Flutter 3.47.6 stable / Dart 3.13.5, JAVA_HOME Corretto 17. Android SDK at
