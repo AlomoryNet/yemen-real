@@ -86,7 +86,15 @@ flutter test      → suite (last known: 173 tests)
   count providers now fall back to that same demo catalogue only when the
   backend returns zero rows; non-empty live results and real errors still win.
   Added regressions in `test/dashboard_category_counts_test.dart`.
-  `flutter analyze` clean; `flutter test` 173/173. USB pass pending final launch.
+  `flutter analyze` clean; `flutter test` 173/173. Verified after commit on the
+  linked network device `192.168.8.117:33803` (USB `ZY22G4C24N` was unavailable):
+  Featured showed 88 demo listings, For sale and For rent showed populated demo
+  cards, and the trust/publisher sections rendered without runtime errors.
+- Release policy + APK asset (2026-11-28): the standing release rule now requires
+  source archives **and** an APK asset. Built `app-release.apk` with debug signing
+  from the pushed code and uploaded it to the existing `v2.4.1+19` release as
+  `yemen-real-v2.4.1+19.apk` (107,441,437 bytes). The docs policy was committed
+  as `47f1806` and pushed to `origin/main`.
 - Responsive landing page pass (uncommitted, 2026-11-27): Home now uses a
   two-column desktop hero (>=900dp) with one search/filter card and one
   publisher/map row, and its body is wrapped in `AppPageBody` so the existing
