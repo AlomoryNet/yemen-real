@@ -79,6 +79,10 @@ flutter test      → suite (last known: 173 tests)
 ```
 
 ## Status - latest
+- Commit `f820778` pushed to `origin/main` (2026-11-28): includes the verified
+  Supabase email flows, PKCE recovery fix, saved searches/alerts, property deep
+  links/share, CI workflow and map chip alignment. Follow-up `chore` commit
+  ignores local `.opencode-tmp/` artifacts.
 - Supabase email verification completed + PKCE recovery fix (uncommitted,
   2026-11-28): the confirmation email for the `.env` `TEMP_EMIAL` user was
   observed in device Gmail, tapped, and that user became `confirmed=True`.

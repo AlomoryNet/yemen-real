@@ -30,6 +30,7 @@ build/
 .swiftpm/
 migrate_working_dir/
 supabase/.temp/
+.opencode-tmp/
 
 # Exclude root screenshots, but allow assets and documentation images
 /*.png
