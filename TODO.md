@@ -4,13 +4,27 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 
 ## Next up
 
-- [ ] **Supabase signup/reset email delivery (tomorrow, 2026-11-28)** —
-      "Supabase signup-email and reset-email delivery were not claimed as verified because the project returned email_address_invalid and then throttling."
-      Next: retry with a valid recipient/domain after the rate-limit window,
-      confirm the signup verification email and the forgot-password reset email
-      actually arrive, then run both flows end to end on `ZY22G4C24N`. Do not
-      mark done until both messages are observed; keep credentials in `.env`
-      only.
+- [x] **Supabase signup/reset email delivery (2026-11-28)** —
+      Verified end to end on `ZY22G4C24N`; credentials stayed in `.env` only and
+      no values were printed or copied into tracked files. Earlier UI/API retries
+      with a no-dot alias returned HTTP 429 `over_email_send_rate_limit`; the
+      real `Asmor112011@gmail.com` account was never touched. Switched to the
+      address from `TEMP_EMIAL` as-is: the app Register UI accepted it, the
+      Supabase confirmation message was observed in Gmail on device Chrome, its
+      link was tapped, and that temporary user became `confirmed=True`.
+      Supabase `site_url` was changed to `yemenreal://login-callback` and
+      `AuthCallbackScreen` gained an in-app new-password form. At 05:02 local a
+      single fresh reset request was sent from the app Reset password screen;
+      the new reset email arrived at 05:04, was opened in Gmail on the device and
+      its link was tapped. The PKCE link contained only `code`, so the mobile
+      callback was updated to detect gotrue's `passwordRecovery` event (and to
+      accept a `type=recovery` deep link) before showing the form. The new
+      password was entered twice through that UI, saved, and login with it was
+      verified on the device. While still signed in, the drawer's Saved searches
+      and Notifications screens both loaded, and the map filter sheet's
+      `Save search` action created one temporary saved search that appeared in
+      the list. Only after those UI checks was the temporary `TEMP_EMIAL` user
+      deleted (the protected account remains present).
 
 - [x] **MapLibre + OpenFreeMap street maps with local tile cache** (2026-11-26,
       committed `add0b3f`; `flutter analyze` clean, `flutter test` 136/136):
@@ -59,7 +73,7 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
       - Leave as-is: demo property content, model JSON fallbacks, comments,
         log strings, Arabic comma in user-edited contract clauses.
 
-- [ ] **Performance quick wins**
+- [x] **Performance quick wins**
       - [x] Cold-start jank: the 440 demo listings are now generated once per
         process (`DemoPropertiesGenerator.cachedDemoProperties`) and reused by
         the demo store, Home and the map fallback. Home's no-op post-frame
@@ -143,8 +157,44 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
         and admin layout with no errors or new ANR.
 
 - [ ] **Flow / product**
-      - Deep links + share for property detail (web + app links, OG meta).
-      - Saved searches + alerts on new matching listings.
+      - [x] Deep links + share for property detail (2026-11-28): canonical
+        `/property/<id>` web paths via `usePathUrlStrategy()`, Android
+        `yemenreal://property/<id>` custom-scheme links, `PropertyLinks` helper,
+        incoming-link routing in `main.dart`, copy-link share action with a
+        snackbar, and static + per-property dynamic OG/Twitter/canonical meta.
+        The OpenFreeMap request header is native-only now to avoid a browser
+        CORS preflight failure. `flutter analyze` clean, `flutter test`
+        178/178, `flutter build web --release` succeeded. USB `ZY22G4C24N`: a
+        `yemenreal://property/<id>` intent opened the correct detail page, share
+        copied `yemenreal://property/<id>` (verified by pasting into the home
+        search field) and showed `تم نسخ رابط العقار للمشاركة`; no runtime
+        errors. Local web SPA check confirmed `/property/<id>` loads with
+        per-property title/OG/canonical meta and no console errors. User decided
+        (2026-11-28) to keep custom-scheme-only sharing for now; revisit HTTPS
+        App Links / iOS Universal Links later if a hosted domain is provided
+        (`APP_BASE_URL`, `assetlinks.json`/AASA).
+      - [x] Saved searches + alerts on new matching listings (2026-11-28,
+        uncommitted): `MapQuery` JSON serialization, `SavedSearch` model,
+        Supabase/demo repositories and providers, save-current-search dialog in
+        the map filter sheet, saved-searches/notifications screens and routes,
+        drawer/rail entries, and rerunnable SQL migration with RLS, policy,
+        function, grants and an `AFTER INSERT OR UPDATE OF status` trigger on
+        `properties`. Alerts are in-app `notifications` rows (no new dependency
+        or push service) and deliberately exclude the listing owner’s own saved
+        searches. Matching covers deal/type, governorate/district contains,
+        free text, price/bedrooms, featured, exact coordinates and nearby radius
+        with a governorate-center fallback. Migration applied to the linked
+        Supabase project using credentials loaded only from `.env`; verified
+        tables/index/4 policies/function/trigger. A live trigger test created a
+        temporary matching/non-matching saved search and a published listing:
+        only the matching non-owner received one notification; all temporary
+        rows were deleted and both property triggers remain enabled. `flutter
+        analyze` clean, `flutter test` 187/187. USB `ZY22G4C24N`: the filter
+        sheet's `Save search` action closes the sheet and shows the sign-in
+        prompt for guests. The authenticated pass was completed after the email
+        flow: Saved searches and Notifications loaded, and one temporary saved
+        search created from the filter sheet appeared in the list before the
+        temporary user was cleaned up.
       - Visit/booking scheduling in rental requests.
       - First-run onboarding: location permission + city selection.
       - Offline cache of viewed properties + favorites (Hive).
@@ -152,7 +202,9 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
 - [ ] **Quality / DX**
       - More widget tests (filter sheet, pagination, PropertyCard layouts).
       - Golden tests for key screens.
-      - CI: `flutter analyze` + `flutter test` on PRs.
+      - [x] CI: `.github/workflows/ci.yml` runs `flutter pub get`,
+        `flutter analyze` and `flutter test` on pushes to `main` and on PRs,
+        using Flutter 3.47.6 stable and Java 17 (2026-11-28, uncommitted).
       - Production crash reporting (Sentry/Crashlytics).
 
 ## Recently completed (2026-11-25)

@@ -5,6 +5,7 @@ import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/notification_provider.dart';
 
 /// M3-flavoured drawer: profile header with avatar, highlighted map card,
 /// navigation tiles with tonal icon containers, prominent account action.
@@ -24,6 +25,7 @@ class AppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
+    final unreadCount = ref.watch(unreadNotificationsCountProvider);
     final logoutColor = Theme.of(context).colorScheme.error;
 
     return Drawer(
@@ -159,6 +161,34 @@ class AppDrawer extends ConsumerWidget {
                     ),
                     _buildDrawerTile(
                       context,
+                      icon: Icons.bookmark_border,
+                      tint: AppColors.infoInk,
+                      title: context.l10n.sh_drawer_saved_searches,
+                      route: '/saved-searches',
+                    ),
+                    _buildDrawerTile(
+                      context,
+                      icon: Icons.notifications_none_rounded,
+                      tint: AppColors.warningInk,
+                      title: context.l10n.sh_drawer_notifications,
+                      route: '/notifications',
+                      trailing: unreadCount > 0
+                          ? CircleAvatar(
+                              radius: 11,
+                              backgroundColor: AppColors.error,
+                              child: Text(
+                                '$unreadCount',
+                                style: AppFonts.cairo(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textLight,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                    _buildDrawerTile(
+                      context,
                       icon: Icons.assignment_rounded,
                       tint: AppColors.violetInk,
                       title: context.l10n.sh_drawer_my_requests,
@@ -276,6 +306,7 @@ class AppDrawer extends ConsumerWidget {
     required Color tint,
     required String title,
     required String route,
+    Widget? trailing,
   }) {
     final currentRoute = GoRouterState.of(context).uri.path;
     final selected =
@@ -327,13 +358,16 @@ class AppDrawer extends ConsumerWidget {
                     ),
                   ),
                 ),
-                Icon(
-                  selected
-                      ? Icons.check_circle_rounded
-                      : Icons.chevron_left_rounded,
-                  color: selected ? AppColors.primaryInk : AppColors.textMuted,
-                  size: 20,
-                ),
+                trailing ??
+                    Icon(
+                      selected
+                          ? Icons.check_circle_rounded
+                          : Icons.chevron_left_rounded,
+                      color: selected
+                          ? AppColors.primaryInk
+                          : AppColors.textMuted,
+                      size: 20,
+                    ),
               ],
             ),
           ),

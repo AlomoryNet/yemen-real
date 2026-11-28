@@ -122,6 +122,51 @@ class MapQuery {
   /// The current view and origin are presentation context, not filters.
   MapQuery resetFilters() => MapQuery(view: view, source: source);
 
+  /// Serializes only the filter fields so a saved search reopens with the same
+  /// results instead of inheriting the current map view or origin.
+  Map<String, dynamic> toSavedJson() => <String, dynamic>{
+        'freeText': freeText,
+        'dealType': dealType,
+        'propertyTypeId': propertyTypeId,
+        'governorate': governorate,
+        'district': district,
+        'minPrice': minPrice,
+        'maxPrice': maxPrice,
+        'minBedrooms': minBedrooms,
+        'onlyFeatured': onlyFeatured,
+        'onlyExactCoordinates': onlyExactCoordinates,
+        'nearbyLatitude': nearbyCenter?.latitude,
+        'nearbyLongitude': nearbyCenter?.longitude,
+        'radiusKm': radiusKm,
+      };
+
+  /// Restores a query saved by [toSavedJson].
+  ///
+  /// Unknown or malformed values are ignored so an older saved search never
+  /// crashes the app. Presentation-only fields default to the list results view.
+  factory MapQuery.fromSavedJson(Map<String, dynamic> json) {
+    final latitude = _asDouble(json['nearbyLatitude']);
+    final longitude = _asDouble(json['nearbyLongitude']);
+    return MapQuery(
+      freeText: json['freeText'] is String ? json['freeText'] as String : '',
+      dealType: json['dealType'] is String ? json['dealType'] as String : '',
+      propertyTypeId: _asString(json['propertyTypeId']),
+      governorate: _asString(json['governorate']),
+      district: _asString(json['district']),
+      minPrice: _asDouble(json['minPrice']),
+      maxPrice: _asDouble(json['maxPrice']),
+      minBedrooms: _asInt(json['minBedrooms']),
+      onlyFeatured: _asBool(json['onlyFeatured']),
+      onlyExactCoordinates: _asBool(json['onlyExactCoordinates']),
+      nearbyCenter: latitude != null && longitude != null
+          ? LatLng(latitude, longitude)
+          : null,
+      radiusKm: _asDouble(json['radiusKm']),
+      view: MapViewMode.list,
+      source: MapQuerySource.general,
+    );
+  }
+
   bool get hasActiveFilters =>
       freeText.trim().isNotEmpty ||
       dealType.isNotEmpty ||
@@ -171,4 +216,28 @@ class MapQuery {
 
   @override
   int get hashCode => Object.hash(filterKey, view, source);
+}
+
+double? _asDouble(Object? value) {
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
+int? _asInt(Object? value) {
+  if (value is int) return value;
+  if (value is double) return value.round();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+String? _asString(Object? value) => value is String && value.isNotEmpty
+    ? value
+    : null;
+
+bool _asBool(Object? value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  return value == 'true' || value == '1';
 }

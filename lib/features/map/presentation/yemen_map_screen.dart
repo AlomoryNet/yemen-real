@@ -15,14 +15,17 @@ import '../../../services/device_location_service.dart';
 import '../../../models/map_query.dart';
 import '../../../models/property.dart';
 import '../../../models/property_type.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
 import '../../../providers/map_query_provider.dart';
 import '../../../providers/property_provider.dart';
+import '../../../providers/saved_search_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/add_property_fab.dart';
 import '../../../shared/widgets/app_bottom_nav_bar.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/app_page_body.dart';
+import '../../../shared/widgets/auth_prompt_dialog.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
@@ -388,7 +391,11 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
         district: (incoming.district == null || incoming.district!.isEmpty)
             ? null
             : incoming.district,
+        minPrice: incoming.minPrice,
+        maxPrice: incoming.maxPrice,
+        minBedrooms: incoming.minBedrooms,
         onlyFeatured: incoming.onlyFeatured,
+        onlyExactCoordinates: incoming.onlyExactCoordinates,
         nearbyCenter: incoming.nearbyCenter,
         radiusKm: incoming.radiusKm,
         view: view,
@@ -776,6 +783,111 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
     }
   }
 
+  String _suggestedSavedSearchName(MapQuery query) {
+    final parts = <String>[
+      if (query.freeText.trim().isNotEmpty) query.freeText.trim(),
+      if (query.governorate != null && query.governorate!.isNotEmpty)
+        query.governorate!,
+      if (query.district != null && query.district!.isNotEmpty) query.district!,
+    ];
+    return parts.isEmpty
+        ? context.l10n.saved_search_name_hint
+        : parts.take(2).join(' · ');
+  }
+
+  Future<void> _saveCurrentSearch(PropertyFilterSelection selection) async {
+    // The save button lives in the filter sheet; close it before showing the
+    // name/auth dialog so the user returns straight to the results afterwards.
+    if (mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+    if (!ref.read(authProvider).isAuthenticated) {
+      if (!mounted) return;
+      await AuthPromptDialog.show(
+        context,
+        message: context.l10n.saved_search_login_required,
+        redirectTo: '/map',
+      );
+      return;
+    }
+
+    final query = ref
+        .read(mapQueryProvider)
+        .applySelection(selection)
+        .copyWith(view: MapViewMode.list);
+    final nameController = TextEditingController(
+      text: _suggestedSavedSearchName(query),
+    );
+    var notify = true;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(context.l10n.saved_search_create_title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: nameController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.saved_search_name_label,
+                  hintText: context.l10n.saved_search_name_hint,
+                  border: const OutlineInputBorder(),
+                ),
+                textInputAction: TextInputAction.done,
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: notify,
+                title: Text(context.l10n.saved_search_notify),
+                onChanged: (value) =>
+                    setDialogState(() => notify = value),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(context.l10n.saved_search_cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(context.l10n.saved_search_save_action),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final name = nameController.text.trim();
+    nameController.dispose();
+    if (confirmed != true || name.isEmpty || !mounted) return;
+
+    final created = await ref.read(savedSearchesProvider.notifier).addSavedSearch(
+          name: name,
+          query: query,
+          notify: notify,
+        );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          created == null
+              ? context.l10n.saved_search_error
+              : context.l10n.saved_search_saved,
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _showFilterModal() async {
     final propertyTypes =
         ref.read(propertyTypesProvider).value ?? const <PropertyType>[];
@@ -785,6 +897,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
       propertyTypes: propertyTypes,
       showAdvancedFilters: true,
       title: context.l10n.map_filter_title,
+      onSave: _saveCurrentSearch,
     );
     if (result == null || !mounted) return;
 
@@ -1354,10 +1467,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         children: [
                           // زر الفلاتر الشاملة — يفتح شريحة الفلاتر السفلية
                           Center(
@@ -1375,32 +1485,39 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
                           // keep this visible so the user can tell at a glance
                           // whether a filter is narrowing the map.
                           Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryFill,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.apartment_rounded,
-                                    size: 15,
-                                    color: AppColors.primaryInk,
+                            child: SizedBox(
+                              height: _headerChipHeight,
+                              child: Container(
+                                key: const ValueKey('map_result_count_chip'),
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryFill,
+                                  borderRadius: BorderRadius.circular(
+                                    _headerChipHeight / 2,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '$_filteredCount ${context.l10n.map_result_property_unit}',
-                                    style: AppFonts.cairo(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.bold,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.apartment_rounded,
+                                      size: 15,
                                       color: AppColors.primaryInk,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '$_filteredCount ${context.l10n.map_result_property_unit}',
+                                      style: AppFonts.cairo(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primaryInk,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -1604,21 +1721,25 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
     String label, {
     required VoidCallback onRemoved,
   }) {
-    return Chip(
-      deleteIcon: const Icon(Icons.close_rounded, size: 16),
-      onDeleted: onRemoved,
-      label: Text(
-        label,
-        style: AppFonts.cairo(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+    return SizedBox(
+      height: _headerChipHeight,
+      child: Chip(
+        key: ValueKey('map_filter_chip_$label'),
+        deleteIcon: const Icon(Icons.close_rounded, size: 16),
+        onDeleted: onRemoved,
+        label: Text(
+          label,
+          style: AppFonts.cairo(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
         ),
+        backgroundColor: AppColors.surfaceVariant,
+        side: BorderSide.none,
+        shape: const StadiumBorder(),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
       ),
-      backgroundColor: AppColors.surfaceVariant,
-      side: BorderSide.none,
-      shape: const StadiumBorder(),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
 
@@ -1650,6 +1771,7 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
     required VoidCallback onTap,
   }) {
     return Material(
+      key: const ValueKey('map_filter_button'),
       color: isActive ? AppColors.primaryFill : AppColors.surfaceVariant,
       shape: StadiumBorder(
         side: BorderSide(

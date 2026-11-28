@@ -22,6 +22,8 @@ import '../core/l10n/context_l10n.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme_scope.dart';
 import '../features/map/presentation/map_screen_args.dart';
+import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/saved_searches/presentation/saved_searches_screen.dart';
 import '../models/property.dart';
 import '../shared/widgets/deferred_screen.dart';
 import '../shared/widgets/empty_state_view.dart';
@@ -269,6 +271,18 @@ final GoRouter appRouter = GoRouter(
       name: 'favorites',
       builder: (context, state) =>
           AppThemeScope(child: const FavoritesScreen()),
+    ),
+    GoRoute(
+      path: '/saved-searches',
+      name: 'saved-searches',
+      builder: (context, state) =>
+          AppThemeScope(child: const SavedSearchesScreen()),
+    ),
+    GoRoute(
+      path: '/notifications',
+      name: 'notifications',
+      builder: (context, state) =>
+          AppThemeScope(child: const NotificationsScreen()),
     ),
     GoRoute(
       path: '/profile',

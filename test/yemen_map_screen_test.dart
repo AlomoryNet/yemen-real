@@ -52,6 +52,21 @@ void main() {
     expect(find.byIcon(Icons.tune), findsOneWidget);
     expect(find.text('عرض القائمة'), findsOneWidget);
 
+    // The filter button, live result badge and every active filter chip share
+    // one height so the floating header reads as a single aligned chip row.
+    final countHeight = tester
+        .getSize(find.byKey(const ValueKey('map_result_count_chip')))
+        .height;
+    expect(
+      tester.getSize(find.byKey(const ValueKey('map_filter_button'))).height,
+      countHeight,
+    );
+    final chipFinders = find.byType(Chip);
+    expect(chipFinders, findsWidgets);
+    for (var i = 0; i < chipFinders.evaluate().length; i++) {
+      expect(tester.getSize(chipFinders.at(i)).height, countHeight);
+    }
+
     // The compact add-property FAB belongs to the list view *and* to the
     // "FAB above map FAB" setting. The default outline mode hides it.
     expect(find.byKey(const ValueKey('map_add_property_fab')), findsNothing);
@@ -127,6 +142,15 @@ void main() {
       ),
       findsOneWidget,
     );
+
+    // Every choice chip in the sheet uses one builder and one height, matching
+    // the floating header chips so switching between them feels consistent.
+    final sheetChips = find.byType(FilterChip);
+    expect(sheetChips, findsWidgets);
+    final sheetChipHeight = tester.getSize(sheetChips.first).height;
+    for (var i = 0; i < sheetChips.evaluate().length; i++) {
+      expect(tester.getSize(sheetChips.at(i)).height, sheetChipHeight);
+    }
   });
 
   testWidgets('filter sheet localizes property type labels', (tester) async {

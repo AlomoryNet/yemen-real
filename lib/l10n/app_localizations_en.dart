@@ -702,6 +702,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callback_back_login => 'Back to the sign-in page';
 
   @override
+  String get reset_password_title => 'Set a new password';
+
+  @override
+  String get reset_password_instructions => 'Enter and confirm a new password for your account to finish the reset.';
+
+  @override
+  String get reset_password_new => 'New password';
+
+  @override
+  String get reset_password_confirm => 'Confirm password';
+
+  @override
+  String get reset_password_mismatch => 'Passwords do not match';
+
+  @override
+  String get reset_password_short => 'Password must be at least 8 characters';
+
+  @override
+  String get reset_password_empty => 'Enter a new password';
+
+  @override
+  String get reset_password_saving => 'Saving password...';
+
+  @override
+  String get reset_password_save => 'Save new password';
+
+  @override
+  String get reset_password_success => 'Password updated successfully';
+
+  @override
+  String get reset_password_failed => 'Could not update the password, please request a new reset link';
+
+  @override
+  String get reset_password_continue => 'Go to sign in';
+
+  @override
   String get admin_restricted_title => 'Restricted admin area';
 
   @override
@@ -2292,6 +2328,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get map_apply_filters => 'Apply filters';
+
+  @override
+  String get saved_searches_title => 'Saved searches';
+
+  @override
+  String get saved_searches_subtitle => 'Save your filters and get notified when new listings match.';
+
+  @override
+  String get saved_search_save => 'Save search';
+
+  @override
+  String get saved_search_create_title => 'Save current search';
+
+  @override
+  String get saved_search_name_label => 'Search name';
+
+  @override
+  String get saved_search_name_hint => 'e.g. Rentals in Ibb';
+
+  @override
+  String get saved_search_notify => 'Notify me about matches';
+
+  @override
+  String get saved_search_save_action => 'Save';
+
+  @override
+  String get saved_search_cancel => 'Cancel';
+
+  @override
+  String get saved_search_saved => 'Search saved';
+
+  @override
+  String get saved_search_error => 'Could not save the search';
+
+  @override
+  String get saved_search_login_required => 'Sign in to save searches';
+
+  @override
+  String get saved_search_load_error => 'Could not load saved searches';
+
+  @override
+  String get saved_search_empty_title => 'No saved searches yet';
+
+  @override
+  String get saved_search_empty_description => 'Open the map, apply filters, then choose Save search.';
+
+  @override
+  String get saved_search_open => 'Open results';
+
+  @override
+  String get saved_search_delete => 'Delete search';
+
+  @override
+  String get saved_search_delete_confirm => 'Delete this saved search?';
+
+  @override
+  String get saved_search_rename => 'Rename';
+
+  @override
+  String get saved_search_featured_only => 'Featured only';
+
+  @override
+  String get saved_search_summary_all => 'All properties';
+
+  @override
+  String get notifications_login_required => 'Sign in to view notifications';
+
+  @override
+  String get notifications_empty_title => 'No notifications yet';
+
+  @override
+  String get notifications_empty_description => 'We\'ll let you know when a saved search has a new match.';
+
+  @override
+  String get notifications_mark_all_read => 'Mark all as read';
+
+  @override
+  String get notifications_load_error => 'Could not load notifications';
+
+  @override
+  String get sh_drawer_saved_searches => 'Saved searches';
+
+  @override
+  String get sh_drawer_notifications => 'Notifications';
 
   @override
   String get map_approximate_location_prefix => 'Approximate location based on the center of';

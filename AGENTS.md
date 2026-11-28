@@ -79,6 +79,97 @@ flutter test      → suite (last known: 173 tests)
 ```
 
 ## Status - latest
+- Supabase email verification completed + PKCE recovery fix (uncommitted,
+  2026-11-28): the confirmation email for the `.env` `TEMP_EMIAL` user was
+  observed in device Gmail, tapped, and that user became `confirmed=True`.
+  `site_url` is now `yemenreal://login-callback`. One fresh reset link was
+  requested from the app UI at 05:02 (no retries/brute-forcing); the 05:04 Gmail
+  reset message was opened on `ZY22G4C24N`. Supabase PKCE recoveries send only
+  `code`, so `AuthCallbackScreen` now also watches gotrue's `passwordRecovery`
+  event, and `main.dart` routes `type=recovery` callbacks; the active recovery
+  session was reopened with that deep link, the in-app password form saved the
+  new password, and UI login with it succeeded. While signed in, the drawer's
+  Saved searches and Notifications screens loaded, and the `/map` filter
+  sheet's `Save search` created one temporary saved search that appeared in the
+  list. The temporary user was deleted only after all UI checks; a post-cleanup
+  audit confirmed it is absent and `Asmor112011@gmail.com` remains present. No
+  credential values were printed or written to tracked files. One transient
+  debug-only `Overlay`/`_dependents.isEmpty` assertion appeared during the
+  saved-search dialog teardown; a hot restart cleared it, the signed-in checks
+  completed, and DTD then reported no runtime errors. `flutter analyze` clean,
+  `flutter test` 187/187; `TODO.md` now marks both flows and the authenticated
+  saved-search pass done.
+- CI + map header chip alignment (uncommitted, 2026-11-28): added
+  `.github/workflows/ci.yml` (Flutter 3.47.6 stable + Java 17, `flutter pub get`,
+  `flutter analyze`, `flutter test` on `main` pushes and PRs). The `/map`
+  floating header now gives the filter button, live result badge and every
+  active filter chip the same 48dp height; the chip row's vertical padding was
+  removed so they sit on one baseline. The shared filter sheet's `FilterChip`s
+  use the same 48dp height, so the header and sheet chips stay visually
+  consistent. Added height assertions to `test/yemen_map_screen_test.dart`;
+  `flutter analyze` clean, `flutter test` 187/187.
+- Saved-search migration applied (uncommitted, 2026-11-28):
+  `supabase/migrations/20261128_saved_searches_and_alerts.sql` was applied to the
+  linked project with `psycopg2` using `SUPABASE_DB_PASSWORD` loaded only from
+  `.env` (no values printed or written to tracked files). Verified
+  `saved_searches`/`notifications` tables, the user+created index, 4 RLS
+  policies, `notify_saved_search_matches()` and the properties trigger. The
+  function excludes the owner’s own searches, uses bidirectional
+  governorate/district contains matching, treats 0,0 as missing coordinates and
+  falls back to the governorate center for nearby alerts. `complete_setup.sql`
+  carries the same function/grants. A live trigger test inserted a temporary
+  published listing plus matching/non-matching/owner saved searches: only the
+  matching non-owner got one notification, and all temporary rows were removed
+  with both property triggers confirmed enabled. USB `ZY22G4C24N`: the map
+  filter sheet's `Save search` action closes the sheet and shows the guest
+  sign-in prompt. `TODO.md` now marks saved searches done pending authenticated
+  screen verification; `flutter analyze` clean, `flutter test` 187/187.
+- Supabase recovery-link UX fix (uncommitted, 2026-11-28): the observed reset
+  email was generated while Supabase `site_url` was still `http://localhost:3000`,
+  so tapping `Reset password` opened an unreachable local page. `AuthCallbackScreen`
+  now recognises `type=recovery` fragments, waits for supabase_flutter to consume
+  the deep link, and shows an in-app new-password/confirm form that calls
+  `auth.updateUser()` then signs out before routing to `/login`. Added
+  `reset_password_*` keys to both ARBs and regenerated l10n. Supabase Auth
+  `site_url` was changed via the Management API (credentials loaded only from
+  `.env`) to `yemenreal://login-callback` so future reset links land in the app;
+  no secret values were printed or copied into tracked files. `flutter analyze`
+  clean, `flutter test` 187/187, `flutter build web --release --no-wasm-dry-run`
+  succeeded, fresh USB install on `ZY22G4C24N` with DTD reporting no runtime
+  errors. A single fresh reset request is scheduled for
+  05:02 local (one hour after the 04:01 send) to respect the email limiter;
+  reset/login verification and temporary-user cleanup are still pending, so
+  `TODO.md` was intentionally left unchanged.
+- Supabase email verification partial pass (2026-11-28): the previous no-dot
+  alias retries hit HTTP 429, so the user supplied a different recipient in
+  `.env` as `TEMP_EMIAL` and asked to use that value as-is. The app Register UI
+  accepted it, the confirmation email was observed in Gmail on device Chrome,
+  the link was tapped, and the temporary user is now `confirmed=True`. The link
+  redirected to `localhost:3000` because Supabase still has a local site URL,
+  but confirmation succeeded. Forgot-password still returns "Too many requests
+  recently"; no reset email arrived after two UI taps, so a single retry is
+  scheduled for 03:57 local. The temporary user has NOT been cleaned up yet and
+  `Asmor112011@gmail.com` was not touched. `TODO.md` records the partial state.
+- Property detail deep links + share (uncommitted, 2026-11-28): added
+  `lib/core/utils/property_links.dart` (canonical `/property/<id>` paths,
+  `yemenreal://property/<id>` links, parser, `APP_BASE_URL` via
+  `String.fromEnvironment` only), conditional web meta helpers
+  (`web_meta{,_web,_stub}.dart`), `usePathUrlStrategy()` and incoming-link
+  routing in `main.dart`, Android custom-scheme intent filter, copy-link share
+  action with snackbar on property detail, static OG/Twitter tags in
+  `web/index.html` and refreshed `web/manifest.json`. The OpenFreeMap request
+  header is now native-only; sending it from the browser caused a CORS preflight
+  failure on the map style. Added `flutter_web_plugins` as a direct SDK
+  dependency and `test/property_links_test.dart` +
+  `test/property_detail_share_test.dart`. `flutter analyze` clean,
+  `flutter test` 178/178, `flutter build web --release` succeeded. USB
+  `ZY22G4C24N`: `yemenreal://property/<id>` opened the correct detail page,
+  share copied `yemenreal://property/<id>` (verified by pasting into the home
+  search field) and showed the copied snackbar, with no runtime errors. Local
+  web SPA check: `/property/<id>` loaded, per-property title/OG/canonical meta
+  updated and no console errors after the CORS fix. User decided
+  (2026-11-28) to **keep custom-scheme-only sharing for now**; revisit HTTPS
+  App Links / iOS Universal Links later if a hosted domain is provided.
 - Home category fallback fix (uncommitted, 2026-11-27): the live Supabase project
   currently has **zero** `properties` rows, so the featured/for-sale/for-rent
   preview providers returned empty lists while the nearby section and `/map`

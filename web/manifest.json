@@ -1,11 +1,11 @@
 {
-    "name": "yemen_real_estate_portal",
-    "short_name": "yemen_real_estate_portal",
+    "name": "بوابة اليمن العقارية",
+    "short_name": "بوابة اليمن العقارية",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F8FAFC",
+    "theme_color": "#134E4A",
+    "description": "المنصة الوطنية الرائدة لخدمات بيع وشراء وتأجير العقارات في كافة المحافظات اليمنية.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

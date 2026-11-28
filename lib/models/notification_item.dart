@@ -17,6 +17,18 @@ class NotificationItem {
     required this.createdAt,
   });
 
+  NotificationItem copyWith({bool? isRead}) {
+    return NotificationItem(
+      id: id,
+      userId: userId,
+      title: title,
+      body: body,
+      link: link,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt,
+    );
+  }
+
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(
       id: json['id'] as String,
@@ -39,6 +51,7 @@ class NotificationItem {
       'body': body,
       'link': link,
       'is_read': isRead,
+      'created_at': createdAt.toIso8601String(),
     };
   }
 }

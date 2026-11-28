@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +31,12 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
   StreamSubscription<supa.AuthState>? _authSub;
   Timer? _timeoutTimer;
   final _resendEmailController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isResending = false;
+  bool _isRecovery = false;
+  bool _isSavingPassword = false;
+  bool _passwordSaved = false;
 
   @override
   void initState() {
@@ -39,7 +44,7 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
     // Localizations are inherited widgets, so they are not available until
     // after the first build. Defer callback processing by one frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _processCallback(context);
+      if (mounted) unawaited(_processCallback(context));
     });
   }
 
@@ -48,10 +53,12 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
     _authSub?.cancel();
     _timeoutTimer?.cancel();
     _resendEmailController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _processCallback(BuildContext context) {
+  Future<void> _processCallback(BuildContext context) async {
     // 1. Check incoming URL query params and fragment for explicit error codes
     final params = widget.queryParams ?? {};
     final frag = widget.fragment ?? '';
@@ -78,6 +85,38 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
     }
 
     final client = SupabaseService.client;
+    final isRecovery = _hasParamValue(params, frag, 'type', 'recovery');
+
+    if (isRecovery && client != null) {
+      // supabase_flutter consumes the same deep link and establishes a
+      // recovery session. Give it a moment before showing the password form.
+      setState(() {
+        _isRecovery = true;
+        _status = CallbackStatus.verifying;
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      await _showRecoveryFormForCurrentUser(client);
+      return;
+    }
+
+    // Supabase's PKCE recovery links contain only `code` — the `type=recovery`
+    // marker lives in the code verifier, which gotrue consumes before this
+    // screen opens. Watch the auth event it emits so a reset link shows the
+    // password form instead of the generic verification-success screen.
+    if (client != null && _hasParam(params, frag, 'code')) {
+      final isPasswordRecovery = await _waitForPasswordRecoveryEvent(client);
+      if (!mounted) return;
+      if (isPasswordRecovery) {
+        setState(() {
+          _isRecovery = true;
+          _status = CallbackStatus.verifying;
+        });
+        await _showRecoveryFormForCurrentUser(client);
+        return;
+      }
+    }
+
     if (client == null) {
       // In demo mode or if client is not initialized, treat as success if called
       setState(() {
@@ -147,6 +186,67 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
     return null;
   }
 
+  bool _hasParam(Map<String, String> params, String fragment, String key) {
+    return params.containsKey(key) ||
+        _extractFromFragment(fragment, key) != null;
+  }
+
+  bool _hasParamValue(
+    Map<String, String> params,
+    String fragment,
+    String key,
+    String value,
+  ) {
+    return params[key] == value ||
+        _extractFromFragment(fragment, key) == value;
+  }
+
+  /// PKCE recovery links expose only a `code`; gotrue remembers the intent via
+  /// the stored code verifier and emits `passwordRecovery` when it exchanges
+  /// the code. `onAuthStateChange` is a BehaviorSubject, so a late subscriber
+  /// still sees that event.
+  Future<bool> _waitForPasswordRecoveryEvent(
+    supa.SupabaseClient client,
+  ) async {
+    final completer = Completer<bool>();
+    final sub = client.auth.onAuthStateChange.listen(
+      (data) {
+        if (data.event == supa.AuthChangeEvent.passwordRecovery &&
+            !completer.isCompleted) {
+          completer.complete(true);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!completer.isCompleted) completer.complete(false);
+      },
+    );
+    try {
+      return await completer.future.timeout(
+        const Duration(milliseconds: 800),
+        onTimeout: () => false,
+      );
+    } finally {
+      await sub.cancel();
+    }
+  }
+
+  Future<void> _showRecoveryFormForCurrentUser(
+    supa.SupabaseClient client,
+  ) async {
+    final recoveryUser = client.auth.currentUser;
+    if (recoveryUser == null) {
+      setState(() {
+        _status = CallbackStatus.error;
+        _errorMessage = context.l10n.reset_password_failed;
+      });
+      return;
+    }
+    setState(() {
+      _status = CallbackStatus.success;
+      _verifiedEmail = recoveryUser.email;
+    });
+  }
+
   Future<void> _resendLink() async {
     final email = _resendEmailController.text.trim();
     if (email.isEmpty) {
@@ -180,6 +280,52 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
         backgroundColor: sent ? AppColors.success : AppColors.error,
       ),
     );
+  }
+
+  Future<void> _saveNewPassword() async {
+    final password = _newPasswordController.text;
+    final confirmation = _confirmPasswordController.text;
+
+    if (password.trim().isEmpty) {
+      setState(() => _errorMessage = context.l10n.reset_password_empty);
+      return;
+    }
+    if (password.length < 8) {
+      setState(() => _errorMessage = context.l10n.reset_password_short);
+      return;
+    }
+    if (password != confirmation) {
+      setState(() => _errorMessage = context.l10n.reset_password_mismatch);
+      return;
+    }
+
+    final client = SupabaseService.client;
+    if (client == null) {
+      setState(() => _errorMessage = context.l10n.reset_password_failed);
+      return;
+    }
+
+    setState(() {
+      _isSavingPassword = true;
+      _errorMessage = null;
+    });
+    try {
+      await client.auth.updateUser(
+        supa.UserAttributes(password: password),
+      );
+      await client.auth.signOut();
+      if (!mounted) return;
+      setState(() {
+        _isSavingPassword = false;
+        _passwordSaved = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSavingPassword = false;
+        _errorMessage = context.l10n.reset_password_failed;
+      });
+    }
   }
 
   @override
@@ -218,6 +364,11 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
   }
 
   Widget _buildContent(BuildContext context) {
+    if (_isRecovery && _status == CallbackStatus.success) {
+      return _passwordSaved
+          ? _buildRecoverySuccess(context)
+          : _buildRecoveryForm(context);
+    }
     switch (_status) {
       case CallbackStatus.verifying:
         return _buildVerifying(context);
@@ -241,6 +392,121 @@ class _AuthCallbackScreenState extends ConsumerState<AuthCallbackScreen> {
         decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
         child: Icon(icon, color: ink, size: 40),
       ),
+    );
+  }
+
+  Widget _buildRecoveryForm(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _statusBadge(
+          icon: Icons.lock_reset_rounded,
+          fill: AppColors.primaryFill,
+          ink: AppColors.primaryInk,
+        ),
+        const SizedBox(height: 20),
+        Text(
+          context.l10n.reset_password_title,
+          style: AppFonts.cairo(
+            fontSize: 21,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          context.l10n.reset_password_instructions,
+          style: AppFonts.cairo(
+            fontSize: 13.5,
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        if (_verifiedEmail != null) ...[
+          const SizedBox(height: 16),
+          _emailChip(context, _verifiedEmail!),
+        ],
+        const SizedBox(height: 24),
+        AuthField(
+          label: context.l10n.reset_password_new,
+          child: TextField(
+            controller: _newPasswordController,
+            obscureText: true,
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              hintText: '••••••••',
+              prefixIcon: Icon(Icons.lock_outline),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        AuthField(
+          label: context.l10n.reset_password_confirm,
+          child: TextField(
+            controller: _confirmPasswordController,
+            obscureText: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => unawaited(_saveNewPassword()),
+            decoration: const InputDecoration(
+              hintText: '••••••••',
+              prefixIcon: Icon(Icons.lock_outline),
+            ),
+          ),
+        ),
+        if (_errorMessage != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _errorMessage!,
+            style: AppFonts.cairo(
+              fontSize: 12.5,
+              color: AppColors.errorInk,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+        const SizedBox(height: 24),
+        AuthPrimaryButton(
+          label: context.l10n.reset_password_save,
+          icon: Icons.save_outlined,
+          loading: _isSavingPassword,
+          onPressed: _isSavingPassword
+              ? null
+              : () => unawaited(_saveNewPassword()),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecoverySuccess(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _statusBadge(
+          icon: Icons.check_circle_rounded,
+          fill: AppColors.successFill,
+          ink: AppColors.successInk,
+        ),
+        const SizedBox(height: 20),
+        Text(
+          context.l10n.reset_password_success,
+          style: AppFonts.cairo(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 28),
+        AuthPrimaryButton(
+          label: context.l10n.reset_password_continue,
+          icon: Icons.login,
+          onPressed: () => context.go('/login'),
+        ),
+      ],
     );
   }
 

@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_maplibre/flutter_map_maplibre.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +15,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/property_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/app_feedback.dart';
+import '../../../core/utils/property_links.dart';
+import '../../../core/utils/web_meta.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../models/property.dart';
@@ -50,6 +54,7 @@ class PropertyDetailScreen extends ConsumerStatefulWidget {
 class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
   final MapController _mapController = MapController();
   LatLng? _userLocation;
+  String? _metaPropertyId;
 
   @override
   void initState() {
@@ -75,6 +80,11 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     setState(() => _userLocation = position);
     _mapController.move(position, 15);
   }
+
+  String _shareUrl(Property property) => propertyShareUrl(
+        property.id,
+        webOrigin: kIsWeb ? Uri.base.origin : null,
+      );
 
   void _showReportDialog(BuildContext context, Property property) {
     final reasonController = TextEditingController();
@@ -229,6 +239,16 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         );
     final isDesktop = Responsive.isDesktop(context);
     final colors = Theme.of(context).colorScheme;
+
+    if (_metaPropertyId != property.id) {
+      _metaPropertyId = property.id;
+      updatePropertyMeta(
+        title: '${property.title} | ${AppConstants.appNameAr}',
+        description: property.description,
+        imageUrl: property.primaryImageUrl,
+        url: _shareUrl(property),
+      );
+    }
 
     return SingleChildScrollView(
       child: Column(
@@ -590,12 +610,32 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: () {
-                    showOptionalFeedback(
-                      context,
-                      ref,
-                      context.l10n.detail_link_copied,
-                    );
+                  key: const Key('property_detail_share_button'),
+                  onPressed: () async {
+                    try {
+                      await Clipboard.setData(
+                        ClipboardData(text: _shareUrl(property)),
+                      );
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            context.l10n.detail_link_copied,
+                            style: AppFonts.cairo(),
+                          ),
+                        ),
+                      );
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            context.l10n.error_occurred,
+                            style: AppFonts.cairo(),
+                          ),
+                        ),
+                      );
+                    }
                   },
                   icon: Icon(
                     Icons.share_outlined,

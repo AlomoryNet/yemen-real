@@ -1469,6 +1469,78 @@ abstract class AppLocalizations {
   /// **'Back to the sign-in page'**
   String get callback_back_login;
 
+  /// No description provided for @reset_password_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new password'**
+  String get reset_password_title;
+
+  /// No description provided for @reset_password_instructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter and confirm a new password for your account to finish the reset.'**
+  String get reset_password_instructions;
+
+  /// No description provided for @reset_password_new.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get reset_password_new;
+
+  /// No description provided for @reset_password_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get reset_password_confirm;
+
+  /// No description provided for @reset_password_mismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get reset_password_mismatch;
+
+  /// No description provided for @reset_password_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get reset_password_short;
+
+  /// No description provided for @reset_password_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a new password'**
+  String get reset_password_empty;
+
+  /// No description provided for @reset_password_saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving password...'**
+  String get reset_password_saving;
+
+  /// No description provided for @reset_password_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save new password'**
+  String get reset_password_save;
+
+  /// No description provided for @reset_password_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated successfully'**
+  String get reset_password_success;
+
+  /// No description provided for @reset_password_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the password, please request a new reset link'**
+  String get reset_password_failed;
+
+  /// No description provided for @reset_password_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to sign in'**
+  String get reset_password_continue;
+
   /// No description provided for @admin_restricted_title.
   ///
   /// In en, this message translates to:
@@ -4648,6 +4720,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply filters'**
   String get map_apply_filters;
+
+  /// No description provided for @saved_searches_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved searches'**
+  String get saved_searches_title;
+
+  /// No description provided for @saved_searches_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your filters and get notified when new listings match.'**
+  String get saved_searches_subtitle;
+
+  /// No description provided for @saved_search_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save search'**
+  String get saved_search_save;
+
+  /// No description provided for @saved_search_create_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Save current search'**
+  String get saved_search_create_title;
+
+  /// No description provided for @saved_search_name_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Search name'**
+  String get saved_search_name_label;
+
+  /// No description provided for @saved_search_name_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Rentals in Ibb'**
+  String get saved_search_name_hint;
+
+  /// No description provided for @saved_search_notify.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify me about matches'**
+  String get saved_search_notify;
+
+  /// No description provided for @saved_search_save_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saved_search_save_action;
+
+  /// No description provided for @saved_search_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get saved_search_cancel;
+
+  /// No description provided for @saved_search_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Search saved'**
+  String get saved_search_saved;
+
+  /// No description provided for @saved_search_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the search'**
+  String get saved_search_error;
+
+  /// No description provided for @saved_search_login_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to save searches'**
+  String get saved_search_login_required;
+
+  /// No description provided for @saved_search_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load saved searches'**
+  String get saved_search_load_error;
+
+  /// No description provided for @saved_search_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved searches yet'**
+  String get saved_search_empty_title;
+
+  /// No description provided for @saved_search_empty_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the map, apply filters, then choose Save search.'**
+  String get saved_search_empty_description;
+
+  /// No description provided for @saved_search_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open results'**
+  String get saved_search_open;
+
+  /// No description provided for @saved_search_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete search'**
+  String get saved_search_delete;
+
+  /// No description provided for @saved_search_delete_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this saved search?'**
+  String get saved_search_delete_confirm;
+
+  /// No description provided for @saved_search_rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get saved_search_rename;
+
+  /// No description provided for @saved_search_featured_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured only'**
+  String get saved_search_featured_only;
+
+  /// No description provided for @saved_search_summary_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All properties'**
+  String get saved_search_summary_all;
+
+  /// No description provided for @notifications_login_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to view notifications'**
+  String get notifications_login_required;
+
+  /// No description provided for @notifications_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get notifications_empty_title;
+
+  /// No description provided for @notifications_empty_description.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll let you know when a saved search has a new match.'**
+  String get notifications_empty_description;
+
+  /// No description provided for @notifications_mark_all_read.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get notifications_mark_all_read;
+
+  /// No description provided for @notifications_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load notifications'**
+  String get notifications_load_error;
+
+  /// No description provided for @sh_drawer_saved_searches.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved searches'**
+  String get sh_drawer_saved_searches;
+
+  /// No description provided for @sh_drawer_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get sh_drawer_notifications;
 
   /// No description provided for @map_approximate_location_prefix.
   ///

@@ -57,6 +57,18 @@ class AppNavigationRail extends ConsumerWidget {
           '/my-properties',
         ),
         _RailItem(
+          context.l10n.sh_drawer_saved_searches,
+          Icons.bookmark_border,
+          Icons.bookmark,
+          '/saved-searches',
+        ),
+        _RailItem(
+          context.l10n.sh_drawer_notifications,
+          Icons.notifications_none_rounded,
+          Icons.notifications_rounded,
+          '/notifications',
+        ),
+        _RailItem(
           context.l10n.sh_drawer_my_requests,
           Icons.assignment_outlined,
           Icons.assignment_rounded,

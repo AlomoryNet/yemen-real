@@ -17,6 +17,7 @@ Future<PropertyFilterSelection?> showPropertyFilterSheet({
   List<PropertyType> propertyTypes = const <PropertyType>[],
   bool showAdvancedFilters = false,
   String? title,
+  Future<void> Function(PropertyFilterSelection selection)? onSave,
 }) {
   return showModalBottomSheet<PropertyFilterSelection>(
     context: context,
@@ -29,6 +30,7 @@ Future<PropertyFilterSelection?> showPropertyFilterSheet({
       propertyTypes: propertyTypes,
       showAdvancedFilters: showAdvancedFilters,
       title: title,
+      onSave: onSave,
     ),
   );
 }
@@ -45,18 +47,22 @@ class PropertyFilterSheet extends StatefulWidget {
     this.propertyTypes = const <PropertyType>[],
     this.showAdvancedFilters = false,
     this.title,
+    this.onSave,
   });
 
   final PropertyFilterSelection initial;
   final List<PropertyType> propertyTypes;
   final bool showAdvancedFilters;
   final String? title;
+  final Future<void> Function(PropertyFilterSelection selection)? onSave;
 
   @override
   State<PropertyFilterSheet> createState() => _PropertyFilterSheetState();
 }
 
 class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
+  static const double _filterChipHeight = 48;
+
   late String _dealType;
   late String? _typeId;
   late String _governorate;
@@ -485,6 +491,14 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
                       label: Text(l10n.map_reset_filters),
                     ),
                   ),
+                  if (widget.onSave != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton.outlined(
+                      tooltip: l10n.saved_search_save,
+                      icon: const Icon(Icons.bookmark_add_outlined, size: 20),
+                      onPressed: () => widget.onSave!(_selection),
+                    ),
+                  ],
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
@@ -587,25 +601,28 @@ class _PropertyFilterSheetState extends State<PropertyFilterSheet> {
     required bool selected,
     required VoidCallback onTap,
   }) {
-    return FilterChip(
-      showCheckmark: false,
-      selected: selected,
-      backgroundColor: AppColors.surfaceVariant,
-      selectedColor: AppColors.primary,
-      label: Text(
-        label,
-        style: AppFonts.cairo(
-          fontSize: 13,
-          fontWeight: selected ? FontWeight.bold : FontWeight.w700,
-          color: selected ? AppColors.textLight : AppColors.textPrimary,
+    return SizedBox(
+      height: _filterChipHeight,
+      child: FilterChip(
+        showCheckmark: false,
+        selected: selected,
+        backgroundColor: AppColors.surfaceVariant,
+        selectedColor: AppColors.primary,
+        label: Text(
+          label,
+          style: AppFonts.cairo(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.bold : FontWeight.w700,
+            color: selected ? AppColors.textLight : AppColors.textPrimary,
+          ),
         ),
+        avatar: Icon(
+          icon,
+          size: 16,
+          color: selected ? AppColors.textLight : AppColors.primaryInk,
+        ),
+        onSelected: (_) => onTap(),
       ),
-      avatar: Icon(
-        icon,
-        size: 16,
-        color: selected ? AppColors.textLight : AppColors.primaryInk,
-      ),
-      onSelected: (_) => onTap(),
     );
   }
 

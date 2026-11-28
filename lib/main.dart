@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre/maplibre.dart' as ml;
@@ -11,6 +12,7 @@ import 'core/constants/app_constants.dart';
 import 'core/constants/map_sources.dart';
 import 'core/l10n/app_locale.dart';
 import 'core/theme/app_colors.dart';
+import 'core/utils/property_links.dart';
 import 'core/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/auth_provider.dart' hide AuthState;
@@ -20,6 +22,7 @@ import 'services/supabase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) usePathUrlStrategy();
 
   // All typography uses the bundled variable Cairo font via AppFonts. Fail fast
   // instead of silently downloading a font if a future screen forgets to use it.
@@ -30,12 +33,16 @@ void main() async {
 
   // Identify this app in OpenFreeMap access logs. MapLibre native owns the
   // User-Agent header, so a custom header is the available app identifier.
-  ml.MapLibreNetwork.requestHeaders = [
-    ml.RequestHeaders(
-      AppMapSources.appRequestHeaders,
-      url: 'https://tiles.openfreemap.org/**',
-    ),
-  ];
+  // Browsers cannot send arbitrary headers without a CORS preflight, so this
+  // applies only to native builds (web keeps the default fetch behaviour).
+  if (!kIsWeb) {
+    ml.MapLibreNetwork.requestHeaders = [
+      ml.RequestHeaders(
+        AppMapSources.appRequestHeaders,
+        url: 'https://tiles.openfreemap.org/**',
+      ),
+    ];
+  }
 
   // Keep MapLibre's ambient tile/style cache bounded on low-storage devices.
   // Creating the native OfflineManager before the first frame adds several
@@ -58,7 +65,7 @@ class YemenRealEstateApp extends ConsumerStatefulWidget {
 class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
     with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSubscription;
-  StreamSubscription<Uri>? _authLinkSubscription;
+  StreamSubscription<Uri>? _linkSubscription;
 
   @override
   void initState() {
@@ -80,12 +87,24 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
     }
     // Supabase consumes the same link stream to establish the session. We only
     // need to open the callback screen so the user sees success/error feedback.
-    // Subscribing here (instead of reading getInitialLink once) also covers the
-    // cold-start case: Android delivers the launch intent when the plugin
-    // attaches, which can be after this widget's initState.
+    // Property deep links use the same stream. Subscribing here (instead of
+    // reading getInitialLink once) also covers cold start: Android delivers the
+    // launch intent when the plugin attaches, which can be after initState.
     if (!kIsWeb) {
-      _authLinkSubscription = AppLinks().uriLinkStream.listen(_openAuthCallback);
+      _linkSubscription = AppLinks().uriLinkStream.listen(_openIncomingLink);
     }
+  }
+
+  void _openIncomingLink(Uri uri) {
+    if (!mounted) return;
+    final propertyId = propertyIdFromLink(uri);
+    if (propertyId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) appRouter.go(propertyPath(propertyId));
+      });
+      return;
+    }
+    _openAuthCallback(uri);
   }
 
   void _openAuthCallback(Uri uri) {
@@ -98,7 +117,9 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
         has('code') ||
         has('error') ||
         has('error_code') ||
-        has('error_description');
+        has('error_description') ||
+        uri.queryParameters['type'] == 'recovery' ||
+        fragmentParams['type'] == 'recovery';
     if (!isAuthCallback) return;
 
     final location = Uri(
@@ -115,7 +136,7 @@ class _YemenRealEstateAppState extends ConsumerState<YemenRealEstateApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _authSubscription?.cancel();
-    _authLinkSubscription?.cancel();
+    _linkSubscription?.cancel();
     super.dispose();
   }
 

@@ -702,6 +702,42 @@ class AppLocalizationsAr extends AppLocalizations {
   String get callback_back_login => 'العودة إلى صفحة تسجيل الدخول';
 
   @override
+  String get reset_password_title => 'تعيين كلمة مرور جديدة';
+
+  @override
+  String get reset_password_instructions => 'أدخل كلمة المرور الجديدة لحسابك وأكّدها لإتمام الاستعادة.';
+
+  @override
+  String get reset_password_new => 'كلمة المرور الجديدة';
+
+  @override
+  String get reset_password_confirm => 'تأكيد كلمة المرور';
+
+  @override
+  String get reset_password_mismatch => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get reset_password_short => 'يجب ألا تقل كلمة المرور عن 8 خانات';
+
+  @override
+  String get reset_password_empty => 'يرجى إدخال كلمة المرور الجديدة';
+
+  @override
+  String get reset_password_saving => 'جارٍ حفظ كلمة المرور...';
+
+  @override
+  String get reset_password_save => 'حفظ كلمة المرور الجديدة';
+
+  @override
+  String get reset_password_success => 'تم تحديث كلمة المرور بنجاح';
+
+  @override
+  String get reset_password_failed => 'تعذر تحديث كلمة المرور، يرجى طلب رابط استعادة جديد';
+
+  @override
+  String get reset_password_continue => 'الذهاب إلى صفحة تسجيل الدخول';
+
+  @override
   String get admin_restricted_title => 'منطقة إدارية محمية';
 
   @override
@@ -2292,6 +2328,90 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get map_apply_filters => 'تطبيق الفلاتر';
+
+  @override
+  String get saved_searches_title => 'عمليات البحث المحفوظة';
+
+  @override
+  String get saved_searches_subtitle => 'احفظ فلاترك وتصلك إشعارات عند ظهور عقارات مطابقة.';
+
+  @override
+  String get saved_search_save => 'حفظ البحث';
+
+  @override
+  String get saved_search_create_title => 'حفظ البحث الحالي';
+
+  @override
+  String get saved_search_name_label => 'اسم البحث';
+
+  @override
+  String get saved_search_name_hint => 'مثال: إيجارات إب';
+
+  @override
+  String get saved_search_notify => 'إبلاغي بالعقارات المطابقة';
+
+  @override
+  String get saved_search_save_action => 'حفظ';
+
+  @override
+  String get saved_search_cancel => 'إلغاء';
+
+  @override
+  String get saved_search_saved => 'تم حفظ البحث';
+
+  @override
+  String get saved_search_error => 'تعذر حفظ البحث';
+
+  @override
+  String get saved_search_login_required => 'سجّل الدخول لحفظ عمليات البحث';
+
+  @override
+  String get saved_search_load_error => 'تعذر تحميل عمليات البحث المحفوظة';
+
+  @override
+  String get saved_search_empty_title => 'لا توجد عمليات بحث محفوظة';
+
+  @override
+  String get saved_search_empty_description => 'افتح الخريطة، طبّق الفلاتر، ثم اختر حفظ البحث.';
+
+  @override
+  String get saved_search_open => 'فتح النتائج';
+
+  @override
+  String get saved_search_delete => 'حذف البحث';
+
+  @override
+  String get saved_search_delete_confirm => 'هل تريد حذف هذا البحث المحفوظ؟';
+
+  @override
+  String get saved_search_rename => 'إعادة التسمية';
+
+  @override
+  String get saved_search_featured_only => 'المميزة فقط';
+
+  @override
+  String get saved_search_summary_all => 'كل العقارات';
+
+  @override
+  String get notifications_login_required => 'سجّل الدخول لعرض الإشعارات';
+
+  @override
+  String get notifications_empty_title => 'لا توجد إشعارات بعد';
+
+  @override
+  String get notifications_empty_description => 'سنخبرك عند ظهور عقار جديد يطابق أحد عمليات بحثك المحفوظة.';
+
+  @override
+  String get notifications_mark_all_read => 'تعليم الكل كمقروء';
+
+  @override
+  String get notifications_load_error => 'تعذر تحميل الإشعارات';
+
+  @override
+  String get sh_drawer_saved_searches => 'عمليات البحث المحفوظة';
+
+  @override
+  String get sh_drawer_notifications => 'الإشعارات';
 
   @override
   String get map_approximate_location_prefix => 'موقع تقديري بناءً على مركز';
