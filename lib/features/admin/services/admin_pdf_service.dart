@@ -134,6 +134,7 @@ class AdminPdfService {
             l10n.admin_col_tenant,
             l10n.admin_col_phone,
             l10n.admin_col_start_date,
+            l10n.admin_col_scheduled_visit,
             l10n.admin_status_label,
           ];
           tableData = reqs
@@ -145,6 +146,7 @@ class AdminPdfService {
                   r.phone,
                   r.requestedStartDate?.toIso8601String().split('T').first ??
                       '-',
+                  Formatters.formatDateTime(r.scheduledVisitAt),
                   AppConstants.getRentalRequestStatusNameAr(r.status),
                 ],
               )

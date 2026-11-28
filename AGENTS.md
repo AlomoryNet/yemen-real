@@ -79,7 +79,24 @@ flutter test      → suite (last known: 173 tests)
 ```
 
 ## Status - latest
-- Saved-search dialog teardown fix (uncommitted, 2026-11-28): the transient
+- Rental-request visit scheduling (uncommitted, 2026-11-28): added a distinct
+  `scheduled_visit_at TIMESTAMPTZ` field (not the move-in date) via
+  `supabase/migrations/20261128_rental_request_visits.sql` (also folded into
+  `complete_setup.sql`). Tenants can optionally propose a future visit in
+  `RentalRequestModal`; admins/owners can schedule, reschedule or clear it from
+  `AdminRequestsTab`. Added shared `DateTimePickers.futureDateTime`, tenant
+  display, success-view confirmation, CSV/PDF columns, demo seeds, localized
+  ARB keys and a rerunnable migration. `userRentalRequestsProvider` is now
+  `autoDispose` and invalidated after submit/admin changes so My Rental Requests
+  refreshes. Migration applied with `.env` credentials only; no values copied to
+  tracked files. The success-sheet note now uses theme-aware
+  `warningFill`/`warningInk` at 13sp instead of a fixed light fill/ink, so it
+  stays readable in dark mode. `flutter analyze` clean, `flutter test` 193/193.
+  USB `ZY22G4C24N`: admin schedule→clear→reschedule, tenant submission with a
+  proposed visit, success view and My Requests display all verified; DTD
+  reported no runtime errors. Temporary user/listing/requests removed and the
+  protected account remains.
+- Saved-search dialog teardown fix (commit `1de0ac9`, pushed 2026-11-28): the transient
   `Overlay`/`_dependents.isEmpty` assertion was reproducible in a widget test.
   Root cause: `_saveCurrentSearch` disposed its `TextEditingController` as soon
   as `showDialog` returned, while the dialog was still animating out and

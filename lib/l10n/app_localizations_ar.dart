@@ -1164,6 +1164,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get admin_col_start_date => 'تاريخ البدء';
 
   @override
+  String get admin_col_scheduled_visit => 'موعد المعاينة';
+
+  @override
+  String get admin_schedule_visit => 'تحديد أو إعادة جدولة المعاينة';
+
+  @override
+  String get admin_clear_visit => 'إلغاء موعد المعاينة';
+
+  @override
+  String get admin_visit_scheduled => 'تم تحديد موعد المعاينة';
+
+  @override
+  String get admin_visit_cleared => 'تم إلغاء موعد المعاينة';
+
+  @override
   String get admin_col_id => 'المعرف';
 
   @override
@@ -2118,6 +2133,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get req_login_required => 'تسجيل الدخول مطلوب';
 
   @override
+  String get req_no_visit_scheduled => 'لم يتم تحديد موعد معاينة بعد';
+
+  @override
   String get req_not_specified => 'غير محدد';
 
   @override
@@ -2139,7 +2157,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get req_pick_date_hint => 'حدد التاريخ المتوقع لبدء الإيجار';
 
   @override
+  String get req_pick_visit_hint => 'اختر تاريخ ووقت المعاينة';
+
+  @override
   String get req_property_fallback => 'عقار للإيجار';
+
+  @override
+  String get req_scheduled_visit => 'موعد المعاينة:';
+
+  @override
+  String get req_visit_label => 'الوقت المناسب للمعاينة (اختياري)';
 
   @override
   String get req_reference_number => 'رقم الطلب المرجعي:';
@@ -3458,6 +3485,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get csv_requested_start => 'تاريخ البدء المطلوب';
+
+  @override
+  String get csv_scheduled_visit => 'موعد المعاينة';
 
   @override
   String get csv_admin_notes => 'ملاحظات الإدارة';

@@ -11,14 +11,13 @@ final rentalRequestRepositoryProvider = Provider<RentalRequestRepository>((
   return RentalRequestRepository();
 });
 
-final userRentalRequestsProvider = FutureProvider<List<RentalRequest>>((
-  ref,
-) async {
-  final auth = ref.watch(authProvider);
-  if (auth.user == null) return [];
-  final repo = ref.watch(rentalRequestRepositoryProvider);
-  return await repo.getUserRentalRequests(auth.user!.id);
-});
+final userRentalRequestsProvider =
+    FutureProvider.autoDispose<List<RentalRequest>>((ref) async {
+      final auth = ref.watch(authProvider);
+      if (auth.user == null) return [];
+      final repo = ref.watch(rentalRequestRepositoryProvider);
+      return await repo.getUserRentalRequests(auth.user!.id);
+    });
 
 // Full list is kept for CSV/PDF export only; the admin tab uses the paginator.
 final allRentalRequestsProvider = FutureProvider<List<RentalRequest>>((

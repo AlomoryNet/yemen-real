@@ -1164,6 +1164,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get admin_col_start_date => 'Start date';
 
   @override
+  String get admin_col_scheduled_visit => 'Scheduled visit';
+
+  @override
+  String get admin_schedule_visit => 'Schedule or reschedule visit';
+
+  @override
+  String get admin_clear_visit => 'Clear visit';
+
+  @override
+  String get admin_visit_scheduled => 'Visit scheduled';
+
+  @override
+  String get admin_visit_cleared => 'Visit cleared';
+
+  @override
   String get admin_col_id => 'ID';
 
   @override
@@ -2118,6 +2133,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get req_login_required => 'Authentication Required';
 
   @override
+  String get req_no_visit_scheduled => 'No visit scheduled yet';
+
+  @override
   String get req_not_specified => 'Not specified';
 
   @override
@@ -2139,7 +2157,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get req_pick_date_hint => 'Pick the expected move-in date';
 
   @override
+  String get req_pick_visit_hint => 'Pick a visit date and time';
+
+  @override
   String get req_property_fallback => 'Property for rent';
+
+  @override
+  String get req_scheduled_visit => 'Scheduled visit:';
+
+  @override
+  String get req_visit_label => 'Preferred visit time (optional)';
 
   @override
   String get req_reference_number => 'Request reference number:';
@@ -3458,6 +3485,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get csv_requested_start => 'Requested start date';
+
+  @override
+  String get csv_scheduled_visit => 'Scheduled visit';
 
   @override
   String get csv_admin_notes => 'Admin notes';

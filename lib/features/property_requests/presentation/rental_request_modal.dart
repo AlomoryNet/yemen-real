@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/utils/date_time_pickers.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../../models/property.dart';
@@ -36,6 +37,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
   late final TextEditingController _phoneController;
   final TextEditingController _notesController = TextEditingController();
   DateTime? _selectedDate;
+  DateTime? _scheduledVisitAt;
   bool _isSubmitting = false;
   RentalRequest? _submittedRequest;
 
@@ -75,6 +77,7 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
         fullName: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
         requestedStartDate: _selectedDate,
+        scheduledVisitAt: _scheduledVisitAt,
         notes: _notesController.text.trim().isNotEmpty
             ? _notesController.text.trim()
             : null,
@@ -132,14 +135,14 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
       children: [
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: AppColors.successMuted,
+          decoration: BoxDecoration(
+            color: AppColors.successFill,
             shape: BoxShape.circle,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.check_circle_outline,
             size: 54,
-            color: AppColors.success,
+            color: AppColors.successInk,
           ),
         ),
         const SizedBox(height: 16),
@@ -167,18 +170,40 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
             ),
           ),
         ),
+        if (req.scheduledVisitAt != null) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.event_available_outlined,
+                size: 18,
+                color: AppColors.infoInk,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '${context.l10n.req_scheduled_visit} ${Formatters.formatDateTime(req.scheduledVisitAt)}',
+                  style: AppFonts.cairo(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.warningMuted,
+            color: AppColors.warningFill,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.info_outline,
-                color: AppColors.warning,
+                color: AppColors.warningInk,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -186,9 +211,9 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                 child: Text(
                   context.l10n.req_success_note,
                   style: AppFonts.cairo(
-                    fontSize: 12,
-                    color: AppColors.textPrimary,
-                    height: 1.4,
+                    fontSize: 13,
+                    color: AppColors.warningInk,
+                    height: 1.45,
                   ),
                 ),
               ),
@@ -330,6 +355,52 @@ class _RentalRequestModalState extends ConsumerState<RentalRequestModal> {
                   ),
                   Icon(
                     Icons.calendar_today_outlined,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Preferred visit time
+          Text(
+            context.l10n.req_visit_label,
+            style: AppFonts.cairo(fontSize: 13, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
+          InkWell(
+            onTap: () async {
+              final picked = await DateTimePickers.futureDateTime(context);
+              if (picked != null && mounted) {
+                setState(() => _scheduledVisitAt = picked);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      _scheduledVisitAt != null
+                          ? Formatters.formatDateTime(_scheduledVisitAt)
+                          : context.l10n.req_pick_visit_hint,
+                      style: AppFonts.cairo(
+                        color: _scheduledVisitAt != null
+                            ? AppColors.textPrimary
+                            : AppColors.textMuted,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.event_available_outlined,
                     size: 18,
                     color: AppColors.textMuted,
                   ),

@@ -178,6 +178,26 @@ class MyRentalRequestsScreen extends ConsumerWidget {
                                           ),
                                         ],
                                       ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.event_available_outlined,
+                                            size: 14,
+                                            color: AppColors.textMuted,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              '${context.l10n.req_scheduled_visit} ${req.scheduledVisitAt != null ? Formatters.formatDateTime(req.scheduledVisitAt) : context.l10n.req_no_visit_scheduled}',
+                                              style: AppFonts.cairo(
+                                                fontSize: 12,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                       if (req.notes != null &&
                                           req.notes!.isNotEmpty) ...[
                                         const SizedBox(height: 8),

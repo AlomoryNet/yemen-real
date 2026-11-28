@@ -105,17 +105,45 @@ void main() {
 
     test('RentalRequestRepository submit inquiry request', () async {
       final reqRepo = RentalRequestRepository();
+      final visit = DateTime(2026, 12, 3, 11);
       final req = await reqRepo.submitRentalRequest(
         propertyId: 'prop-1',
         userId: 'test-user-1',
         fullName: 'نبيل سعيد',
         phone: '773333333',
+        scheduledVisitAt: visit,
         notes: 'عائلة مكونة من 3 أفراد',
       );
 
       expect(req.requestNumber, startsWith('REQ-'));
       expect(req.status, equals(AppConstants.reqStatusNew));
       expect(req.fullName, equals('نبيل سعيد'));
+      expect(req.scheduledVisitAt, equals(visit));
+    });
+
+    test('RentalRequestRepository schedules and clears visits', () async {
+      final reqRepo = RentalRequestRepository();
+      final req = await reqRepo.submitRentalRequest(
+        propertyId: 'prop-2',
+        userId: 'visit-user',
+        fullName: 'هالة',
+        phone: '771111111',
+      );
+      final confirmed = DateTime(2026, 12, 4, 16, 30);
+
+      await reqRepo.updateRentalRequestVisit(
+        requestId: req.id,
+        scheduledVisitAt: confirmed,
+      );
+      var stored = (await reqRepo.getUserRentalRequests('visit-user')).single;
+      expect(stored.scheduledVisitAt, equals(confirmed));
+
+      await reqRepo.updateRentalRequestVisit(
+        requestId: req.id,
+        clearVisit: true,
+      );
+      stored = (await reqRepo.getUserRentalRequests('visit-user')).single;
+      expect(stored.scheduledVisitAt, isNull);
     });
 
     test('CommissionRepository manual record creation', () async {
@@ -153,6 +181,7 @@ void main() {
       final reqCsv = adminRepo.exportRentalRequestsToCsv(requests);
       expect(reqCsv, startsWith('\uFEFF'));
       expect(reqCsv, contains('رقم الطلب'));
+      expect(reqCsv, contains('موعد المعاينة'));
 
       final commRepo = CommissionRepository();
       final commissions = await commRepo.getCommissions();
@@ -205,4 +234,3 @@ void main() {
     );
   });
 }
-

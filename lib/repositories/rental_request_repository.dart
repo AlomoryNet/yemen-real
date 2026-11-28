@@ -18,6 +18,7 @@ class RentalRequestRepository {
     required String fullName,
     required String phone,
     DateTime? requestedStartDate,
+    DateTime? scheduledVisitAt,
     String? notes,
     String? propertyTitle,
     double? propertyPrice,
@@ -36,6 +37,7 @@ class RentalRequestRepository {
         fullName: fullName,
         phone: phone,
         requestedStartDate: requestedStartDate,
+        scheduledVisitAt: scheduledVisitAt,
         notes: notes,
         status: AppConstants.reqStatusNew,
         createdAt: DateTime.now(),
@@ -59,6 +61,7 @@ class RentalRequestRepository {
             ?.toIso8601String()
             .split('T')
             .first,
+        'scheduled_visit_at': scheduledVisitAt?.toIso8601String(),
         'notes': notes,
         'status': AppConstants.reqStatusNew,
       };
@@ -225,6 +228,42 @@ class RentalRequestRepository {
           .update({
             'status': status,
             if (adminNotes != null) 'admin_notes': adminNotes,
+          })
+          .eq('id', requestId);
+    } catch (e) {
+      throw AppException.fromSupabase(e);
+    }
+  }
+
+  /// Set or clear the property-viewing appointment (Admin / Property Owner).
+  Future<void> updateRentalRequestVisit({
+    required String requestId,
+    DateTime? scheduledVisitAt,
+    bool clearVisit = false,
+  }) async {
+    if (!clearVisit && scheduledVisitAt == null) return;
+
+    if (AppConfig.isDemoMode || _client == null) {
+      final idx = SupabaseService.demoRentalRequests.indexWhere(
+        (r) => r.id == requestId,
+      );
+      if (idx != -1) {
+        final current = SupabaseService.demoRentalRequests[idx];
+        SupabaseService.demoRentalRequests[idx] = current.copyWith(
+          scheduledVisitAt: scheduledVisitAt,
+          clearScheduledVisit: clearVisit,
+        );
+      }
+      return;
+    }
+
+    try {
+      await _client
+          .from('rental_requests')
+          .update({
+            'scheduled_visit_at': clearVisit
+                ? null
+                : scheduledVisitAt?.toIso8601String(),
           })
           .eq('id', requestId);
     } catch (e) {

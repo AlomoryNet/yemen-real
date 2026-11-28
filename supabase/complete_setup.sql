@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS public.rental_requests (
     full_name TEXT NOT NULL,
     phone TEXT NOT NULL,
     requested_start_date DATE,
+    scheduled_visit_at TIMESTAMPTZ,
     notes TEXT,
     status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'under_review', 'contacted', 'provisionally_accepted', 'rejected', 'cancelled', 'completed')),
     admin_notes TEXT,

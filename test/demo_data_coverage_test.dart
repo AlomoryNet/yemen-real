@@ -47,6 +47,11 @@ void main() {
     final ids = SupabaseService.demoProperties.map((p) => p.id).toSet();
 
     expect(SupabaseService.demoRentalRequests, hasLength(4));
+    expect(
+      SupabaseService.demoRentalRequests
+          .where((request) => request.scheduledVisitAt != null),
+      hasLength(3),
+    );
     expect(SupabaseService.demoCommissions, hasLength(4));
     expect(SupabaseService.demoReports, hasLength(3));
 

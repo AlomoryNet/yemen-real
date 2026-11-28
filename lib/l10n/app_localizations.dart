@@ -2393,6 +2393,36 @@ abstract class AppLocalizations {
   /// **'Start date'**
   String get admin_col_start_date;
 
+  /// No description provided for @admin_col_scheduled_visit.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled visit'**
+  String get admin_col_scheduled_visit;
+
+  /// No description provided for @admin_schedule_visit.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule or reschedule visit'**
+  String get admin_schedule_visit;
+
+  /// No description provided for @admin_clear_visit.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear visit'**
+  String get admin_clear_visit;
+
+  /// No description provided for @admin_visit_scheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit scheduled'**
+  String get admin_visit_scheduled;
+
+  /// No description provided for @admin_visit_cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit cleared'**
+  String get admin_visit_cleared;
+
   /// No description provided for @admin_col_id.
   ///
   /// In en, this message translates to:
@@ -4301,6 +4331,12 @@ abstract class AppLocalizations {
   /// **'Authentication Required'**
   String get req_login_required;
 
+  /// No description provided for @req_no_visit_scheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'No visit scheduled yet'**
+  String get req_no_visit_scheduled;
+
   /// No description provided for @req_not_specified.
   ///
   /// In en, this message translates to:
@@ -4343,11 +4379,29 @@ abstract class AppLocalizations {
   /// **'Pick the expected move-in date'**
   String get req_pick_date_hint;
 
+  /// No description provided for @req_pick_visit_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a visit date and time'**
+  String get req_pick_visit_hint;
+
   /// No description provided for @req_property_fallback.
   ///
   /// In en, this message translates to:
   /// **'Property for rent'**
   String get req_property_fallback;
+
+  /// No description provided for @req_scheduled_visit.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled visit:'**
+  String get req_scheduled_visit;
+
+  /// No description provided for @req_visit_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred visit time (optional)'**
+  String get req_visit_label;
 
   /// No description provided for @req_reference_number.
   ///
@@ -6964,6 +7018,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Requested start date'**
   String get csv_requested_start;
+
+  /// No description provided for @csv_scheduled_visit.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled visit'**
+  String get csv_scheduled_visit;
 
   /// No description provided for @csv_admin_notes.
   ///

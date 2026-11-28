@@ -202,7 +202,22 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
         disposing it during the exit animation, and a fresh on-device save with
         a temporary confirmed user produced no runtime errors before that user
         was deleted.
-      - Visit/booking scheduling in rental requests.
+      - [x] Visit/booking scheduling in rental requests (2026-11-28,
+        uncommitted): `scheduled_visit_at TIMESTAMPTZ` on `rental_requests`
+        (separate from the desired move-in date), a shared future-only date+time
+        picker, an optional tenant proposal in the rental modal, tenant display,
+        admin schedule/reschedule/clear controls, CSV/PDF columns, demo seeds and
+        a rerunnable migration. `userRentalRequestsProvider` is autoDispose and
+        invalidated on submit/admin changes so the tenant list refreshes. The
+        migration was applied with credentials loaded only from `.env`. Added
+        model/repository/UI/demo regressions plus a theme-contrast regression for
+        the success note; `flutter analyze` clean, `flutter test` 193/193.
+        USB `ZY22G4C24N`: admin schedule/clear/reschedule,
+        tenant submission with a proposed visit, the success view and My Rental
+        Requests display all worked; DTD reported no runtime errors. The success
+        note was switched to theme-aware `warningFill`/`warningInk` (13sp) after
+        it proved hard to read in dark mode. Temporary user/listing/requests
+        were deleted and the protected account remains.
       - First-run onboarding: location permission + city selection.
       - Offline cache of viewed properties + favorites (Hive).
 

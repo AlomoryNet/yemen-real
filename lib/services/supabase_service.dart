@@ -302,6 +302,9 @@ class SupabaseService {
         fullName: 'طارق عبدالكريم',
         phone: '+967772223334',
         requestedStartDate: DateTime.now().add(const Duration(days: 14)),
+        scheduledVisitAt: DateTime.now().add(
+          const Duration(days: 2, hours: 4),
+        ),
         notes: 'عائلة مكونة من 4 أفراد، نفضل عقد سنوي مع دفع مقدم 3 أشهر.',
         status: AppConstants.reqStatusNew,
         createdAt: DateTime.now().subtract(const Duration(hours: 6)),
@@ -332,6 +335,9 @@ class SupabaseService {
         fullName: 'طارق عبدالكريم',
         phone: '+967772223334',
         requestedStartDate: DateTime.now().add(const Duration(days: 30)),
+        scheduledVisitAt: DateTime.now().add(
+          const Duration(days: 4, hours: 10),
+        ),
         notes: 'طلب سكن عائلي قريب من مركز المدينة.',
         status: AppConstants.reqStatusUnderReview,
         adminNotes: 'تم التحقق من رقم الهاتف.',
@@ -348,6 +354,9 @@ class SupabaseService {
         fullName: 'منى عبدالرحمن',
         phone: '+967733445566',
         requestedStartDate: DateTime.now().subtract(const Duration(days: 10)),
+        scheduledVisitAt: DateTime.now().subtract(
+          const Duration(days: 12),
+        ),
         notes: 'تم إكمال العقد واستلام المفتاح.',
         status: AppConstants.reqStatusCompleted,
         createdAt: DateTime.now().subtract(const Duration(days: 20)),

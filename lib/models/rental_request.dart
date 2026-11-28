@@ -8,6 +8,7 @@ class RentalRequest {
   final String fullName;
   final String phone;
   final DateTime? requestedStartDate;
+  final DateTime? scheduledVisitAt;
   final String? notes;
   final String status;
   final String? adminNotes;
@@ -25,6 +26,7 @@ class RentalRequest {
     required this.fullName,
     required this.phone,
     this.requestedStartDate,
+    this.scheduledVisitAt,
     this.notes,
     this.status = AppConstants.reqStatusNew,
     this.adminNotes,
@@ -57,6 +59,9 @@ class RentalRequest {
       requestedStartDate: json['requested_start_date'] != null
           ? DateTime.parse(json['requested_start_date'] as String)
           : null,
+      scheduledVisitAt: json['scheduled_visit_at'] != null
+          ? DateTime.parse(json['scheduled_visit_at'] as String)
+          : null,
       notes: json['notes'] as String?,
       status: json['status'] as String? ?? AppConstants.reqStatusNew,
       adminNotes: json['admin_notes'] as String?,
@@ -84,13 +89,19 @@ class RentalRequest {
           ?.toIso8601String()
           .split('T')
           .first,
+      'scheduled_visit_at': scheduledVisitAt?.toIso8601String(),
       'notes': notes,
       'status': status,
       'admin_notes': adminNotes,
     };
   }
 
-  RentalRequest copyWith({String? status, String? adminNotes}) {
+  RentalRequest copyWith({
+    String? status,
+    String? adminNotes,
+    DateTime? scheduledVisitAt,
+    bool clearScheduledVisit = false,
+  }) {
     return RentalRequest(
       id: id,
       requestNumber: requestNumber,
@@ -99,6 +110,9 @@ class RentalRequest {
       fullName: fullName,
       phone: phone,
       requestedStartDate: requestedStartDate,
+      scheduledVisitAt: clearScheduledVisit
+          ? null
+          : (scheduledVisitAt ?? this.scheduledVisitAt),
       notes: notes,
       status: status ?? this.status,
       adminNotes: adminNotes ?? this.adminNotes,

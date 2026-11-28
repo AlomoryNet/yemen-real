@@ -5,6 +5,8 @@ import 'package:yemen_real_estate_portal/core/theme/app_fonts.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/context_l10n.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/date_time_pickers.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../providers/admin_provider.dart';
 import '../../../../providers/rental_request_provider.dart';
 import '../../../../repositories/rental_request_repository.dart';
@@ -110,7 +112,8 @@ class AdminRequestsTab extends ConsumerWidget {
                           ),
                         ),
                         subtitle: Text(
-                          '${context.l10n.admin_phone_label}: ${req.phone} • ${context.l10n.admin_property_label}: ${req.propertyTitle ?? req.propertyId}',
+                          '${context.l10n.admin_phone_label}: ${req.phone} • ${context.l10n.admin_property_label}: ${req.propertyTitle ?? req.propertyId}'
+                          '${req.scheduledVisitAt != null ? '\n${context.l10n.req_scheduled_visit} ${Formatters.formatDateTime(req.scheduledVisitAt)}' : ''}',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppFonts.cairo(fontSize: 12),
@@ -119,6 +122,77 @@ class AdminRequestsTab extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             StatusBadge.rentalRequest(req.status),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              tooltip: req.scheduledVisitAt == null
+                                  ? context.l10n.admin_schedule_visit
+                                  : '${context.l10n.admin_schedule_visit} · ${Formatters.formatDateTime(req.scheduledVisitAt)}',
+                              icon: const Icon(
+                                Icons.event_available_outlined,
+                                size: 20,
+                              ),
+                              onPressed: () async {
+                                final picked =
+                                    await DateTimePickers.futureDateTime(
+                                      context,
+                                    );
+                                if (picked == null || !context.mounted) return;
+                                await RentalRequestRepository()
+                                    .updateRentalRequestVisit(
+                                      requestId: req.id,
+                                      scheduledVisitAt: picked,
+                                    );
+                                ref.invalidate(userRentalRequestsProvider);
+                                await ref
+                                    .read(
+                                      allRentalRequestsPaginatorProvider
+                                          .notifier,
+                                    )
+                                    .reload();
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      context.l10n.admin_visit_scheduled,
+                                      style: AppFonts.cairo(),
+                                    ),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                              },
+                            ),
+                            if (req.scheduledVisitAt != null)
+                              IconButton(
+                                tooltip: context.l10n.admin_clear_visit,
+                                icon: const Icon(
+                                  Icons.event_busy_outlined,
+                                  size: 20,
+                                ),
+                                onPressed: () async {
+                                  await RentalRequestRepository()
+                                      .updateRentalRequestVisit(
+                                        requestId: req.id,
+                                        clearVisit: true,
+                                      );
+                                  ref.invalidate(userRentalRequestsProvider);
+                                  await ref
+                                      .read(
+                                        allRentalRequestsPaginatorProvider
+                                            .notifier,
+                                      )
+                                      .reload();
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        context.l10n.admin_visit_cleared,
+                                        style: AppFonts.cairo(),
+                                      ),
+                                      backgroundColor: AppColors.success,
+                                    ),
+                                  );
+                                },
+                              ),
                             const SizedBox(width: 8),
                             PopupMenuButton<String>(
                               onSelected: (newStatus) async {

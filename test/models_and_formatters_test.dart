@@ -90,6 +90,31 @@ void main() {
       expect(req.requestNumber, equals('REQ-2026-1001'));
       expect(req.status, equals(AppConstants.reqStatusNew));
     });
+
+    test('RentalRequest scheduled visit survives JSON and copyWith', () {
+      final visit = DateTime.utc(2026, 12, 2, 10, 30);
+      final req = RentalRequest.fromJson({
+        'id': 'r-2',
+        'request_number': 'REQ-2026-1002',
+        'property_id': 'p-2',
+        'user_id': 'u-2',
+        'full_name': 'سالم',
+        'phone': '771234567',
+        'requested_start_date': '2026-12-20',
+        'scheduled_visit_at': visit.toIso8601String(),
+        'status': AppConstants.reqStatusContacted,
+        'created_at': '2026-11-28T10:00:00Z',
+      });
+
+      expect(req.scheduledVisitAt, isNotNull);
+      expect(req.scheduledVisitAt!.toUtc(), equals(visit));
+      expect(
+        req.toJson()['scheduled_visit_at'],
+        equals(visit.toIso8601String()),
+      );
+      expect(req.copyWith().scheduledVisitAt, isNotNull);
+      expect(req.copyWith(clearScheduledVisit: true).scheduledVisitAt, isNull);
+    });
   });
 
   group('Formatters Tests', () {
