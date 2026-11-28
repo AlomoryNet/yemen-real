@@ -79,6 +79,20 @@ flutter test      → suite (last known: 173 tests)
 ```
 
 ## Status - latest
+- Saved-search dialog teardown fix (uncommitted, 2026-11-28): the transient
+  `Overlay`/`_dependents.isEmpty` assertion was reproducible in a widget test.
+  Root cause: `_saveCurrentSearch` disposed its `TextEditingController` as soon
+  as `showDialog` returned, while the dialog was still animating out and
+  rebuilding against the disposed controller; the cascade then deactivated
+  inherited elements in the wrong build scope. `_SaveSearchDialog` now owns the
+  controller for the whole dialog lifetime and returns a typed result, and its
+  content `Column` uses `mainAxisSize.min`. Added
+  `test/saved_search_dialog_test.dart` as a regression. `flutter analyze` clean,
+  `flutter test` 188/188. USB `ZY22G4C24N`: recreated a temporary confirmed user
+  via the admin API (no email sent), signed in through the UI, saved a search
+  from the map filter sheet with no runtime errors, confirmed it appeared in
+  Saved searches, then deleted only that temporary user and verified the
+  protected user remains. Hot restart: no runtime errors.
 - Commit `f820778` pushed to `origin/main` (2026-11-28): includes the verified
   Supabase email flows, PKCE recovery fix, saved searches/alerts, property deep
   links/share, CI workflow and map chip alignment. Follow-up `chore` commit
@@ -97,12 +111,12 @@ flutter test      → suite (last known: 173 tests)
   sheet's `Save search` created one temporary saved search that appeared in the
   list. The temporary user was deleted only after all UI checks; a post-cleanup
   audit confirmed it is absent and `Asmor112011@gmail.com` remains present. No
-  credential values were printed or written to tracked files. One transient
-  debug-only `Overlay`/`_dependents.isEmpty` assertion appeared during the
-  saved-search dialog teardown; a hot restart cleared it, the signed-in checks
-  completed, and DTD then reported no runtime errors. `flutter analyze` clean,
-  `flutter test` 187/187; `TODO.md` now marks both flows and the authenticated
-  saved-search pass done.
+  credential values were printed or written to tracked files. An
+  `Overlay`/`_dependents.isEmpty` assertion observed during the saved-search
+  dialog teardown was later reproduced and fixed by the entry above; the rest of
+  the signed-in checks completed and DTD reported no runtime errors. `flutter
+  analyze` clean; `flutter test` 187/187 at the time; `TODO.md` marks both flows
+  and the authenticated saved-search pass done.
 - CI + map header chip alignment (uncommitted, 2026-11-28): added
   `.github/workflows/ci.yml` (Flutter 3.47.6 stable + Java 17, `flutter pub get`,
   `flutter analyze`, `flutter test` on `main` pushes and PRs). The `/map`

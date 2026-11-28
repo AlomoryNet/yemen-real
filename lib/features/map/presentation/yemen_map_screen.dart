@@ -815,65 +815,21 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
         .read(mapQueryProvider)
         .applySelection(selection)
         .copyWith(view: MapViewMode.list);
-    final nameController = TextEditingController(
-      text: _suggestedSavedSearchName(query),
-    );
-    var notify = true;
 
-    final confirmed = await showDialog<bool>(
+    final result = await showDialog<_SavedSearchDialogResult>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(context.l10n.saved_search_create_title),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: nameController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: context.l10n.saved_search_name_label,
-                  hintText: context.l10n.saved_search_name_hint,
-                  border: const OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: notify,
-                title: Text(context.l10n.saved_search_notify),
-                onChanged: (value) =>
-                    setDialogState(() => notify = value),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(context.l10n.saved_search_cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(context.l10n.saved_search_save_action),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) =>
+          _SaveSearchDialog(initialName: _suggestedSavedSearchName(query)),
     );
+    if (!mounted || result == null) return;
 
-    final name = nameController.text.trim();
-    nameController.dispose();
-    if (confirmed != true || name.isEmpty || !mounted) return;
+    final name = result.name.trim();
+    if (name.isEmpty) return;
 
     final created = await ref.read(savedSearchesProvider.notifier).addSavedSearch(
           name: name,
           query: query,
-          notify: notify,
+          notify: result.notify,
         );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -2072,6 +2028,93 @@ class _YemenMapScreenState extends ConsumerState<YemenMapView>
               ),
             )
           : null,
+    );
+  }
+}
+
+class _SavedSearchDialogResult {
+  const _SavedSearchDialogResult({
+    required this.name,
+    required this.notify,
+  });
+
+  final String name;
+  final bool notify;
+}
+
+/// Owns its text controller for the whole dialog lifetime. Disposing it as soon
+/// as the route is popped lets the still-animating dialog rebuild against a
+/// disposed controller and corrupts the overlay teardown.
+class _SaveSearchDialog extends StatefulWidget {
+  const _SaveSearchDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_SaveSearchDialog> createState() => _SaveSearchDialogState();
+}
+
+class _SaveSearchDialogState extends State<_SaveSearchDialog> {
+  late final TextEditingController _nameController;
+  bool _notify = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      title: Text(context.l10n.saved_search_create_title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: context.l10n.saved_search_name_label,
+              hintText: context.l10n.saved_search_name_hint,
+              border: const OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.done,
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _notify,
+            title: Text(context.l10n.saved_search_notify),
+            onChanged: (value) => setState(() => _notify = value),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(context.l10n.saved_search_cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(
+                _SavedSearchDialogResult(
+                  name: _nameController.text,
+                  notify: _notify,
+                ),
+              ),
+          child: Text(context.l10n.saved_search_save_action),
+        ),
+      ],
     );
   }
 }

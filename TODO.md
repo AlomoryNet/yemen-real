@@ -189,12 +189,19 @@ Living roadmap. Update as items are completed. Full change history stays in `AGE
         temporary matching/non-matching saved search and a published listing:
         only the matching non-owner received one notification; all temporary
         rows were deleted and both property triggers remain enabled. `flutter
-        analyze` clean, `flutter test` 187/187. USB `ZY22G4C24N`: the filter
-        sheet's `Save search` action closes the sheet and shows the sign-in
-        prompt for guests. The authenticated pass was completed after the email
-        flow: Saved searches and Notifications loaded, and one temporary saved
-        search created from the filter sheet appeared in the list before the
-        temporary user was cleaned up.
+        analyze` clean; `flutter test` 188/188 after the dialog-teardown
+        regression below. USB `ZY22G4C24N`: the filter sheet's `Save search`
+        action closes the sheet and shows the sign-in prompt for guests. The
+        authenticated pass was completed after the email flow: Saved searches
+        and Notifications loaded, and one temporary saved search created from
+        the filter sheet appeared in the list before the temporary user was
+        cleaned up. A follow-up pass reproduced the transient
+        `Overlay`/`_dependents.isEmpty` assertion in
+        `test/saved_search_dialog_test.dart`; the save dialog now owns its
+        `TextEditingController` for the full dialog lifetime instead of
+        disposing it during the exit animation, and a fresh on-device save with
+        a temporary confirmed user produced no runtime errors before that user
+        was deleted.
       - Visit/booking scheduling in rental requests.
       - First-run onboarding: location permission + city selection.
       - Offline cache of viewed properties + favorites (Hive).
